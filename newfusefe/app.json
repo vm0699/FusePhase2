@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Fuse",
+    "slug": "newfusefe",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splashicon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#e91e63"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.swayvick.newfusefe"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptiveicon.png",
+        "backgroundColor": "#e91e63"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.swayvick.newfusefe"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bca6b147-0d35-4b56-8862-211f1c19d75a"
+      }
+    },
+    "plugins": [
+      "expo-font"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-6755071267673135~6024264479"
+  }
+}
