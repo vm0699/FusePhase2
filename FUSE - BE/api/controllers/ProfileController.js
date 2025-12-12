@@ -7,66 +7,154 @@ import jwt from 'jsonwebtoken';
 
 // Save or Update User Profile
 export const saveUserProfile = async (req, res) => {
-  try {
-    const { intro, options, profileDetails, prompts, phoneNumber, photos } = req.body;
+  console.log("📥 [saveUserProfile] Incoming body:", req.body);
+  console.log("🔑 [saveUserProfile] Auth user:", req.user);
 
-    // ƒo. Ensure all required fields are provided
-    if (
-      !intro?.name ||
-      !intro?.dob ||
-      !options?.username ||
-      !options?.gender ||
-      !profileDetails?.height ||
-      !profileDetails?.interests?.length ||
-      !profileDetails?.values?.length ||
-      !prompts?.length ||
-      !phoneNumber
-    ) {
-      return res.status(400).json({
+  try {
+    const { intro, options, profileDetails, prompts, photos } = req.body;
+
+    // 🔒 Ensure auth is working
+    const userId = req.user?.id;
+    const phoneFromToken = req.user?.phoneNumber;
+
+    if (!userId || !phoneFromToken) {
+      console.log("❌ Missing user ID or phone in token");
+      return res.status(401).json({
         success: false,
-        message: "Please provide all required profile fields.",
+        message: "Unauthorized: missing user in token",
       });
     }
 
-    // ƒo. Find the user (already created during phone verification)
-    const existingUser = await UserProfile.findOne({ phoneNumber });
+    console.log("🟢 Using authenticated user:", userId, phoneFromToken);
+
+    // 🔎 Find the user
+    let existingUser = await UserProfile.findById(userId);
 
     if (!existingUser) {
+      console.log("⚠️ User not found by ID. Trying phoneNumber lookup…");
+      existingUser = await UserProfile.findOne({ phoneNumber: phoneFromToken });
+    }
+
+    if (!existingUser) {
+      console.log("❌ User not found in database at all.");
       return res.status(404).json({
         success: false,
-        message: "User not found. Please verify your phone number first.",
+        message: "User not found.",
       });
     }
 
-    // ƒo. Update the dummy user with full profile data
-    existingUser.name = intro.name;
-    existingUser.dateOfBirth = intro.dob;
-    existingUser.username = options.username;
-    existingUser.gender = options.gender;
-    existingUser.height = profileDetails.height;
-    existingUser.interests = profileDetails.interests;
-    existingUser.values = profileDetails.values;
-    existingUser.prompts = prompts;
-    existingUser.photos = photos;
+    console.log("🟢 User found:", existingUser._id.toString());
 
+    // 📝 Save onboarding fields
+    existingUser.name = intro?.name;
+    existingUser.dateOfBirth = intro?.dob;
+    existingUser.username = options?.username;
+    existingUser.gender = options?.gender;
+
+    existingUser.height = profileDetails?.height;
+    existingUser.interests = profileDetails?.interests || [];
+    existingUser.values = profileDetails?.values || [];
+    existingUser.prompts = prompts || [];
+
+    // Photos already uploaded to S3 during PhotoUpload
+    if (Array.isArray(photos) && photos.length > 0) {
+      console.log("📸 Updating photos:", photos);
+      existingUser.photos = photos;
+    }
+
+    console.log("💾 Saving updated profile…");
     await existingUser.save();
+    console.log("✅ User profile saved.");
+
+    // 🧮 Calculate completeness
+    const profileComplete = calculateProfileCompleteness(existingUser);
+    console.log("📊 Profile completeness:", profileComplete);
+
+    const fixedPhotos = (existingUser.photos || []).map((p) => p);
+
+    // 🎁 Build response profile
+    const profilePayload = {
+      _id: existingUser._id,
+      name: existingUser.name,
+      username: existingUser.username,
+      phoneNumber: existingUser.phoneNumber,
+      dateOfBirth: existingUser.dateOfBirth,
+      gender: existingUser.gender,
+      height: existingUser.height,
+      interests: existingUser.interests,
+      values: existingUser.values,
+      prompts: existingUser.prompts,
+      photos: fixedPhotos,
+      profileComplete,
+
+      // extended fields
+      pronouns: existingUser.pronouns,
+      sexuality: existingUser.sexuality,
+      work: existingUser.work,
+      jobTitle: existingUser.jobTitle,
+      college: existingUser.college,
+      educationLevel: existingUser.educationLevel,
+      religion: existingUser.religion,
+      homeTown: existingUser.homeTown,
+      politics: existingUser.politics,
+      languages: existingUser.languages,
+      datingIntentions: existingUser.datingIntentions,
+      relationshipType: existingUser.relationshipType,
+      ethnicity: existingUser.ethnicity,
+      children: existingUser.children,
+      familyPlans: existingUser.familyPlans,
+      pets: existingUser.pets,
+      zodiacSign: existingUser.zodiacSign,
+      drinking: existingUser.drinking,
+      smoking: existingUser.smoking,
+      marijuana: existingUser.marijuana,
+      drugs: existingUser.drugs,
+    };
+
+    console.log("📤 Final profilePayload:", profilePayload);
+
+    // 🔐 Generate new tokens that match authMiddleware fields
+    const accessToken = jwt.sign(
+      {
+        id: existingUser._id.toString(),
+        phoneNumber: existingUser.phoneNumber,
+        username: existingUser.username,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const refreshToken = jwt.sign(
+      {
+        id: existingUser._id.toString(),
+        phoneNumber: existingUser.phoneNumber,
+        username: existingUser.username,
+      },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    console.log("🔑 New accessToken issued");
+    console.log("🔑 New refreshToken issued");
 
     return res.status(200).json({
       success: true,
-      message: "Profile updated successfully!",
+      message: "Profile saved successfully.",
       data: {
-        accessToken: jwt.sign({ phoneNumber }, process.env.JWT_SECRET, { expiresIn: "1h" }),
-        refreshToken: jwt.sign({ phoneNumber }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" }),
+        profile: profilePayload,
+        accessToken,
+        refreshToken,
       },
     });
-  } catch (error) {
-    console.error("ƒ?O Error saving profile:", error.message);
+  } catch (err) {
+    console.error("🔥 ERROR in saveUserProfile:", err);
     return res.status(500).json({
       success: false,
-      message: "An error occurred while saving the profile.",
+      message: "Internal server error while saving profile.",
     });
   }
 };
+
 
 
 
@@ -595,47 +683,199 @@ export const uploadPhotos = async (req, res) => {
 
 
 export const updateUserProfile = async (req, res) => {
-  try {
-    const { phoneNumber, updates } = req.body;
+  console.log("🛠 [updateUserProfile] Raw body:", req.body);
+  console.log("🛡 [updateUserProfile] Auth user:", req.user);
 
-    if (!phoneNumber || !updates) {
-      return res.status(400).json({
+  try {
+    const userId = req.user?.id;
+    const phoneFromToken = req.user?.phoneNumber;
+
+    if (!userId || !phoneFromToken) {
+      console.log("❌ [updateUserProfile] Missing auth user details");
+      return res.status(401).json({
         success: false,
-        message: "Phone number and update data are required.",
+        message: "Unauthorized: missing user in token",
       });
     }
 
-    const user = await UserProfile.findOne({ phoneNumber });
-
+    // Load user
+    const user = await UserProfile.findById(userId);
     if (!user) {
+      console.log("❌ [updateUserProfile] User not found for ID:", userId);
       return res.status(404).json({
         success: false,
         message: "User not found.",
       });
     }
 
-    // ƒo. Apply updates only for provided fields
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value !== undefined) {
-        user[key] = value;
-      }
-    });
+    console.log("✅ [updateUserProfile] Found user:", user._id.toString());
 
+    // Support both:
+    // { updates: {...} }  (new way)
+    // { pronouns: "...", sexuality: "..." } (fallback)
+    const updates = req.body.updates && typeof req.body.updates === "object"
+      ? req.body.updates
+      : req.body;
+
+    console.log("✏️ [updateUserProfile] Parsed updates:", updates);
+
+    if (!updates || Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields provided to update.",
+      });
+    }
+
+    // Whitelist allowed fields to avoid random overwrites
+    const allowedFields = [
+      "name",
+      "username",
+      "dateOfBirth",
+      "gender",
+      "height",
+      "interests",
+      "values",
+      "prompts",
+      "photos",
+
+      // Identity + lifestyle fields
+      "pronouns",
+      "sexuality",
+      "work",
+      "jobTitle",
+      "college",
+      "educationLevel",
+      "religion",
+      "homeTown",
+      "politics",
+      "languages",
+      "datingIntentions",
+      "relationshipType",
+      "ethnicity",
+      "children",
+      "familyPlans",
+      "pets",
+      "zodiacSign",
+      "drinking",
+      "smoking",
+      "marijuana",
+      "drugs",
+    ];
+
+    let anyFieldUpdated = false;
+
+    for (const key of Object.keys(updates)) {
+      if (!allowedFields.includes(key)) {
+        console.log(`⚠️ [updateUserProfile] Ignoring disallowed field: ${key}`);
+        continue;
+      }
+
+      const value = updates[key];
+      console.log(`✏️ [updateUserProfile] Setting ${key} =`, value);
+
+      user[key] = value;
+      anyFieldUpdated = true;
+    }
+
+    if (!anyFieldUpdated) {
+      console.log("ℹ️ [updateUserProfile] No allowed fields found in updates.");
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided to update.",
+      });
+    }
+
+    console.log("💾 [updateUserProfile] Saving user…");
     await user.save();
+    console.log("✅ [updateUserProfile] User saved.");
+
+    // Recalculate completeness (using existing helper)
+    const profileCompleteness = calculateProfileCompleteness(user);
+    console.log("📊 [updateUserProfile] Profile completeness:", profileCompleteness);
+
+    const fixedPhotos = (user.photos || []).map((p) => p);
+
+    const profilePayload = {
+      _id: user._id,
+      name: user.name,
+      username: user.username,
+      phoneNumber: user.phoneNumber,
+      dateOfBirth: user.dateOfBirth,
+      gender: user.gender,
+      height: user.height,
+      interests: user.interests,
+      values: user.values,
+      prompts: user.prompts || [],
+      photos: fixedPhotos,
+      profileComplete: profileCompleteness,
+
+      // Extended fields
+      pronouns: user.pronouns,
+      sexuality: user.sexuality,
+      work: user.work,
+      jobTitle: user.jobTitle,
+      college: user.college,
+      educationLevel: user.educationLevel,
+      religion: user.religion,
+      homeTown: user.homeTown,
+      politics: user.politics,
+      languages: user.languages,
+      datingIntentions: user.datingIntentions,
+      relationshipType: user.relationshipType,
+      ethnicity: user.ethnicity,
+      children: user.children,
+      familyPlans: user.familyPlans,
+      pets: user.pets,
+      zodiacSign: user.zodiacSign,
+      drinking: user.drinking,
+      smoking: user.smoking,
+      marijuana: user.marijuana,
+      drugs: user.drugs,
+    };
+
+    console.log("📤 [updateUserProfile] Final profilePayload:", profilePayload);
+
+    // Issue fresh tokens in case username / anything important changed
+    const accessToken = jwt.sign(
+      {
+        id: user._id.toString(),
+        phoneNumber: user.phoneNumber,
+        username: user.username,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const refreshToken = jwt.sign(
+      {
+        id: user._id.toString(),
+        phoneNumber: user.phoneNumber,
+        username: user.username,
+      },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    console.log("🔑 [updateUserProfile] New access & refresh tokens issued.");
 
     return res.status(200).json({
       success: true,
-      message: "Profile updated successfully!",
-      data: user,
+      message: "Profile updated successfully.",
+      data: {
+        profile: profilePayload,
+        accessToken,
+        refreshToken,
+      },
     });
   } catch (error) {
-    console.error("ƒ?O Error updating profile:", error.message);
+    console.error("🔥 [updateUserProfile] ERROR:", error);
     return res.status(500).json({
       success: false,
-      message: "An error occurred while updating the profile.",
+      message: "Internal server error while updating profile.",
     });
   }
 };
+
 
 // Calculate Profile Completeness
 export const calculateProfileCompleteness = (user) => {
@@ -688,4 +928,156 @@ export const calculateProfileCompleteness = (user) => {
   });
 
   return (filledFields / totalFields) * 100; // Return percentage
+};
+
+
+export const reorderPhotos = async (req, res) => {
+  console.log("🎯 [reorderPhotos] Body:", req.body);
+  console.log("🛡 [reorderPhotos] Auth user:", req.user);
+
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      console.log("❌ [reorderPhotos] Missing auth user id");
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: missing user in token",
+      });
+    }
+
+    const { newOrder } = req.body;
+
+    if (!Array.isArray(newOrder)) {
+      console.log("❌ [reorderPhotos] newOrder is not an array");
+      return res.status(400).json({
+        success: false,
+        message: "newOrder must be an array of photo URLs.",
+      });
+    }
+
+    const user = await UserProfile.findById(userId);
+    if (!user) {
+      console.log("❌ [reorderPhotos] User not found for ID:", userId);
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    const currentPhotos = user.photos || [];
+
+    // Filter out any null/empty entries that may come from the frontend
+    const cleanedNewOrder = newOrder.filter((p) => typeof p === "string" && p.trim().length > 0);
+
+    // Basic integrity check: all items in newOrder must exist in currentPhotos
+    const allExist = cleanedNewOrder.every((url) => currentPhotos.includes(url));
+    if (!allExist) {
+      console.log("⚠️ [reorderPhotos] Some URLs in newOrder do not exist in current photos.");
+      return res.status(400).json({
+        success: false,
+        message: "Invalid photo URLs in newOrder.",
+      });
+    }
+
+    // Optional: if newOrder doesn't include all photos (e.g. fewer), append remaining at the end
+    const remaining = currentPhotos.filter((url) => !cleanedNewOrder.includes(url));
+    const finalOrder = [...cleanedNewOrder, ...remaining];
+
+    console.log("🧩 [reorderPhotos] Final ordered photos:", finalOrder);
+    user.photos = finalOrder;
+
+    await user.save();
+    console.log("✅ [reorderPhotos] User photos reordered & saved.");
+
+    const profileCompleteness = calculateProfileCompleteness(user);
+    const fixedPhotos = (user.photos || []).map((p) => p);
+
+    return res.status(200).json({
+      success: true,
+      message: "Photos reordered successfully.",
+      data: {
+        photos: fixedPhotos,
+        profileComplete: profileCompleteness,
+      },
+    });
+  } catch (error) {
+    console.error("🔥 [reorderPhotos] ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while reordering photos.",
+    });
+  }
+};
+
+
+export const deletePhoto = async (req, res) => {
+  console.log("🗑 [deletePhoto] Body:", req.body);
+  console.log("🛡 [deletePhoto] Auth user:", req.user);
+
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      console.log("❌ [deletePhoto] Missing auth user id");
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: missing user in token",
+      });
+    }
+
+    const { index } = req.body;
+
+    if (index === undefined || index === null) {
+      console.log("❌ [deletePhoto] index not provided");
+      return res.status(400).json({
+        success: false,
+        message: "index is required.",
+      });
+    }
+
+    const user = await UserProfile.findById(userId);
+    if (!user) {
+      console.log("❌ [deletePhoto] User not found for ID:", userId);
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    const photos = user.photos || [];
+
+    if (index < 0 || index >= photos.length) {
+      console.log("❌ [deletePhoto] index out of range:", index);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid photo index.",
+      });
+    }
+
+    console.log("🗑 [deletePhoto] Removing photo at index:", index, "URL:", photos[index]);
+    photos.splice(index, 1); // remove one item at the index
+    user.photos = photos;
+
+    await user.save();
+    console.log("✅ [deletePhoto] Photo removed & user saved.");
+
+    const profileCompleteness = calculateProfileCompleteness(user);
+    const fixedPhotos = (user.photos || []).map((p) => p);
+
+    return res.status(200).json({
+      success: true,
+      message: "Photo deleted successfully.",
+      data: {
+        photos: fixedPhotos,
+        profileComplete: profileCompleteness,
+      },
+    });
+  } catch (error) {
+    console.error("🔥 [deletePhoto] ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while deleting photo.",
+    });
+  }
 };

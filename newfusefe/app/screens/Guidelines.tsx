@@ -11,40 +11,74 @@ export default function GuidelinesPage() {
   const { profileData, setFullProfile } = useContext(ProfileContext);
 
   const handleAccept = async () => {
-    try {
-      const token = await AsyncStorage.getItem("jwtToken");
-      if (!token) {
-        Alert.alert("Error", "User not authenticated. Please log in again.");
-        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-        return;
-      }
+  console.log("👉 [Guidelines] Starting profile submission…");
+  try {
+    const token = await AsyncStorage.getItem("jwtToken");
+    console.log("🔑 Stored JWT before submit:", token);
 
-      // ✅ Submit full profile to backend (only once, after photo upload and this screen)
-      const res = await fetch(`${BASE_URL}/api/profile`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...profileData,
-          phoneNumber: profileData.number, // 🔄 Ensure consistent field for backend
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || "Profile submission failed");
-      }
-
-      setFullProfile(json.data); // ✅ Set confirmed profile into context
-      Alert.alert("Success", "Your profile is ready!");
-      navigation.navigate('SwipeView');
-    } catch (err) {
-      console.error("❌ Error saving profile in GuidelinesPage:", err);
-      Alert.alert("Error", err.message || "Could not save your profile. Please try again.");
+    if (!token) {
+      Alert.alert("Error", "Session expired. Please login again.");
+      navigation.reset({ index: 0, routes: [{ name: "PhoneVerif" }] });
+      return;
     }
-  };
+
+    // Build payload exactly as backend expects
+    const payload = {
+      intro: profileData.intro,
+      options: profileData.options,
+      profileDetails: profileData.profileDetails,
+      prompts: profileData.prompts,
+      photos: profileData.photos,
+    };
+
+    console.log("📤 Payload sending from Guidelines:", payload);
+
+    const res = await fetch(`${BASE_URL}/api/profile`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const json = await res.json();
+    console.log("📥 Response from backend:", json);
+
+    if (!json.success) {
+      Alert.alert("Error", json.message || "Failed to save profile.");
+      return;
+    }
+
+    const { profile, accessToken, refreshToken } = json.data;
+
+    // Update context with full profile
+    console.log("🟢 Saving profile to context:", profile);
+    setFullProfile(profile);
+
+    // Save new tokens
+    if (accessToken) {
+      await AsyncStorage.setItem("jwtToken", accessToken);
+      console.log("🔄 JWT updated:", accessToken);
+    }
+
+    if (refreshToken) {
+      await AsyncStorage.setItem("refreshToken", refreshToken);
+      console.log("🔄 Refresh token updated:", refreshToken);
+    }
+
+    console.log("✅ Profile submission complete. Navigating to SwipeView…");
+
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "SwipeView" }],
+    });
+  } catch (err) {
+    console.error("🔥 Error in Guidelines handleAccept:", err);
+    Alert.alert("Error", "Unexpected error occurred.");
+  }
+};
+
 
   return (
     <View style={styles.container}>

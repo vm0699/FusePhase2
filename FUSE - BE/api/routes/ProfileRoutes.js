@@ -5,7 +5,9 @@ import {
   getFilteredProfiles,
   handleSwipe,
   uploadPhotos,
-  updateUserProfile
+  updateUserProfile,
+  reorderPhotos,
+  deletePhoto,
 } from '../controllers/ProfileController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import upload from '../middleware/FileUpload.js';
@@ -13,10 +15,10 @@ import upload from '../middleware/FileUpload.js';
 const router = Router();
 
 // POST: Save or update user profile
-router.post('/', saveUserProfile);
+router.post('/', authMiddleware, saveUserProfile);
 
 // ✅ FIX: Use Multer for updating profile (to handle FormData)
-router.put('/update', authMiddleware, upload.array('photos', 6), updateUserProfile);
+// router.put('/update', authMiddleware, upload.array('photos', 6), updateUserProfile);
 
 router.put('/update', authMiddleware, updateUserProfile);
 
@@ -30,5 +32,8 @@ router.get('/', authMiddleware, getProfileByPhoneNumber);
 router.get('/filteredProfiles', authMiddleware, getFilteredProfiles);
 
 router.post('/swipe', authMiddleware, handleSwipe);
+
+router.put("/reorder-photos", authMiddleware, reorderPhotos);
+router.delete("/delete-photo", authMiddleware, deletePhoto);
 
 export default router;
