@@ -5,80 +5,87 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProfileContext } from '../../ProfileContext';
 
 const BASE_URL = "http://172.20.10.4:5000";
+const ONBOARDING_STEP_KEY = "@onboarding_step"; // 🔹 2.1
 
 export default function GuidelinesPage() {
   const navigation = useNavigation();
   const { profileData, setFullProfile } = useContext(ProfileContext);
 
   const handleAccept = async () => {
-  console.log("👉 [Guidelines] Starting profile submission…");
-  try {
-    const token = await AsyncStorage.getItem("jwtToken");
-    console.log("🔑 Stored JWT before submit:", token);
+    console.log("👉 [Guidelines] Starting profile submission…");
+    try {
+      const token = await AsyncStorage.getItem("jwtToken");
 
-    if (!token) {
-      Alert.alert("Error", "Session expired. Please login again.");
-      navigation.reset({ index: 0, routes: [{ name: "PhoneVerif" }] });
-      return;
+      if (!token) {
+        Alert.alert("Error", "Session expired. Please login again.");
+        navigation.reset({ index: 0, routes: [{ name: "PhoneVerif" }] });
+        return;
+      }
+
+      const payload = {
+        intro: profileData.intro,
+        options: profileData.options,
+        profileDetails: profileData.profileDetails,
+        prompts: profileData.prompts,
+        photos: profileData.photos,
+      };
+
+      const res = await fetch(`${BASE_URL}/api/profile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+
+      if (!json.success) {
+        Alert.alert("Error", json.message || "Failed to save profile.");
+        return;
+      }
+
+      const { profile, accessToken, refreshToken } = json.data;
+      setFullProfile(profile);
+
+      if (accessToken) {
+        await AsyncStorage.setItem("jwtToken", accessToken);
+      }
+
+      if (refreshToken) {
+        await AsyncStorage.setItem("refreshToken", refreshToken);
+      }
+
+      // =====================================================
+      // 🔥 2.1 FINAL BACKEND CHECKPOINT — ONBOARDING COMPLETE
+      // =====================================================
+      await fetch(`${BASE_URL}/api/profile/update`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          updates: {
+            onboardingStage: "COMPLETE", // ✅ FINAL STATE
+          },
+        }),
+      });
+      // =====================================================
+
+      // 🔹 2.1 — CLEAR LOCAL ONBOARDING RESUME STATE
+      await AsyncStorage.removeItem(ONBOARDING_STEP_KEY);
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "SwipeView" }],
+      });
+    } catch (err) {
+      console.error("🔥 Error in Guidelines handleAccept:", err);
+      Alert.alert("Error", "Unexpected error occurred.");
     }
-
-    // Build payload exactly as backend expects
-    const payload = {
-      intro: profileData.intro,
-      options: profileData.options,
-      profileDetails: profileData.profileDetails,
-      prompts: profileData.prompts,
-      photos: profileData.photos,
-    };
-
-    console.log("📤 Payload sending from Guidelines:", payload);
-
-    const res = await fetch(`${BASE_URL}/api/profile`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const json = await res.json();
-    console.log("📥 Response from backend:", json);
-
-    if (!json.success) {
-      Alert.alert("Error", json.message || "Failed to save profile.");
-      return;
-    }
-
-    const { profile, accessToken, refreshToken } = json.data;
-
-    // Update context with full profile
-    console.log("🟢 Saving profile to context:", profile);
-    setFullProfile(profile);
-
-    // Save new tokens
-    if (accessToken) {
-      await AsyncStorage.setItem("jwtToken", accessToken);
-      console.log("🔄 JWT updated:", accessToken);
-    }
-
-    if (refreshToken) {
-      await AsyncStorage.setItem("refreshToken", refreshToken);
-      console.log("🔄 Refresh token updated:", refreshToken);
-    }
-
-    console.log("✅ Profile submission complete. Navigating to SwipeView…");
-
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "SwipeView" }],
-    });
-  } catch (err) {
-    console.error("🔥 Error in Guidelines handleAccept:", err);
-    Alert.alert("Error", "Unexpected error occurred.");
-  }
-};
-
+  };
 
   return (
     <View style={styles.container}>
@@ -98,10 +105,7 @@ export default function GuidelinesPage() {
 
           <Text style={styles.paragraph}>
             By using Fuse, you're agreeing to adhere to our values as well as our{' '}
-            <Text style={styles.linkText} onPress={() => navigation.navigate('SwipeView')}>
-              guidelines
-            </Text>
-            .
+            <Text style={styles.linkText}>guidelines</Text>.
           </Text>
         </View>
 

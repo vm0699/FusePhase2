@@ -22,18 +22,25 @@ const authMiddleware = async (req, res, next) => {
 
     console.log("🔹 Decoded JWT:", decoded);
 
-    // ✅ Ensure `id`, `phoneNumber`, and `username` exist in the decoded token
-    if (!decoded.id || typeof decoded.id !== "string" || !decoded.phoneNumber || !decoded.username) {
-      console.warn("⚠️ Token is missing 'id', 'phoneNumber', or 'username'. Decoded:", decoded);
-      return res.status(400).json({ success: false, message: "Invalid token data (Missing user fields)" });
+    /**
+     * 🔹 2.1 FIX:
+     * username is OPTIONAL during onboarding
+     * Only id + phoneNumber are mandatory
+     */
+    if (!decoded.id || typeof decoded.id !== "string" || !decoded.phoneNumber) {
+      console.warn("⚠️ Token missing required fields. Decoded:", decoded);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid token data",
+      });
     }
 
-    // ✅ Convert `id` to String (if needed) before querying MongoDB
+    // ✅ Convert `id` to String (safe)
     const userId = String(decoded.id).trim();
 
     console.log(`🔹 Fetching user from DB: ID = ${userId}`);
 
-    // ✅ Fetch User from Database by `id`
+    // ✅ Fetch User from Database
     const user = await UserProfile.findById(userId);
 
     if (!user) {
@@ -41,14 +48,17 @@ const authMiddleware = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // ✅ Attach user details to `req.user` for use in other middleware/routes
+    /**
+     * 🔹 2.1 FIX:
+     * Provide SAFE DEFAULTS for onboarding users
+     */
     req.user = {
-      id: user._id.toString(),  // Ensure it remains a String
+      id: user._id.toString(),
       phoneNumber: user.phoneNumber,
-      username: user.username,  // ✅ Ensured username is included
-      name: user.name,
-      gender: user.gender,  // ✅ Ensure gender is included
-      interests: user.interests || [], // ✅ Ensure interests are included
+      username: user.username || "", // ✅ onboarding-safe
+      name: user.name || "",
+      gender: user.gender || "",
+      interests: user.interests || [],
     };
 
     console.log("✅ Authenticated user:", req.user);

@@ -1,8 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
+} from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CircularNextButton from '../../components/CircularNextButton';
+
+const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
 
 export default function VerifyCodePage() {
   const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -12,10 +24,17 @@ export default function VerifyCodePage() {
   const { phoneNumber, countryCode } = route.params;
 
   const inputRefs = useRef([]);
-  inputRefs.current = Array(6).fill(1).map((_, i) => inputRefs.current[i] ?? React.createRef());
+  inputRefs.current = Array(6)
+    .fill(1)
+    .map((_, i) => inputRefs.current[i] ?? React.createRef());
+
+  // 🔹 Persist checkpoint ONLY for crash recovery
+  useEffect(() => {
+    console.log('🟣 [VerifyCode] mounted');
+    AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'CodeVerif');
+  }, []);
 
   const handleCodeChange = (index, value) => {
-    // Allow only a single digit 0-9 (or empty when clearing)
     if (value.length > 1) return;
     if (value !== '' && !/^\d$/.test(value)) return;
 
@@ -23,7 +42,6 @@ export default function VerifyCodePage() {
     newCode[index] = value;
     setCode(newCode);
 
-    // Move forward if a digit is entered
     if (value !== '' && index < 5) {
       inputRefs.current[index + 1].current?.focus();
     }
@@ -33,7 +51,6 @@ export default function VerifyCodePage() {
     const key = e?.nativeEvent?.key;
 
     if (key === 'Backspace') {
-      // If current box has a digit, clear it
       if (code[index] !== '') {
         const newCode = [...code];
         newCode[index] = '';
@@ -41,7 +58,6 @@ export default function VerifyCodePage() {
         return;
       }
 
-      // If current is already empty, move to previous and clear it
       if (index > 0) {
         inputRefs.current[index - 1].current?.focus();
         const newCode = [...code];
@@ -54,61 +70,101 @@ export default function VerifyCodePage() {
   useEffect(() => {
     if (timer === 0) return;
     const timerId = setInterval(() => {
-      setTimer(prevTimer => prevTimer - 1);
+      setTimer((prev) => prev - 1);
     }, 1000);
     return () => clearInterval(timerId);
   }, [timer]);
 
-  const isComplete = code.every(digit => digit !== '');
+  const isComplete = code.every((digit) => digit !== '');
 
   const verifyOTPCode = async () => {
     try {
-      let fullPhoneNumber = `+${countryCode}${phoneNumber}`; // Ensure proper formatting
-      fullPhoneNumber = fullPhoneNumber.replace(/^(\+91)(\+91)?/, '+91'); // Fix duplicate +91 if any
+      console.log('🟣 [VerifyCode] VERIFY OTP clicked');
 
-      const response = await fetch('http://172.20.10.4:5000/api/auth/verifyCode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber: fullPhoneNumber, code: code.join('') }),
-      });
+      let fullPhoneNumber = `+${countryCode}${phoneNumber}`;
+      fullPhoneNumber = fullPhoneNumber.replace(/^(\+91)(\+91)?/, '+91');
+
+      console.log('🟣 [VerifyCode] Sending verifyCode for:', fullPhoneNumber);
+
+      const response = await fetch(
+        'http://172.20.10.4:5000/api/auth/verifyCode',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phoneNumber: fullPhoneNumber,
+            code: code.join(''),
+          }),
+        }
+      );
+
+      console.log('🟣 [VerifyCode] verifyCode response status:', response.status);
 
       const result = await response.json();
+      console.log('🟣 [VerifyCode] verifyCode response JSON:', result);
 
-      if (result.success) {
-        // ✅ Persist token and user info if provided by backend
-        const token = result?.data?.accessToken || result?.accessToken;
-        if (token) {
-          await AsyncStorage.setItem('jwtToken', token);
-          console.log('✅ Saved jwtToken from verifyCode');
-        }
-        const userId = result?.data?.user?.id ?? result?.user?.id;
-        if (userId) await AsyncStorage.setItem('userId', String(userId));
-        const username = result?.data?.user?.username ?? result?.user?.username;
-        if (username) await AsyncStorage.setItem('username', String(username));
-
-        // Optional: clear one-time UI flags
-        await AsyncStorage.removeItem('popup_shown_this_session');
-
-        Alert.alert('Success', 'OTP verified successfully.');
-        navigation.navigate('Intro'); // keep your existing flow
-      } else {
-        Alert.alert('Error', result.message || 'Invalid OTP. Please try again.');
+      if (!result.success) {
+        Alert.alert('Error', result.message || 'Invalid OTP');
+        return;
       }
+
+      // ✅ Save JWT (required for AuthGate)
+      if (result?.data?.accessToken) {
+        console.log('🟢 [VerifyCode] Saving jwtToken');
+        await AsyncStorage.setItem('jwtToken', result.data.accessToken);
+      } else {
+        console.log('🟥 [VerifyCode] NO accessToken received');
+      }
+
+      // ✅ Save userId safely
+      if (result?.data?.user?.id) {
+        console.log('🟢 [VerifyCode] Saving userId:', result.data.user.id);
+        await AsyncStorage.setItem('userId', String(result.data.user.id));
+      }
+
+      // ✅ Save username ONLY if non-empty
+      if (
+        typeof result?.data?.user?.username === 'string' &&
+        result.data.user.username.length > 0
+      ) {
+        console.log('🟢 [VerifyCode] Saving username:', result.data.user.username);
+        await AsyncStorage.setItem('username', result.data.user.username);
+      } else {
+        console.log('🟠 [VerifyCode] Username empty or missing');
+      }
+
+      await AsyncStorage.removeItem('popup_shown_this_session');
+
+      console.log('🟢 [VerifyCode] OTP VERIFIED — redirecting to AuthGate');
+
+      Alert.alert('Success', 'OTP verified successfully.');
+
+      // ✅ SINGLE SOURCE OF TRUTH — AuthGate
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'AuthGate' }],
+      });
     } catch (error) {
-      console.error('Error verifying OTP:', error);
-      Alert.alert('Error', `An error occurred while verifying the OTP: ${error.message}`);
+      console.error('❌ [VerifyCode] Error verifying OTP:', error);
+      Alert.alert(
+        'Error',
+        `An error occurred while verifying the OTP: ${error.message}`
+      );
     }
   };
 
+
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
           <Text style={styles.title}>Verify your number</Text>
-          <Text style={styles.description}>Enter the code we've sent by text to {phoneNumber}.</Text>
+          <Text style={styles.description}>
+            Enter the code we've sent by text to {phoneNumber}.
+          </Text>
 
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.changeNumber}>Change number</Text>
@@ -117,27 +173,34 @@ export default function VerifyCodePage() {
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Code</Text>
             <View style={styles.codeInputContainer}>
-              {Array(6).fill(0).map((_, index) => (
-                <TextInput
-                  key={index}
-                  style={styles.inputField}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  value={code[index]}
-                  onChangeText={(value) => handleCodeChange(index, value)}
-                  onKeyPress={(e) => handleKeyPress(index, e)}
-                  ref={inputRefs.current[index]}
-                  returnKeyType="next"
-                />
-              ))}
+              {Array(6)
+                .fill(0)
+                .map((_, index) => (
+                  <TextInput
+                    key={index}
+                    style={styles.inputField}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    value={code[index]}
+                    onChangeText={(value) => handleCodeChange(index, value)}
+                    onKeyPress={(e) => handleKeyPress(index, e)}
+                    ref={inputRefs.current[index]}
+                    returnKeyType="next"
+                  />
+                ))}
             </View>
           </View>
 
-          <Text style={styles.timerText}>This code should arrive within {timer}s</Text>
+          <Text style={styles.timerText}>
+            This code should arrive within {timer}s
+          </Text>
         </View>
       </ScrollView>
 
-      <CircularNextButton onPress={verifyOTPCode} disabled={!isComplete || timer <= 0} />
+      <CircularNextButton
+        onPress={verifyOTPCode}
+        disabled={!isComplete || timer <= 0}
+      />
     </KeyboardAvoidingView>
   );
 }

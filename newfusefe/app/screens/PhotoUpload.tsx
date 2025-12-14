@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { ProfileContext } from '../../ProfileContext';
@@ -7,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImageManipulator from 'expo-image-manipulator';
 
 const BASE_URL = "http://172.20.10.4:5000";
+const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
 
 export default function PhotoUploadPage() {
   const navigation = useNavigation();
@@ -23,6 +32,11 @@ export default function PhotoUploadPage() {
 
   const [photos, setPhotos] = useState(initializePhotos);
   const [uploading, setUploading] = useState(false);
+
+  // 🔹 2.1 — persist current onboarding step (LOCAL resume)
+  useEffect(() => {
+    AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'PhotoUpload');
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -52,108 +66,128 @@ export default function PhotoUploadPage() {
   };
 
   const handleSubmit = async () => {
-  const filledPhotos = photos.filter(photo => photo !== null);
-  if (filledPhotos.length < 4) {
-    Alert.alert("Incomplete", "Please upload at least 4 photos.");
-    return;
-  }
-
-  try {
-    setUploading(true);
-    const token = await AsyncStorage.getItem("jwtToken");
-    const phoneNumber = profileData.number;
-    const formData = new FormData();
-    formData.append("phoneNumber", phoneNumber);
-
-    const compressAndCalculateSize = async (uris, fallback = false) => {
-      let totalSize = 0;
-      const compressedPhotos = [];
-
-      for (const uri of uris) {
-        const compressed = await ImageManipulator.manipulateAsync(
-          uri,
-          [{ resize: { width: fallback ? 600 : 800 } }],
-          {
-            compress: fallback ? 0.2 : 0.4,
-            format: ImageManipulator.SaveFormat.JPEG,
-          }
-        );
-
-        const response = await fetch(compressed.uri);
-        const blob = await response.blob();
-        totalSize += blob.size;
-
-        compressedPhotos.push({
-          uri: compressed.uri,
-          name: compressed.uri.split('/').pop(),
-          type: 'image/jpeg',
-        });
-      }
-
-      return { totalSize, compressedPhotos };
-    };
-
-    // 🔁 First compression attempt
-    let { totalSize, compressedPhotos } = await compressAndCalculateSize(filledPhotos);
-
-    // 🔁 Fallback compression if still too big
-    if (totalSize > 1024 * 1024) {
-      const fallbackResult = await compressAndCalculateSize(filledPhotos, true);
-      totalSize = fallbackResult.totalSize;
-      compressedPhotos = fallbackResult.compressedPhotos;
-    }
-
-    // ❌ Still exceeds even after fallback
-    if (totalSize > 1024 * 1024) {
-      Alert.alert(
-        "Size Exceeded",
-        "Total image size exceeds 1MB. Please remove or replace one photo."
-      );
-      setUploading(false);
+    const filledPhotos = photos.filter(photo => photo !== null);
+    if (filledPhotos.length < 4) {
+      Alert.alert("Incomplete", "Please upload at least 4 photos.");
       return;
     }
 
-    // ✅ Upload to backend
-    compressedPhotos.forEach(photo => {
-      formData.append("photos", photo);
-    });
+    try {
+      setUploading(true);
+      const token = await AsyncStorage.getItem("jwtToken");
+      const phoneNumber = profileData.number;
 
-    const uploadRes = await fetch(`${BASE_URL}/api/profile/upload-photos`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
+      const formData = new FormData();
+      formData.append("phoneNumber", phoneNumber);
 
-    const contentType = uploadRes.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      const rawText = await uploadRes.text();
-      console.error("🚨 Unexpected response:", rawText);
-      throw new Error("Upload failed: Invalid server response.");
+      const compressAndCalculateSize = async (uris, fallback = false) => {
+        let totalSize = 0;
+        const compressedPhotos = [];
+
+        for (const uri of uris) {
+          const compressed = await ImageManipulator.manipulateAsync(
+            uri,
+            [{ resize: { width: fallback ? 600 : 800 } }],
+            {
+              compress: fallback ? 0.2 : 0.4,
+              format: ImageManipulator.SaveFormat.JPEG,
+            }
+          );
+
+          const response = await fetch(compressed.uri);
+          const blob = await response.blob();
+          totalSize += blob.size;
+
+          compressedPhotos.push({
+            uri: compressed.uri,
+            name: compressed.uri.split('/').pop(),
+            type: 'image/jpeg',
+          });
+        }
+
+        return { totalSize, compressedPhotos };
+      };
+
+      // 🔁 First compression attempt
+      let { totalSize, compressedPhotos } =
+        await compressAndCalculateSize(filledPhotos);
+
+      // 🔁 Fallback compression
+      if (totalSize > 1024 * 1024) {
+        const fallbackResult =
+          await compressAndCalculateSize(filledPhotos, true);
+        totalSize = fallbackResult.totalSize;
+        compressedPhotos = fallbackResult.compressedPhotos;
+      }
+
+      if (totalSize > 1024 * 1024) {
+        Alert.alert(
+          "Size Exceeded",
+          "Total image size exceeds 1MB. Please remove or replace one photo."
+        );
+        setUploading(false);
+        return;
+      }
+
+      compressedPhotos.forEach(photo => {
+        formData.append("photos", photo);
+      });
+
+      const uploadRes = await fetch(
+        `${BASE_URL}/api/profile/upload-photos`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      const uploadJson = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(uploadJson.message || "Upload failed");
+
+      const uploadedPhotos = uploadJson.data.photos;
+      updateProfileData("photos", uploadedPhotos);
+
+      // =====================================================
+      // 🔥 2.1 CORE CHANGE — BACKEND CHECKPOINT SAVE
+      // Mark photos done in DB
+      // =====================================================
+      await fetch(`${BASE_URL}/api/profile/update`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          updates: {
+            photos: uploadedPhotos,
+            onboardingStage: "PHOTOS_DONE", // ✅ backend checkpoint
+          },
+        }),
+      });
+      // =====================================================
+
+      // 🔹 2.1 — advance local resume pointer
+      await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'Guidelines');
+
+      Alert.alert("Success", "Photos uploaded!");
+      navigation.navigate("Guidelines");
+    } catch (error) {
+      console.error("❌ Upload Error:", error);
+      Alert.alert("Error", error.message || "Something went wrong.");
+    } finally {
+      setUploading(false);
     }
-
-    const uploadJson = await uploadRes.json();
-    if (!uploadRes.ok) throw new Error(uploadJson.message || "Upload failed");
-
-    const uploadedPhotos = uploadJson.data.photos;
-    updateProfileData("photos", uploadedPhotos);
-
-    Alert.alert("Success", "Photos uploaded!");
-    navigation.navigate("Guidelines");
-  } catch (error) {
-    console.error("❌ Upload Error:", error);
-    Alert.alert("Error", error.message || "Something went wrong.");
-  } finally {
-    setUploading(false);
-  }
-};
-
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Add at least 4 great photos</Text>
-      <Text style={styles.description}>Whether it’s you with your pet, doing what you love, or at your favorite place — let your photos talk!</Text>
+      <Text style={styles.description}>
+        Whether it’s you with your pet, doing what you love, or at your favorite place — let your photos talk!
+      </Text>
 
       <View style={styles.grid}>
         {photos.map((photo, index) => (
@@ -171,29 +205,35 @@ export default function PhotoUploadPage() {
         ))}
       </View>
 
-      {uploading && <ActivityIndicator size="large" color="#ff5864" style={{ marginTop: 16 }} />}
+      {uploading && (
+        <ActivityIndicator
+          size="large"
+          color="#ff5864"
+          style={{ marginTop: 16 }}
+        />
+      )}
 
       <TouchableOpacity
-  style={[
-    styles.submitButton,
-    {
-      backgroundColor:
-        photos.filter(p => p !== null).length >= 4 ? "#e60f3f" : "#ff586480", // ✅ App color if >= 4, else disabled gray
-    },
-  ]}
-  disabled={photos.filter(p => p !== null).length < 4}
-  onPress={handleSubmit}
->
-  <Text style={styles.submitText}>Submit</Text>
-</TouchableOpacity>
-
+        style={[
+          styles.submitButton,
+          {
+            backgroundColor:
+              photos.filter(p => p !== null).length >= 4
+                ? "#e60f3f"
+                : "#ff586480",
+          },
+        ]}
+        disabled={photos.filter(p => p !== null).length < 4}
+        onPress={handleSubmit}
+      >
+        <Text style={styles.submitText}>Submit</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 40 },
-
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 30 },
   description: { fontSize: 14, color: "#555", marginBottom: 20 },
 
@@ -219,16 +259,11 @@ const styles = StyleSheet.create({
   image: { width: "100%", height: "100%", borderRadius: 10 },
   placeholder: { fontSize: 32, color: "#aaa" },
 
-  // ✅ Submit button styles
   submitButton: {
     backgroundColor: "#ff5864", // ✅ App color
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
-  },
-
-  submitButtonDisabled: {
-    backgroundColor: "#ff586480", // ✅ Faded version for disabled state
   },
 
   submitText: {

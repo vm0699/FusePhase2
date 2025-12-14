@@ -1,39 +1,40 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { Input } from './Input';
+import React, { useState, useContext, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SelectableTag } from '../../components/SelectableTag';
 import { CircularNextButton } from '../../components/CircularNextButton';
 import { useProfile } from '../../ProfileContext';
 
+const BASE_URL = 'http://172.20.10.4:5000';
+const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
+
 const HEIGHTS = Array.from({ length: 101 }, (_, i) => 120 + i);
 
 const INTERESTS = [
-  { emoji: '🕯️', label: 'Aromatherapy' }, { emoji: '🌠', label: 'Astrology' }, { emoji: '❄️', label: 'Cold plunging' },
-  { emoji: '💎', label: 'Crystals' }, { emoji: '💬', label: 'Deep chats' }, { emoji: '✍', label: 'Journalling' },
-  { emoji: '🧠', label: 'Mindfulness' }, { emoji: '🥦', label: 'Nutrition' }, { emoji: '🤸‍♂️', label: 'Gym' },
-  { emoji: '🏈', label: 'American football' }, { emoji: '🏊', label: 'Athletics' }, { emoji: '🏋️', label: 'Badminton' },
-  { emoji: '⚾', label: 'Baseball' }, { emoji: '🏀', label: 'Basketball' }, { emoji: '💪', label: 'Bodybuilding' },
-  { emoji: '🧓', label: 'Bouldering' }, { emoji: '🎨', label: 'Art' }, { emoji: '🔊', label: 'Crafts' },
-  { emoji: '🧾', label: 'Crocheting' }, { emoji: '💃', label: 'Dancing' }, { emoji: '🖊️', label: 'Design' },
-  { emoji: '🖋️', label: 'Drawing' }, { emoji: '👗', label: 'Fashion' }, { emoji: '🧵', label: 'Knitting' },
-  { emoji: '🍻', label: 'Bars' }, { emoji: '☕️', label: 'Cafe-hopping' }, { emoji: '🏆', label: 'Drag shows' },
-  { emoji: '🎉', label: 'Festivals' }, { emoji: '🍿', label: 'Films' }, { emoji: '🎟', label: 'Gigs' },
-  { emoji: '👩‍🎤', label: 'Improv' }, { emoji: '🎤', label: 'Karaoke' }, { emoji: '🤖', label: 'AI' },
-  { emoji: '🍰', label: 'Baking' }, { emoji: '🎲', label: 'Board games' }, { emoji: '♘', label: 'Chess' },
-  { emoji: '🍽️', label: 'Cooking' }, { emoji: '🌱', label: 'Gardening' }, { emoji: '🌿', label: 'House plants' },
-  { emoji: '🎙️', label: 'Podcasts' }, { emoji: '📺', label: 'Action & adventure' }, { emoji: '📺', label: 'Animated' },
-  { emoji: '📺', label: 'Anime' }, { emoji: '📺', label: 'Bollywood' }, { emoji: '📺', label: 'Comedy' },
-  { emoji: '📺', label: 'Cooking shows' }, { emoji: '📺', label: 'Crime' }, { emoji: '📺', label: 'Documentaries' },
-  { emoji: '📖', label: 'Biographies' }, { emoji: '📖', label: 'Classics' }, { emoji: '📖', label: 'Comic books' },
-  { emoji: '📖', label: 'Fantasy' }, { emoji: '📖', label: 'History' }, { emoji: '🎵', label: 'Afro' },
-  { emoji: '🎵', label: 'Arab' }, { emoji: '🎵', label: 'Blues' }, { emoji: '🎵', label: 'Classical' },
-  { emoji: '🎵', label: 'Country' }, { emoji: '🎵', label: 'Desi' }, { emoji: '🎵', label: 'EDM' },
-  { emoji: '🎵', label: 'Electronic' }, { emoji: '🍺', label: 'Beer' }, { emoji: '🍗', label: 'BBQ' },
-  { emoji: '🍟', label: 'Biryani' }, { emoji: '🧋', label: 'Boba tea' }, { emoji: '🍔', label: 'Burgers' },
-  { emoji: '🍰', label: 'Cake' }, { emoji: '🍹', label: 'Cocktails' },
-  { emoji: '🌆', label: 'City breaks' }, { emoji: '🚵', label: 'Backpacking' }, { emoji: '🏖️', label: 'Beaches' },
-  { emoji: '🏕️', label: 'Camping' }, { emoji: '🏡', label: 'Country escapes' }, { emoji: '🎣', label: 'Fishing trips' },
-  { emoji: '🏔', label: 'Hiking trips' }, { emoji: '🚌', label: 'Road trips' },
+  { emoji: '🕯️', label: 'Aromatherapy' }, { emoji: '🌠', label: 'Astrology' },
+  { emoji: '❄️', label: 'Cold plunging' }, { emoji: '💎', label: 'Crystals' },
+  { emoji: '💬', label: 'Deep chats' }, { emoji: '✍', label: 'Journalling' },
+  { emoji: '🧠', label: 'Mindfulness' }, { emoji: '🥦', label: 'Nutrition' },
+  { emoji: '🤸‍♂️', label: 'Gym' }, { emoji: '🏈', label: 'American football' },
+  { emoji: '🏊', label: 'Athletics' }, { emoji: '🏋️', label: 'Badminton' },
+  { emoji: '⚾', label: 'Baseball' }, { emoji: '🏀', label: 'Basketball' },
+  { emoji: '💪', label: 'Bodybuilding' }, { emoji: '🧓', label: 'Bouldering' },
+  { emoji: '🎨', label: 'Art' }, { emoji: '🔊', label: 'Crafts' },
+  { emoji: '🧾', label: 'Crocheting' }, { emoji: '💃', label: 'Dancing' },
+  { emoji: '🖊️', label: 'Design' }, { emoji: '🖋️', label: 'Drawing' },
+  { emoji: '👗', label: 'Fashion' }, { emoji: '🧵', label: 'Knitting' },
+  { emoji: '🍻', label: 'Bars' }, { emoji: '☕️', label: 'Cafe-hopping' },
+  { emoji: '🏆', label: 'Drag shows' }, { emoji: '🎉', label: 'Festivals' },
+  { emoji: '🍿', label: 'Films' }, { emoji: '🎟', label: 'Gigs' },
+  { emoji: '👩‍🎤', label: 'Improv' }, { emoji: '🎤', label: 'Karaoke' },
+  { emoji: '🤖', label: 'AI' },
 ];
 
 const VALUES = [
@@ -47,9 +48,18 @@ export default function ProfileDetailsPage({ navigation }) {
   const { profileData, updateNestedProfileData } = useProfile();
   const { profileDetails } = profileData;
 
+  // 🔹 2.1 — Persist onboarding step locally
+  useEffect(() => {
+    AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'ProfileDetails');
+  }, []);
+
   const [height, setHeight] = useState(profileDetails.height || 168);
-  const [selectedInterests, setSelectedInterests] = useState(profileDetails.interests || []);
-  const [selectedValues, setSelectedValues] = useState(profileDetails.values || []);
+  const [selectedInterests, setSelectedInterests] = useState(
+    profileDetails.interests || []
+  );
+  const [selectedValues, setSelectedValues] = useState(
+    profileDetails.values || []
+  );
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredInterests = INTERESTS.filter((interest) =>
@@ -63,9 +73,7 @@ export default function ProfileDetailsPage({ navigation }) {
     const full = `${entry.emoji} ${entry.label}`;
 
     setSelectedInterests((prev) => {
-      if (prev.includes(full)) {
-        return prev.filter((i) => i !== full);
-      }
+      if (prev.includes(full)) return prev.filter((i) => i !== full);
       if (prev.length >= 5) return prev;
       return [...prev, full];
     });
@@ -73,20 +81,49 @@ export default function ProfileDetailsPage({ navigation }) {
 
   const toggleValue = (value) => {
     setSelectedValues((prev) => {
-      if (prev.includes(value)) {
-        return prev.filter((v) => v !== value);
-      }
+      if (prev.includes(value)) return prev.filter((v) => v !== value);
       if (prev.length >= 3) return prev;
       return [...prev, value];
     });
   };
 
-  const isComplete = height && selectedInterests.length > 0 && selectedValues.length > 0;
+  const isComplete =
+    height &&
+    selectedInterests.length > 0 &&
+    selectedValues.length > 0;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     updateNestedProfileData('profileDetails', 'height', height);
     updateNestedProfileData('profileDetails', 'interests', selectedInterests);
     updateNestedProfileData('profileDetails', 'values', selectedValues);
+
+    const token = await AsyncStorage.getItem('jwtToken');
+    if (!token) return;
+
+    // =====================================================
+    // 🔥 2.1 CORE CHANGE — BACKEND CHECKPOINT UPDATE
+    // Saves height, interests, values + onboardingStage
+    // =====================================================
+    await fetch(`${BASE_URL}/api/profile/update`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        updates: {
+          height,
+          interests: selectedInterests,
+          values: selectedValues,
+          onboardingStage: 'DETAILS_DONE', // ✅ backend checkpoint
+        },
+      }),
+    });
+    // =====================================================
+
+    // 🔹 2.1 — Advance local resume pointer
+    await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'PromptSelection');
+
     navigation.navigate('PromptSelection');
   };
 
@@ -100,7 +137,7 @@ export default function ProfileDetailsPage({ navigation }) {
           </Text>
         </View>
 
-        {/* Height Selection */}
+        {/* Height */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your height</Text>
           <ScrollView style={styles.heightScroll} nestedScrollEnabled>
@@ -126,9 +163,11 @@ export default function ProfileDetailsPage({ navigation }) {
           </ScrollView>
         </View>
 
-        {/* Interests Selection */}
+        {/* Interests */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Choose 5 things you're really into</Text>
+          <Text style={styles.sectionTitle}>
+            Choose 5 things you're really into
+          </Text>
           <TextInput
             style={styles.input}
             placeholder="What are you into?"
@@ -153,12 +192,16 @@ export default function ProfileDetailsPage({ navigation }) {
               );
             })}
           </View>
-          <Text style={styles.counter}>{selectedInterests.length}/5 selected</Text>
+          <Text style={styles.counter}>
+            {selectedInterests.length}/5 selected
+          </Text>
         </View>
 
-        {/* Values Selection */}
+        {/* Values */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tell us what you value in a person</Text>
+          <Text style={styles.sectionTitle}>
+            Tell us what you value in a person
+          </Text>
           <View style={styles.tagContainer}>
             {VALUES.map((value) => (
               <SelectableTag
@@ -166,69 +209,38 @@ export default function ProfileDetailsPage({ navigation }) {
                 selected={selectedValues.includes(value)}
                 onPress={() => toggleValue(value)}
                 disabled={
-                  selectedValues.length >= 3 && !selectedValues.includes(value)
+                  selectedValues.length >= 3 &&
+                  !selectedValues.includes(value)
                 }
               >
                 {value}
               </SelectableTag>
             ))}
           </View>
-          <Text style={styles.counter}>{selectedValues.length}/3 selected</Text>
+          <Text style={styles.counter}>
+            {selectedValues.length}/3 selected
+          </Text>
         </View>
       </ScrollView>
 
-      <CircularNextButton
-        disabled={!isComplete}
-        onPress={handleNext}
-      />
+      <CircularNextButton disabled={!isComplete} onPress={handleNext} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  content: {
-    padding: 20,
-  },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    color: '#666',
-    marginTop: 4,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  heightScroll: {
-    maxHeight: 300,
-  },
-  heightOption: {
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  heightOptionSelected: {
-    backgroundColor: '#ff5864',
-  },
-  heightText: {
-    color: '#666',
-  },
-  heightTextSelected: {
-    fontWeight: 'bold',
-    color: '#fff',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
+  content: { padding: 20 },
+  header: { marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: 'bold' },
+  subtitle: { color: '#666', marginTop: 4 },
+  section: { marginBottom: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  heightScroll: { maxHeight: 300 },
+  heightOption: { paddingVertical: 10, alignItems: 'center' },
+  heightOptionSelected: { backgroundColor: '#ff5864' },
+  heightText: { color: '#666' },
+  heightTextSelected: { color: '#fff', fontWeight: 'bold' },
   input: {
     borderColor: '#ccc',
     borderWidth: 1,
@@ -236,13 +248,6 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
-  tagContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  counter: {
-    marginTop: 10,
-    color: '#666',
-  },
+  tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  counter: { marginTop: 10, color: '#666' },
 });

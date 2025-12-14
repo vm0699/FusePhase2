@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,12 @@ import {
   Modal,
   StyleSheet,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { useProfile } from '../../ProfileContext'; // Corrected import for ProfileContext
+import { useProfile } from '../../ProfileContext';
+
+const BASE_URL = 'http://172.20.10.4:5000';
+const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
 
 const PROMPT_CATEGORIES = {
   'Looking for': [
@@ -35,40 +39,77 @@ const PROMPT_CATEGORIES = {
   ],
 };
 
-
 export default function PromptSelectionPage({ navigation }) {
-  const { profileData, updateProfileData } = useProfile(); // Updated to use correct hook
+  const { profileData, updateProfileData } = useProfile();
+
+  // 🔹 2.1 — persist current onboarding step (LOCAL resume)
+  useEffect(() => {
+    AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'PromptSelection');
+  }, []);
+
   const [activeCategory, setActiveCategory] = useState('Looking for');
   const [currentPrompt, setCurrentPrompt] = useState<string | null>(null);
   const [currentAnswer, setCurrentAnswer] = useState<string>('');
 
   const selectedPrompts = profileData.prompts || [];
 
-  // Handle prompt selection
   const handlePromptSelect = (prompt: string) => {
     setCurrentPrompt(prompt);
   };
 
-  // Save the selected prompt and answer
   const handleSavePrompt = () => {
     if (currentPrompt && currentAnswer.trim()) {
       const updatedPrompts =
         selectedPrompts.length >= 3
-          ? [...selectedPrompts.slice(1), { question: currentPrompt, answer: currentAnswer.trim() }]
-          : [...selectedPrompts, { question: currentPrompt, answer: currentAnswer.trim() }];
+          ? [
+              ...selectedPrompts.slice(1),
+              { question: currentPrompt, answer: currentAnswer.trim() },
+            ]
+          : [
+              ...selectedPrompts,
+              { question: currentPrompt, answer: currentAnswer.trim() },
+            ];
 
-      updateProfileData('prompts', updatedPrompts); // Update profile context
+      updateProfileData('prompts', updatedPrompts);
       setCurrentPrompt(null);
       setCurrentAnswer('');
     }
   };
 
-  // Clear all selected prompts
   const handleClearAll = () => {
     updateProfileData('prompts', []);
   };
 
   const isComplete = selectedPrompts.length === 3;
+
+  const handleNext = async () => {
+    const token = await AsyncStorage.getItem('jwtToken');
+    if (!token) return;
+
+    // =====================================================
+    // 🔥 2.1 CORE CHANGE — BACKEND CHECKPOINT SAVE
+    // Saves prompts + onboardingStage = PROMPTS_DONE
+    // =====================================================
+    await fetch(`${BASE_URL}/api/profile/update`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        updates: {
+          prompts: selectedPrompts,
+          onboardingStage: 'PROMPTS_DONE', // ✅ backend checkpoint
+        },
+      }),
+    });
+    // =====================================================
+
+    // 🔹 2.1 — advance local resume pointer
+    await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'PhotoUpload');
+
+    navigation.navigate('PhotoUpload');
+  };
 
   return (
     <View style={styles.container}>
@@ -103,25 +144,25 @@ export default function PromptSelectionPage({ navigation }) {
         ))}
       </ScrollView>
 
-      {/* Prompts List */}
+      {/* Prompts */}
       <FlatList
         data={PROMPT_CATEGORIES[activeCategory as keyof typeof PROMPT_CATEGORIES]}
         keyExtractor={(item) => item}
-        renderItem={({ item: prompt }) => (
+        renderItem={({ item }) => (
           <TouchableOpacity
-            onPress={() => handlePromptSelect(prompt)}
+            onPress={() => handlePromptSelect(item)}
             disabled={
               selectedPrompts.length >= 3 &&
-              !selectedPrompts.some((p) => p.question === prompt)
+              !selectedPrompts.some((p) => p.question === item)
             }
             style={[
               styles.promptButton,
-              selectedPrompts.some((p) => p.question === prompt)
+              selectedPrompts.some((p) => p.question === item)
                 ? styles.selectedPrompt
                 : styles.unselectedPrompt,
             ]}
           >
-            <Text style={styles.promptText}>{prompt}</Text>
+            <Text style={styles.promptText}>{item}</Text>
             <Ionicons name="chevron-forward" size={20} color="#888" />
           </TouchableOpacity>
         )}
@@ -146,19 +187,16 @@ export default function PromptSelectionPage({ navigation }) {
         <Text style={styles.countText}>{selectedPrompts.length}/3 added</Text>
       </View>
 
-      {/* Next Button */}
+      {/* Next */}
       <TouchableOpacity
-        style={[
-          styles.nextButton,
-          !isComplete && styles.disabledNextButton,
-        ]}
+        style={[styles.nextButton, !isComplete && styles.disabledNextButton]}
         disabled={!isComplete}
-        onPress={() => navigation.navigate('PhotoUpload')}
+        onPress={handleNext}
       >
         <Text style={styles.nextButtonText}>Next</Text>
       </TouchableOpacity>
 
-      {/* Dialog Modal */}
+      {/* Modal */}
       <Modal transparent visible={!!currentPrompt} animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -173,8 +211,16 @@ export default function PromptSelectionPage({ navigation }) {
               <TouchableOpacity onPress={() => setCurrentPrompt(null)}>
                 <Text style={styles.modalCancel}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleSavePrompt} disabled={!currentAnswer.trim()}>
-                <Text style={[styles.modalSave, !currentAnswer.trim() && styles.disabledSave]}>
+              <TouchableOpacity
+                onPress={handleSavePrompt}
+                disabled={!currentAnswer.trim()}
+              >
+                <Text
+                  style={[
+                    styles.modalSave,
+                    !currentAnswer.trim() && styles.disabledSave,
+                  ]}
+                >
                   Save
                 </Text>
               </TouchableOpacity>
@@ -188,35 +234,22 @@ export default function PromptSelectionPage({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-
-  // 1. Lower the heading
   headerContainer: { marginTop: 25, marginBottom: 16 },
-
   header: { fontSize: 24, fontWeight: 'bold', color: '#333' },
   subHeader: { fontSize: 14, color: '#777' },
 
-  // 2. Resize and recolor category pills
-categoryContainer: {
-  flexDirection: 'row',
-  marginBottom: -60,
-},
-
-categoryButton: {
-  height: 50,                   // ✅ Fixed height for compact bubble
-  paddingHorizontal: 12,       // ✅ Slightly increased for balance
-  marginHorizontal: 6,
-  borderRadius: 12,
-  backgroundColor: '#eee',
-  justifyContent: 'center',    // ✅ Vertically center text
-},
-  activeCategoryButton: {
-    backgroundColor: '#ff5864', // ✅ App color
+  categoryContainer: { flexDirection: 'row', marginBottom: -60 },
+  categoryButton: {
+    height: 50,
+    paddingHorizontal: 12,
+    marginHorizontal: 6,
+    borderRadius: 12,
+    backgroundColor: '#eee',
+    justifyContent: 'center',
   },
+  activeCategoryButton: { backgroundColor: '#ff5864' },
   categoryText: { fontSize: 14, color: '#555' },
-  activeCategoryText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
+  activeCategoryText: { color: '#fff', fontWeight: 'bold' },
 
   promptButton: {
     flexDirection: 'row',
@@ -237,34 +270,20 @@ categoryButton: {
     backgroundColor: '#f9f9f9',
     borderRadius: 8,
   },
-  selectedPromptQuestion: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  selectedPromptAnswer: {
-    fontSize: 14,
-    color: '#777',
-    marginTop: 4,
-  },
+  selectedPromptQuestion: { fontSize: 14, fontWeight: 'bold', color: '#333' },
+  selectedPromptAnswer: { fontSize: 14, color: '#777', marginTop: 4 },
 
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
   clearButton: { color: '#f44336', fontSize: 14 },
   countText: { fontSize: 14, color: '#555' },
 
-  // 3. Update next button color and position
   nextButton: {
-  marginTop: 16,
-  marginBottom: 20,
-  paddingVertical: 14,
-  backgroundColor: '#ff5864',
-  borderRadius: 10,
-  alignSelf: 'stretch',   // full width inside the 16px-padded container
-},
+    marginTop: 16,
+    marginBottom: 20,
+    paddingVertical: 14,
+    backgroundColor: '#ff5864',
+    borderRadius: 10,
+  },
   disabledNextButton: { backgroundColor: '#ff586480' },
   nextButtonText: {
     fontSize: 16,
@@ -276,7 +295,7 @@ categoryButton: {
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     padding: 16,
@@ -284,12 +303,7 @@ categoryButton: {
     backgroundColor: '#fff',
     borderRadius: 8,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 8 },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -297,10 +311,7 @@ categoryButton: {
     padding: 8,
     marginBottom: 8,
   },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
+  modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
   modalCancel: { fontSize: 14, color: '#f44336' },
   modalSave: { fontSize: 14, color: '#4CAF50' },
   disabledSave: { color: '#ccc' },

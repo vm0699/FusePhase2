@@ -4,31 +4,55 @@ const { Schema, model } = mongoose;
 
 const profileSchema = new Schema(
   {
+    // ===== CORE IDENTITY =====
     phoneNumber: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
-    username: { type: String, required: true, unique: true },
-    dateOfBirth: { type: String, required: true },
-    gender: { type: String, required: true },
-    height: { type: String, required: true },
 
-    interests: { type: [String], required: true },
-    values: { type: [String], required: true },
+    // ===== ONBOARDING CHECKPOINT TRACKER (2.1 CORE) =====
+    onboardingStage: {
+      type: String,
+      enum: [
+        "PHONE_VERIFIED",
+        "INTRO_DONE",
+        "PROFILE_SETUP_DONE",
+        "DETAILS_DONE",
+        "PROMPTS_DONE",
+        "PHOTOS_DONE",
+        "COMPLETE",
+      ],
+      default: "PHONE_VERIFIED",
+    },
 
-    prompts: [
-      {
-        question: { type: String, required: true },
-        answer: { type: String, required: true },
-      },
-    ],
+    // ===== BASIC PROFILE (NO LONGER REQUIRED) =====
+    name: { type: String, default: "" },
+    username: { type: String, default: "" },
+    dateOfBirth: { type: String, default: "" },
+    gender: { type: String, default: "" },
+    height: { type: String, default: "" },
 
+    interests: { type: [String], default: [] },
+    values: { type: [String], default: [] },
+
+    // ===== PROMPTS (OPTIONAL DURING ONBOARDING) =====
+    prompts: {
+      type: [
+        {
+          question: String,
+          answer: String,
+        },
+      ],
+      default: [],
+    },
+
+    // ===== PHOTOS =====
     photos: { type: [String], default: [] },
 
+    // ===== LOCATION =====
     location: {
       latitude: { type: Number, default: null },
       longitude: { type: Number, default: null },
     },
 
-    // ===== Editable Profile Fields =====
+    // ===== EDITABLE PROFILE FIELDS =====
     pronouns: { type: String, default: "" },
     sexuality: { type: String, default: "" },
     work: { type: String, default: "" },
@@ -52,35 +76,34 @@ const profileSchema = new Schema(
     marijuana: { type: String, default: "" },
     drugs: { type: String, default: "" },
 
-    // ===== Tracking swiped profiles =====
+    // ===== MATCHING & SWIPE TRACKING =====
     swipedUserIds: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: "UserProfile",
-      default: []
+      default: [],
     },
 
-    // ===== CRITICAL: For matching & swipe logic =====
     swipedRight: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: "UserProfile",
-      default: []
+      default: [],
     },
 
     swipedLeft: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: "UserProfile",
-      default: []
+      default: [],
     },
 
     matches: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: "UserProfile",
-      default: []
+      default: [],
     },
   },
   { timestamps: true }
 );
 
-const UserProfile = model('UserProfile', profileSchema);
+const UserProfile = model("UserProfile", profileSchema);
 
 export default UserProfile;

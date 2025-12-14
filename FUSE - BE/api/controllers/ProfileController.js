@@ -13,7 +13,6 @@ export const saveUserProfile = async (req, res) => {
   try {
     const { intro, options, profileDetails, prompts, photos } = req.body;
 
-    // 🔒 Ensure auth is working
     const userId = req.user?.id;
     const phoneFromToken = req.user?.phoneNumber;
 
@@ -27,7 +26,6 @@ export const saveUserProfile = async (req, res) => {
 
     console.log("🟢 Using authenticated user:", userId, phoneFromToken);
 
-    // 🔎 Find the user
     let existingUser = await UserProfile.findById(userId);
 
     if (!existingUser) {
@@ -56,23 +54,23 @@ export const saveUserProfile = async (req, res) => {
     existingUser.values = profileDetails?.values || [];
     existingUser.prompts = prompts || [];
 
-    // Photos already uploaded to S3 during PhotoUpload
     if (Array.isArray(photos) && photos.length > 0) {
       console.log("📸 Updating photos:", photos);
       existingUser.photos = photos;
     }
 
-    console.log("💾 Saving updated profile…");
-    await existingUser.save();
-    console.log("✅ User profile saved.");
+    // ✅ CRITICAL 2.1 CHECKPOINT — ONBOARDING COMPLETE
+    existingUser.onboardingStage = "COMPLETE";
 
-    // 🧮 Calculate completeness
+    console.log("💾 Saving updated profile with onboarding COMPLETE…");
+    await existingUser.save();
+    console.log("✅ User profile saved and onboarding marked COMPLETE.");
+
     const profileComplete = calculateProfileCompleteness(existingUser);
     console.log("📊 Profile completeness:", profileComplete);
 
     const fixedPhotos = (existingUser.photos || []).map((p) => p);
 
-    // 🎁 Build response profile
     const profilePayload = {
       _id: existingUser._id,
       name: existingUser.name,
@@ -87,7 +85,6 @@ export const saveUserProfile = async (req, res) => {
       photos: fixedPhotos,
       profileComplete,
 
-      // extended fields
       pronouns: existingUser.pronouns,
       sexuality: existingUser.sexuality,
       work: existingUser.work,
@@ -111,9 +108,6 @@ export const saveUserProfile = async (req, res) => {
       drugs: existingUser.drugs,
     };
 
-    console.log("📤 Final profilePayload:", profilePayload);
-
-    // 🔐 Generate new tokens that match authMiddleware fields
     const accessToken = jwt.sign(
       {
         id: existingUser._id.toString(),
@@ -133,9 +127,6 @@ export const saveUserProfile = async (req, res) => {
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: "7d" }
     );
-
-    console.log("🔑 New accessToken issued");
-    console.log("🔑 New refreshToken issued");
 
     return res.status(200).json({
       success: true,
@@ -159,52 +150,68 @@ export const saveUserProfile = async (req, res) => {
 
 
 
+
 // Fetch User Profile by Phone Number (JWT)
 // Fetch User Profile by Phone Number (JWT)
 export const getProfileByPhoneNumber = async (req, res) => {
   try {
-    const { phoneNumber } = req.user;
+    // 🔑 Always trust authMiddleware
+    const userId = req.user.id;
 
-    const user = await UserProfile.findOne({ phoneNumber });
+    console.log("🔍 [getProfileByPhoneNumber] Fetching user for ID:", userId);
+
+    const user = await UserProfile.findById(userId);
 
     if (!user) {
+      console.log("❌ [getProfileByPhoneNumber] User not found");
       return res.status(404).json({
         success: false,
         message: 'User profile not found.',
       });
     }
 
-    // ƒo. Calculate profile completeness
-    const profileCompleteness = calculateProfileCompleteness(user);
-
-    // ƒo. Normalize photo URLs
-    const fixedPhotos = (user.photos || []).map(photo => {
-      if (photo.startsWith("http") || photo.startsWith("data:")) return photo;
-      const normalized = photo.replace(/\\/g, "/"); // Convert backslashes to forward slashes
-      return `http://172.20.10.4:5000/${normalized}`; // Add full URL prefix
+    console.log("✅ [getProfileByPhoneNumber] User found:", {
+      id: user._id.toString(),
+      onboardingStage: user.onboardingStage,
     });
 
-    console.log("dY\"1 Backend User Profile Response:", {
+    // 📊 Calculate profile completeness
+    const profileCompleteness = calculateProfileCompleteness(user);
+
+    // 🖼 Normalize photo URLs
+    const fixedPhotos = (user.photos || []).map(photo => {
+      if (photo.startsWith("http") || photo.startsWith("data:")) return photo;
+      const normalized = photo.replace(/\\/g, "/");
+      return `http://172.20.10.4:5000/${normalized}`;
+    });
+
+    console.log("📤 [getProfileByPhoneNumber] Returning profile snapshot:", {
       name: user.name,
       phoneNumber: user.phoneNumber,
-      photos: fixedPhotos,
+      onboardingStage: user.onboardingStage,
     });
 
     res.status(200).json({
       success: true,
       message: 'User profile fetched successfully!',
       data: {
+        // 🔥 REQUIRED FOR AUTHGATE (CORE FIX)
+        onboardingStage: user.onboardingStage,
+
+        // Core profile fields
         name: user.name,
         phoneNumber: user.phoneNumber,
+        username: user.username,
         dateOfBirth: user.dateOfBirth,
         gender: user.gender,
         height: user.height,
         interests: user.interests,
         values: user.values,
         prompts: user.prompts || [],
-        photos: fixedPhotos, // ƒo. Return the fixed photo URLs
-        profileComplete: profileCompleteness, // Include profile completeness
-        // ƒo. Newly added profile fields
+        photos: fixedPhotos,
+        profileComplete: profileCompleteness,
+
+        // Extended profile fields
         pronouns: user.pronouns,
         sexuality: user.sexuality,
         work: user.work,
@@ -230,7 +237,7 @@ export const getProfileByPhoneNumber = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('ƒ?O Error fetching user profile:', error);
+    console.error('🔥 [getProfileByPhoneNumber] Error:', error);
     res.status(500).json({
       success: false,
       message: 'An error occurred while fetching the user profile.',
@@ -566,59 +573,80 @@ export const handleSwipe = async (req, res) => {
 
 export const uploadPhotos = async (req, res) => {
   try {
-    console.log("dY\"\" Full req.body:", req.body);
-    console.log("dY\"ú Uploaded files:", req.files);
+    console.log('📸 [uploadPhotos] Full req.body:', req.body);
+    console.log('📸 [uploadPhotos] Uploaded files:', req.files);
+    console.log('📸 [uploadPhotos] Auth user:', req.user);
 
-    const phoneNumber = req.body.phoneNumber || req.query.phoneNumber;
+    const userId = req.user?.id;
+    const phoneFromToken = req.user?.phoneNumber;
     const replaceIndex = req.body.replaceIndex;
 
-    if (!phoneNumber) {
-      return res.status(400).json({
+    // 🔒 Auth check (JWT is the source of truth)
+    if (!userId || !phoneFromToken) {
+      return res.status(401).json({
         success: false,
-        message: "Phone number is required to upload photos.",
+        message: 'Unauthorized: missing user in token',
       });
     }
 
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "No files were uploaded.",
+        message: 'No files were uploaded.',
       });
     }
 
-    // ƒo. Extract S3 URLs from files
-    const fileUrls = req.files.map(file => file.location); // <-- key change
+    // ✅ Extract S3 URLs
+    const fileUrls = req.files.map(file => file.location);
+    console.log('📸 [uploadPhotos] File URLs:', fileUrls);
 
-    let user = await UserProfile.findOne({ phoneNumber });
+    // ✅ Fetch user by ID (NOT phone number)
+    const user = await UserProfile.findById(userId);
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found.",
+        message: 'User not found.',
       });
     }
 
-    if (replaceIndex !== undefined) {
+    // 🔁 Replace OR append
+    if (replaceIndex !== undefined && replaceIndex !== null) {
+      console.log(`🔁 [uploadPhotos] Replacing photo at index ${replaceIndex}`);
       user.photos[replaceIndex] = fileUrls[0];
     } else {
+      console.log('➕ [uploadPhotos] Appending photos');
       user.photos.push(...fileUrls);
     }
 
-    await user.save();
+    // 🧭 Advance onboarding checkpoint
+    if (user.onboardingStage !== 'PHOTOS_DONE') {
+      console.log(
+        `🧭 [uploadPhotos] Updating onboardingStage: ${user.onboardingStage} → PHOTOS_DONE`
+      );
+      user.onboardingStage = 'PHOTOS_DONE';
+    }
 
-    res.status(200).json({
+    await user.save();
+    console.log('✅ [uploadPhotos] Photos saved successfully');
+
+    return res.status(200).json({
       success: true,
-      message: "Photos uploaded successfully!",
-      data: user,
+      message: 'Photos uploaded successfully!',
+      data: {
+        photos: user.photos,
+        onboardingStage: user.onboardingStage,
+      },
     });
   } catch (error) {
-    console.error("ƒ?O Error uploading photos:", error);
-    res.status(500).json({
+    console.error('🔥 [uploadPhotos] ERROR:', error);
+    return res.status(500).json({
       success: false,
-      message: "An error occurred while uploading photos.",
+      message: 'An error occurred while uploading photos.',
     });
   }
 };
+
 
 
 
@@ -708,14 +736,18 @@ export const updateUserProfile = async (req, res) => {
       });
     }
 
-    console.log("✅ [updateUserProfile] Found user:", user._id.toString());
+    console.log("✅ [updateUserProfile] Found user:", {
+      id: user._id.toString(),
+      currentOnboardingStage: user.onboardingStage,
+    });
 
     // Support both:
-    // { updates: {...} }  (new way)
-    // { pronouns: "...", sexuality: "..." } (fallback)
-    const updates = req.body.updates && typeof req.body.updates === "object"
-      ? req.body.updates
-      : req.body;
+    // { updates: {...} }
+    // { name: "...", gender: "..." }
+    const updates =
+      req.body.updates && typeof req.body.updates === "object"
+        ? req.body.updates
+        : req.body;
 
     console.log("✏️ [updateUserProfile] Parsed updates:", updates);
 
@@ -726,8 +758,9 @@ export const updateUserProfile = async (req, res) => {
       });
     }
 
-    // Whitelist allowed fields to avoid random overwrites
+    // ✅ ALLOWED FIELDS (FIXED)
     const allowedFields = [
+      // Core profile
       "name",
       "username",
       "dateOfBirth",
@@ -737,6 +770,9 @@ export const updateUserProfile = async (req, res) => {
       "values",
       "prompts",
       "photos",
+
+      // 🔹 ONBOARDING CHECKPOINT (CRITICAL FIX)
+      "onboardingStage",
 
       // Identity + lifestyle fields
       "pronouns",
@@ -762,6 +798,17 @@ export const updateUserProfile = async (req, res) => {
       "drugs",
     ];
 
+    // ✅ Allowed onboarding stages (guardrail)
+    const ALLOWED_ONBOARDING_STAGES = [
+      "PHONE_VERIFIED",
+      "INTRO_DONE",
+      "PROFILE_SETUP_DONE",
+      "DETAILS_DONE",
+      "PROMPTS_DONE",
+      "PHOTOS_DONE",
+      "COMPLETE",
+    ];
+
     let anyFieldUpdated = false;
 
     for (const key of Object.keys(updates)) {
@@ -771,7 +818,23 @@ export const updateUserProfile = async (req, res) => {
       }
 
       const value = updates[key];
-      console.log(`✏️ [updateUserProfile] Setting ${key} =`, value);
+
+      // 🔐 Extra safety for onboardingStage
+      if (key === "onboardingStage") {
+        if (!ALLOWED_ONBOARDING_STAGES.includes(value)) {
+          console.log(
+            "❌ [updateUserProfile] Invalid onboardingStage rejected:",
+            value
+          );
+          continue;
+        }
+
+        console.log(
+          `🧭 [updateUserProfile] Updating onboardingStage: ${user.onboardingStage} → ${value}`
+        );
+      } else {
+        console.log(`✏️ [updateUserProfile] Setting ${key} =`, value);
+      }
 
       user[key] = value;
       anyFieldUpdated = true;
@@ -789,7 +852,7 @@ export const updateUserProfile = async (req, res) => {
     await user.save();
     console.log("✅ [updateUserProfile] User saved.");
 
-    // Recalculate completeness (using existing helper)
+    // Recalculate completeness
     const profileCompleteness = calculateProfileCompleteness(user);
     console.log("📊 [updateUserProfile] Profile completeness:", profileCompleteness);
 
@@ -808,6 +871,9 @@ export const updateUserProfile = async (req, res) => {
       prompts: user.prompts || [],
       photos: fixedPhotos,
       profileComplete: profileCompleteness,
+
+      // 🔹 IMPORTANT: expose onboardingStage for debugging
+      onboardingStage: user.onboardingStage,
 
       // Extended fields
       pronouns: user.pronouns,
@@ -835,7 +901,7 @@ export const updateUserProfile = async (req, res) => {
 
     console.log("📤 [updateUserProfile] Final profilePayload:", profilePayload);
 
-    // Issue fresh tokens in case username / anything important changed
+    // Issue fresh tokens
     const accessToken = jwt.sign(
       {
         id: user._id.toString(),
@@ -875,6 +941,7 @@ export const updateUserProfile = async (req, res) => {
     });
   }
 };
+
 
 
 // Calculate Profile Completeness

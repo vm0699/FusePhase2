@@ -1,180 +1,239 @@
-import UserProfile from "../models/UserProfile.js"; 
+import UserProfile from "../models/UserProfile.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { sendOTP, verifyOTP } from "../middleware/otpService.js";
 
-dotenv.config(); // Load environment variables
+dotenv.config();
 
 /**
- * Send OTP to the phone number using Twilio Verify API.
+ * STEP 1 — VERIFY PHONE NUMBER (SEND OTP)
  */
 export const verifyPhoneNumber = async (req, res) => {
   const { phoneNumber } = req.body;
 
+  console.log("📞 [verifyPhoneNumber] Incoming phone:", phoneNumber);
+
   if (!phoneNumber) {
-    return res.status(400).json({ success: false, message: "Phone number is required." });
+    console.log("❌ [verifyPhoneNumber] Missing phone number");
+    return res.status(400).json({
+      success: false,
+      message: "Phone number is required.",
+    });
   }
 
   try {
-    const user = await UserProfile.findOne({ phoneNumber });
+    // 🔹 Normalize phone number
+    let formattedPhone = phoneNumber.trim();
+    if (!formattedPhone.startsWith("+")) {
+      formattedPhone = `+${formattedPhone}`;
+    }
 
-    let accessToken = null;
-    let refreshToken = null;
-    let profileComplete = false;
+    console.log("📞 [verifyPhoneNumber] Normalized phone:", formattedPhone);
+
+    const user = await UserProfile.findOne({ phoneNumber: formattedPhone });
 
     if (user) {
-      profileComplete = !!(
-        user.name &&
-        user.dateOfBirth &&
-        user.username &&
-        user.gender &&
-        user.height &&
-        user.interests?.length &&
-        user.values?.length &&
-        user.prompts?.length
-      );
+      console.log("👤 [verifyPhoneNumber] Existing user found:", {
+        id: user._id.toString(),
+        onboardingStage: user.onboardingStage,
+        username: user.username,
+      });
 
-      // ✅ Generate JWT tokens for existing user
-      accessToken = jwt.sign(
-        { 
-          id: user._id.toString(), 
-          phoneNumber: user.phoneNumber, 
-          username: user.username 
+      const accessToken = jwt.sign(
+        {
+          id: user._id.toString(),
+          phoneNumber: user.phoneNumber,
+          username: user.username || "",
         },
         process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
 
-      refreshToken = jwt.sign(
-        { 
-          id: user._id.toString(), 
-          phoneNumber: user.phoneNumber, 
-          username: user.username 
+      const refreshToken = jwt.sign(
+        {
+          id: user._id.toString(),
+          phoneNumber: user.phoneNumber,
+          username: user.username || "",
         },
         process.env.JWT_REFRESH_SECRET,
         { expiresIn: "7d" }
       );
 
-      console.log("✅ User exists. Logging in...");
-      console.log("🔹 JWT Created:", { accessToken, refreshToken });
+      console.log("🔑 [verifyPhoneNumber] Tokens issued for EXISTING user");
 
       return res.status(200).json({
         success: true,
-        message: "User found. Logging in...",
+        message: "User found.",
         data: {
           accessToken,
           refreshToken,
           exists: true,
-          profileComplete,
+          onboardingStage: user.onboardingStage,
           user: {
             id: user._id.toString(),
-            username: user.username,
-          }
-        }
+            username: user.username || "",
+          },
+        },
       });
     }
 
-    // ✅ If new user, create dummy fields for required values
-    console.log("🚀 New user. Creating entry and sending OTP...");
+    // 🆕 NEW USER
+    console.log("🆕 [verifyPhoneNumber] Creating new user…");
 
-    const defaultUser = await UserProfile.create({
-      phoneNumber,
-      name: "New User",
-      username: `user${Math.floor(100000 + Math.random() * 900000)}`,
-      gender: "Not specified",
-      height: "Not specified",
-      dateOfBirth: new Date("2000-01-01"), // fallback default DOB
-      photos: [],
-      interests: [],
-      values: [],
-      prompts: [],
+    const newUser = await UserProfile.create({
+      phoneNumber: formattedPhone,
+      onboardingStage: "PHONE_VERIFIED",
     });
 
-    // 🔑 Generate JWT tokens for new user
-    accessToken = jwt.sign(
+    console.log("🆕 [verifyPhoneNumber] New user created:", {
+      id: newUser._id.toString(),
+      onboardingStage: newUser.onboardingStage,
+    });
+
+    const accessToken = jwt.sign(
       {
-        id: defaultUser._id.toString(),
-        phoneNumber: defaultUser.phoneNumber,
-        username: defaultUser.username,
+        id: newUser._id.toString(),
+        phoneNumber: newUser.phoneNumber,
+        username: "",
       },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    refreshToken = jwt.sign(
+    const refreshToken = jwt.sign(
       {
-        id: defaultUser._id.toString(),
-        phoneNumber: defaultUser.phoneNumber,
-        username: defaultUser.username,
+        id: newUser._id.toString(),
+        phoneNumber: newUser.phoneNumber,
+        username: "",
       },
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: "7d" }
     );
 
-    await sendOTP(phoneNumber); // 📨 still send OTP
+    console.log("📤 [verifyPhoneNumber] Sending OTP…");
+    await sendOTP(formattedPhone);
+    console.log("✅ [verifyPhoneNumber] OTP sent");
 
     return res.status(200).json({
       success: true,
-      message: "New user created. OTP sent and token issued.",
+      message: "OTP sent.",
       data: {
         accessToken,
         refreshToken,
         exists: false,
-        profileComplete: false,
+        onboardingStage: "PHONE_VERIFIED",
         user: {
-          id: defaultUser._id.toString(),
-          username: defaultUser.username,
-        }
-      }
+          id: newUser._id.toString(),
+          username: "",
+        },
+      },
     });
-
   } catch (error) {
-    console.error("❌ Phone number verification error:", error);
-    res.status(500).json({ success: false, message: "Internal server error. Please try again later." });
+    console.error("🔥 [verifyPhoneNumber] ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
   }
 };
 
-
-
-
 /**
- * Verify OTP entered by the user.
+ * STEP 2 — VERIFY OTP (FINAL AUTH POINT)
  */
 export const verifyCode = async (req, res) => {
   const { phoneNumber, code } = req.body;
 
+  console.log("🔐 [verifyCode] Incoming:", { phoneNumber, code });
+
   if (!phoneNumber || !code) {
-    console.error('❌ Missing phoneNumber or code:', { phoneNumber, code });
-    return res.status(400).json({ success: false, message: "Phone number and OTP code are required." });
+    console.log("❌ [verifyCode] Missing phone or code");
+    return res.status(400).json({
+      success: false,
+      message: "Phone number and OTP code are required.",
+    });
   }
 
   try {
-    // Ensure phone number has exactly one '+' at the beginning
-    let formattedPhoneNumber = phoneNumber.trim();
-    if (!formattedPhoneNumber.startsWith('+')) {
-      formattedPhoneNumber = `+${formattedPhoneNumber}`;
+    let formattedPhone = phoneNumber.trim();
+    if (!formattedPhone.startsWith("+")) {
+      formattedPhone = `+${formattedPhone}`;
     }
 
-    console.log('✅ Verifying OTP for:', formattedPhoneNumber, 'with code:', code);
+    console.log("🔐 [verifyCode] Normalized phone:", formattedPhone);
 
-    const verified = await verifyOTP(formattedPhoneNumber, code);
-    if (verified) {
-      console.log('✅ OTP verified successfully.');
-      return res.status(200).json({ success: true, message: 'OTP verified successfully.' });
-    } else {
-      console.error('❌ Invalid OTP entered:', formattedPhoneNumber);
-      return res.status(401).json({ success: false, message: 'Invalid OTP. Please try again.' });
+    const verified = await verifyOTP(formattedPhone, code);
+    console.log("🔐 [verifyCode] OTP verified:", verified);
+
+    if (!verified) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid OTP.",
+      });
     }
+
+    const user = await UserProfile.findOne({ phoneNumber: formattedPhone });
+
+    if (!user) {
+      console.log("❌ [verifyCode] User not found after OTP");
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    console.log("👤 [verifyCode] User verified:", {
+      id: user._id.toString(),
+      onboardingStage: user.onboardingStage,
+    });
+
+    // ✅ ISSUE TOKENS HERE (CRITICAL FIX)
+    const accessToken = jwt.sign(
+      {
+        id: user._id.toString(),
+        phoneNumber: user.phoneNumber,
+        username: user.username || "",
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const refreshToken = jwt.sign(
+      {
+        id: user._id.toString(),
+        phoneNumber: user.phoneNumber,
+        username: user.username || "",
+      },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    console.log("🔑 [verifyCode] Tokens issued");
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP verified successfully.",
+      data: {
+        onboardingStage: user.onboardingStage,
+        accessToken,
+        refreshToken,
+        user: {
+          id: user._id.toString(),
+          username: user.username || "",
+        },
+      },
+    });
   } catch (error) {
-    console.error('❌ OTP verification error:', error.message);
-    return res.status(500).json({ success: false, message: `Internal server error: ${error.message}` });
+    console.error("🔥 [verifyCode] ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
   }
 };
 
 
-
 /**
- * Refresh JWT Token for user.
+ * Refresh JWT Token
  */
 export const refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
@@ -187,7 +246,11 @@ export const refreshToken = async (req, res) => {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
     const newAccessToken = jwt.sign(
-      { id: decoded.id, phoneNumber: decoded.phoneNumber, username: decoded.username }, // ✅ Added `username`
+      {
+        id: decoded.id,
+        phoneNumber: decoded.phoneNumber,
+        username: decoded.username || "", // ✅ SAFE
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -198,7 +261,6 @@ export const refreshToken = async (req, res) => {
       data: { accessToken: newAccessToken },
     });
   } catch (error) {
-    console.error("Refresh token error:", error.message);
     return res.status(401).json({
       success: false,
       message: "Refresh token is invalid or expired.",
