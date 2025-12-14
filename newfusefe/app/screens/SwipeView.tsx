@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -16,16 +16,18 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { X, Heart, ArrowLeft, SlidersHorizontal } from "lucide-react-native";
 import { BottomNav } from "../../components/BottomNav";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
 const BASE_URL = "http://172.20.10.4:5000";
 
 export default function SwipeView() {
   const navigation = useNavigation();
+
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
+
   const [compliment, setCompliment] = useState("");
   const [isComplimentPopupOpen, setIsComplimentPopupOpen] = useState(false);
   const [isSendingCompliment, setIsSendingCompliment] = useState(false);
@@ -33,49 +35,91 @@ export default function SwipeView() {
 
   const swipeAnimation = new Animated.Value(0);
 
-  useEffect(() => {
-    fetchProfiles();
-  }, []);
+  /* ---------------- HINGE-LIKE REFRESH ON FOCUS ---------------- */
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfiles();
+    }, [])
+  );
 
   const advanceToNextProfile = () => {
     setCurrentProfileIndex((prev) => prev + 1);
   };
 
-  const fetchProfiles = async () => {
-    setLoading(true);
-    try {
-      const token = await AsyncStorage.getItem("jwtToken");
-      if (!token) {
-        console.error("❌ No auth token found!");
-        setLoading(false);
-        return;
-      }
+  /* ---------------- FETCH PROFILES (FILTER-AWARE) ---------------- */
 
-      const response = await fetch(`${BASE_URL}/api/profile/filteredProfiles`, {
-        method: "GET",
+  const fetchProfiles = async () => {
+  console.log("🔄 SwipeView fetchProfiles triggered");
+
+  setLoading(true);
+  try {
+    const token = await AsyncStorage.getItem("jwtToken");
+    const userId = await AsyncStorage.getItem("userId");
+    if (!token) {
+      console.warn("⚠️ No auth token, aborting fetch");
+      return;
+    }
+
+    let filters = null;
+    if (userId) {
+      const stored = await AsyncStorage.getItem(`filters:${userId}`);
+      if (stored) {
+        try {
+          filters = JSON.parse(stored);
+        } catch {
+          console.warn("⚠️ Failed to parse stored filters");
+        }
+      }
+    }
+
+    console.log("📦 Loaded filters from storage:", filters);
+
+    console.log(
+      `🌐 Fetching profiles | method=${filters ? "POST" : "GET"}`
+    );
+
+    const response = await fetch(
+      `${BASE_URL}/api/profile/filteredProfiles`,
+      {
+        method: filters ? "POST" : "GET",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      });
+        body: filters ? JSON.stringify({ filters }) : undefined,
+      }
+    );
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Failed to fetch profiles");
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "Fetch failed");
 
-      setProfiles(result.profiles);
-      setCurrentProfileIndex(0);
-    } catch (error) {
-      console.error("❌ Error fetching profiles:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+    console.log(
+      "✅ Profiles fetched:",
+      result?.profiles?.length ?? 0
+    );
+
+    setProfiles(result.profiles || []);
+    setCurrentProfileIndex(0);
+  } catch (error) {
+    console.error("❌ Error fetching profiles:", error);
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+};
+
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchProfiles();
   };
+
+  /* ---------------- REST OF YOUR FILE UNCHANGED ---------------- */
+  /* swipe logic, compliment logic, UI rendering — exactly same */
+
+  // ⬇️ everything below is untouched from your original file
+
 
   const sendSwipeAction = async (swipedUserId, action) => {
   try {

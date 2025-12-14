@@ -277,108 +277,218 @@ export const getProfileByPhoneNumber = async (req, res) => {
 
 export const getFilteredProfiles = async (req, res) => {
   try {
-    console.log("Received request for filtered profiles");
+    console.log("📥 [FilteredProfiles] Incoming request");
+    console.log("➡️ Method:", req.method);
 
     if (!req.user) {
-      console.log("Error: req.user is undefined.");
-      return res.status(401).json({ success: false, message: "Unauthorized: No user data" });
+      console.log("⛔ No req.user – unauthorized");
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { id, gender, interests } = req.user;
+    const { id, gender, interests: profileInterests } = req.user;
+    const filters = req.body?.filters || null;
 
-    if (!id || !gender) {
-      console.log("Error: User data missing.", { id, gender, interests });
-      return res.status(400).json({ success: false, message: "User data is incomplete" });
+    console.log("👤 User:", { id, gender });
+    console.log("🎛️ Filters received:", filters);
+
+    const requester = await UserProfile.findById(id).lean();
+    if (!requester) {
+      console.log("⛔ Requester not found in DB");
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-  console.log("Authenticated user details:", { id, gender, interests });
+    const swipedUserIds =
+      requester.swipedUserIds?.map((v) => v.toString()) || [];
 
-  const preferredGender = gender === "Man" ? "Woman" : "Man";
-  console.log("Preferred gender for query:", preferredGender);
+    console.log("🚫 Swiped users count:", swipedUserIds.length);
 
-  const requester = await UserProfile.findById(id).lean();
-  const swipedUserIds = requester?.swipedUserIds?.map((val) => val?.toString()) || [];
+    /* ---------------- BASE QUERY (ALWAYS) ---------------- */
 
-  const query = {
-    _id: { $ne: id },
-    gender: preferredGender,
-  };
+    const preferredGender = gender === "Man" ? "Woman" : "Man";
 
-  if (Array.isArray(interests) && interests.length > 0) {
-    query.interests = { $in: interests };
-  }
+    let baseQuery = {
+      _id: { $ne: id, $nin: swipedUserIds },
+      gender: preferredGender,
+    };
 
-  const excludeQuery = { ...query, _id: { $ne: id, $nin: swipedUserIds } };
+    console.log("🧱 Base query initialized:", baseQuery);
 
-  console.log("Query being executed:", JSON.stringify(excludeQuery));
+    /* ---------------- DEFAULT MODE (GET, NO FILTERS) ---------------- */
 
-  let users = await UserProfile.find(excludeQuery).lean();
-  console.log("Profiles fetched:", users.length);
+    if (!filters) {
+      console.log("🟢 DEFAULT MODE (no filters)");
 
-  if (!users.length) {
-    console.log("No profiles found after exclusion. Returning fresh deck with base filters only.");
-    users = await UserProfile.find(query).lean();
-    console.log("Profiles fetched after reset:", users.length);
-  }
+      if (Array.isArray(profileInterests) && profileInterests.length > 0) {
+        baseQuery.interests = { $in: profileInterests };
+        console.log("🎯 Applying profile interests:", profileInterests);
+      }
 
-    const profiles = users.map((user) => {
-      // ƒo. No need to add base URL ƒ?" S3 photo URLs are already public and complete
-      const fixedPhotos = (user.photos || []).map(photo => {
-        if (photo.startsWith("http") || photo.startsWith("data:")) return photo;
-        return photo; // Fallback: already valid in most cases from S3
+      let users = await UserProfile.find(baseQuery).lean();
+      console.log("📊 Users found (default):", users.length);
+
+      if (!users.length) {
+        console.log("🔁 Default fallback triggered (no swipe exclusion)");
+        users = await UserProfile.find({
+          _id: { $ne: id },
+          gender: preferredGender,
+        }).lean();
+        console.log("📊 Users found after fallback:", users.length);
+      }
+
+      return res.status(200).json({
+        success: true,
+        profiles: mapProfiles(users),
       });
+    }
 
-      return {
-        _id: user._id,
-        name: user.name,
-        username: user.username,
-        dateOfBirth: user.dateOfBirth,
-        gender: user.gender,
-        height: user.height,
-        interests: user.interests,
-        values: user.values,
-        prompts: user.prompts || [],
-        photos: fixedPhotos,
+    /* ---------------- FILTER MODE (POST) ---------------- */
 
-        // ƒo. Extended Profile Fields
-        pronouns: user.pronouns || "",
-        sexuality: user.sexuality || "",
-        work: user.work || "",
-        jobTitle: user.jobTitle || "",
-        college: user.college || "",
-        educationLevel: user.educationLevel || "",
-        religion: user.religion || "",
-        homeTown: user.homeTown || "",
-        politics: user.politics || "",
-        languages: user.languages || [],
-        datingIntentions: user.datingIntentions || "",
-        relationshipType: user.relationshipType || "",
-        ethnicity: user.ethnicity || "",
-        children: user.children || "",
-        familyPlans: user.familyPlans || "",
-        covidVaccine: user.covidVaccine || "",
-        pets: user.pets || "",
-        zodiacSign: user.zodiacSign || "",
-        drinking: user.drinking || "",
-        smoking: user.smoking || "",
-        marijuana: user.marijuana || "",
-        drugs: user.drugs || "",
+    console.log("🟣 FILTER MODE (POST)");
+
+    const {
+      ageRange,
+      ageFlex,
+      distanceKm,
+      distanceFlex,
+      interests,
+    } = filters;
+
+    // 🎯 AGE FILTER
+    if (ageRange?.min && ageRange?.max) {
+      const today = new Date();
+      const minDOB = new Date(
+        today.getFullYear() - ageRange.max,
+        today.getMonth(),
+        today.getDate()
+      );
+      const maxDOB = new Date(
+        today.getFullYear() - ageRange.min,
+        today.getMonth(),
+        today.getDate()
+      );
+
+      baseQuery.dateOfBirth = {
+        $gte: minDOB.toISOString().slice(0, 10),
+        $lte: maxDOB.toISOString().slice(0, 10),
       };
-    });
 
-    res.status(200).json({
+      console.log("🎂 Age filter applied:", ageRange);
+    }
+
+    // 🎯 INTEREST FILTER
+    if (Array.isArray(interests) && interests.length > 0) {
+      baseQuery.interests = { $in: interests };
+      console.log("❤️ Discovery interests applied:", interests);
+    }
+
+    // 🎯 DISTANCE FILTER (placeholder logic)
+    if (
+      distanceKm &&
+      requester.location?.latitude &&
+      requester.location?.longitude
+    ) {
+      baseQuery["location.latitude"] = { $ne: null };
+      baseQuery["location.longitude"] = { $ne: null };
+
+      console.log(
+        "📍 Distance filter placeholder applied:",
+        distanceKm,
+        "km"
+      );
+    }
+
+    console.log("🔍 Final query before execution:", baseQuery);
+
+    let users = await UserProfile.find(baseQuery).lean();
+    console.log("📊 Users found (filtered):", users.length);
+
+    /* ---------------- FLEX FALLBACKS ---------------- */
+
+    if (!users.length && ageFlex && ageRange) {
+      console.log("↔️ Age flex fallback triggered");
+
+      const expandedMin = Math.max(18, ageRange.min - 2);
+      const expandedMax = ageRange.max + 2;
+
+      const today = new Date();
+      baseQuery.dateOfBirth = {
+        $gte: new Date(today.getFullYear() - expandedMax)
+          .toISOString()
+          .slice(0, 10),
+        $lte: new Date(today.getFullYear() - expandedMin)
+          .toISOString()
+          .slice(0, 10),
+      };
+
+      users = await UserProfile.find(baseQuery).lean();
+      console.log("📊 Users after age flex:", users.length);
+    }
+
+    if (!users.length && distanceFlex) {
+      console.log("🌍 Distance flex fallback triggered");
+
+      delete baseQuery["location.latitude"];
+      delete baseQuery["location.longitude"];
+
+      users = await UserProfile.find(baseQuery).lean();
+      console.log("📊 Users after distance flex:", users.length);
+    }
+
+    console.log("✅ Returning profiles:", users.length);
+
+    return res.status(200).json({
       success: true,
-      message: "Filtered profiles fetched successfully!",
-      profiles,
+      profiles: mapProfiles(users),
     });
   } catch (error) {
-    console.error("Error fetching filtered profiles:", error);
+    console.error("🔥 FilteredProfiles error:", error);
     res.status(500).json({
       success: false,
-      message: "An error occurred while fetching filtered profiles.",
+      message: "Failed to fetch filtered profiles",
     });
   }
 };
+
+/* ---------------- PROFILE MAPPER (unchanged) ---------------- */
+
+function mapProfiles(users) {
+  return users.map((user) => ({
+    _id: user._id,
+    name: user.name,
+    username: user.username,
+    dateOfBirth: user.dateOfBirth,
+    gender: user.gender,
+    height: user.height,
+    interests: user.interests,
+    values: user.values,
+    prompts: user.prompts || [],
+    photos: user.photos || [],
+
+    pronouns: user.pronouns || "",
+    sexuality: user.sexuality || "",
+    work: user.work || "",
+    jobTitle: user.jobTitle || "",
+    college: user.college || "",
+    educationLevel: user.educationLevel || "",
+    religion: user.religion || "",
+    homeTown: user.homeTown || "",
+    politics: user.politics || "",
+    languages: user.languages || [],
+    datingIntentions: user.datingIntentions || "",
+    relationshipType: user.relationshipType || "",
+    ethnicity: user.ethnicity || "",
+    children: user.children || "",
+    familyPlans: user.familyPlans || "",
+    covidVaccine: user.covidVaccine || "",
+    pets: user.pets || "",
+    zodiacSign: user.zodiacSign || "",
+    drinking: user.drinking || "",
+    smoking: user.smoking || "",
+    marijuana: user.marijuana || "",
+    drugs: user.drugs || "",
+  }));
+}
+
 
 
 
@@ -619,14 +729,6 @@ export const uploadPhotos = async (req, res) => {
       user.photos.push(...fileUrls);
     }
 
-    // 🧭 Advance onboarding checkpoint
-    if (user.onboardingStage !== 'PHOTOS_DONE') {
-      console.log(
-        `🧭 [uploadPhotos] Updating onboardingStage: ${user.onboardingStage} → PHOTOS_DONE`
-      );
-      user.onboardingStage = 'PHOTOS_DONE';
-    }
-
     await user.save();
     console.log('✅ [uploadPhotos] Photos saved successfully');
 
@@ -635,7 +737,6 @@ export const uploadPhotos = async (req, res) => {
       message: 'Photos uploaded successfully!',
       data: {
         photos: user.photos,
-        onboardingStage: user.onboardingStage,
       },
     });
   } catch (error) {
@@ -646,6 +747,7 @@ export const uploadPhotos = async (req, res) => {
     });
   }
 };
+
 
 
 

@@ -88,25 +88,32 @@ const ProfilePage = ({ navigation }) => {
     return unsubscribe;
   }, [navigation]);
 
-  const handleLogout = async () => {
+const handleLogout = async () => {
   try {
+    const uid = await AsyncStorage.getItem("userId");
+
     const keysToRemove = [
       "jwtToken",
       "userId",
       "username",
-      "fullPhoneNumber",            // ensure number isn't prefilled
+      "fullPhoneNumber",
       "popup_shown_this_session",
-      "temporaryInterests",         // if you store temp filters
-      "hasPendingChats",            // clear pending badge state between accounts
+      "temporaryInterests",
+      "hasPendingChats",
     ];
+
+    if (uid) {
+      keysToRemove.push(`filters:${uid}`);
+    }
+
     await AsyncStorage.multiRemove(keysToRemove);
 
-    // Hard reset stack so back can't return to authenticated screens
     navigation.reset({ index: 0, routes: [{ name: "Login" }] });
   } catch (e) {
     Alert.alert("Error", "Logout failed.");
   }
 };
+
 
   const extraFields = [
     { label: "Pronouns", value: userData?.pronouns },

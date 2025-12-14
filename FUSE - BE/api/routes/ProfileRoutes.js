@@ -30,6 +30,7 @@ router.get('/', authMiddleware, getProfileByPhoneNumber);
 
 // GET: Fetch filtered profiles for the swipe screen (requires authentication)
 router.get('/filteredProfiles', authMiddleware, getFilteredProfiles);
+router.post('/filteredProfiles', authMiddleware, getFilteredProfiles);
 
 router.post('/swipe', authMiddleware, handleSwipe);
 

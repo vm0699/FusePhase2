@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
-import { ProfileContext } from '../../ProfileContext';
+import { ProfileContext, setFullProfile } from '../../ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImageManipulator from 'expo-image-manipulator';
 
@@ -147,12 +147,13 @@ export default function PhotoUploadPage() {
       const uploadJson = await uploadRes.json();
       if (!uploadRes.ok) throw new Error(uploadJson.message || "Upload failed");
 
+      // 🔽 INSIDE handleSubmit(), REPLACE ONLY THIS PART
+
       const uploadedPhotos = uploadJson.data.photos;
       updateProfileData("photos", uploadedPhotos);
 
       // =====================================================
-      // 🔥 2.1 CORE CHANGE — BACKEND CHECKPOINT SAVE
-      // Mark photos done in DB
+      // 🔥 BACKEND CHECKPOINT ONLY
       // =====================================================
       await fetch(`${BASE_URL}/api/profile/update`, {
         method: "PUT",
@@ -162,18 +163,45 @@ export default function PhotoUploadPage() {
         },
         body: JSON.stringify({
           updates: {
-            photos: uploadedPhotos,
-            onboardingStage: "PHOTOS_DONE", // ✅ backend checkpoint
+            onboardingStage: "PHOTOS_DONE",
           },
         }),
       });
+
+      // =====================================================
+      // ✅ CRITICAL FIX — REHYDRATE PROFILE FROM DB
+      // =====================================================
+      const profileRes = await fetch(`${BASE_URL}/api/profile`, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+
+const profileJson = await profileRes.json();
+
+if (profileJson?.success) {
+  const fresh = profileJson.data;
+
+  // restore intro safely
+  if (fresh?.name || fresh?.dateOfBirth) {
+    updateProfileData("intro", {
+      name: fresh.name || "",
+      dob: fresh.dateOfBirth || "",
+    });
+  }
+
+  // restore photos (already uploaded)
+  if (Array.isArray(fresh.photos)) {
+    updateProfileData("photos", fresh.photos);
+  }
+}
       // =====================================================
 
-      // 🔹 2.1 — advance local resume pointer
       await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'Guidelines');
 
       Alert.alert("Success", "Photos uploaded!");
       navigation.navigate("Guidelines");
+
     } catch (error) {
       console.error("❌ Upload Error:", error);
       Alert.alert("Error", error.message || "Something went wrong.");
