@@ -9,7 +9,23 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 
-import PronounsPicker from "../components/PronounsPicker"; // 🔥 example
+import PronounsPicker from "../../../components/PronounsPicker"; // 🔥 example
+import SexualityPicker from "../../../components/SexualityPicker";
+import DatingIntentionsPicker from "../../../components/DatingIntentionsPicker";            
+import PoliticsPicker from "../../../components/PoliticsPicker";
+import ReligionPicker from "../../../components/ReligionPicker";
+import WorkInput from "../../../components/WorkInput";
+import JobTitleInput from "../../../components/JobTitleInput";
+import EduLevelInput from "../../../components/EduLevelInput";
+import CollegeInput from "../../../components/CollegeInput";
+import HomeTownInput from "../../../components/HomeTownInput";
+import LanguagesPicker from "../../../components/LanguagesPicker";
+import EthnicityPicker from "../../../components/EthnicityPicker";
+
+
+
+
+
 
 const BASE_URL = "http://172.20.10.4:5000";
 
@@ -24,7 +40,52 @@ const OPTIONAL_ONBOARDING_STEPS = [
     key: "pronouns",
     Component: PronounsPicker,
   },
-  // next components will come here
+  {
+    key: "sexuality",
+    Component: SexualityPicker,
+  },
+  {
+    key: "datingIntentions",
+    Component: DatingIntentionsPicker,
+  },
+  {
+    key: "politics",
+    Component: PoliticsPicker,
+  },
+  {
+    key: "religion",
+    Component: ReligionPicker,
+  },
+  {
+    key: "work",
+    Component: WorkInput,
+  },
+  {
+    key: "jobTitle",
+    Component: JobTitleInput,
+  },
+  {
+    key: "educationLevel",
+    Component: EduLevelInput,
+  },
+  {
+    key: "college",
+    Component: CollegeInput,
+  },
+  {
+    key: "homeTown",
+    Component: HomeTownInput,
+  },
+  {
+    key: "languages",
+    Component: LanguagesPicker,
+  },
+  {
+    key: "ethnicity",
+    Component: EthnicityPicker,
+  },
+
+
 ];
 
 const STORAGE_KEY_PREFIX = "onboarding_optional_progress";

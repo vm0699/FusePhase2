@@ -1,59 +1,34 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-
-const datingOptions = [
-  "Long-term relationship",
-  "Short-term relationship",
-  "New friends",
-  "Open to exploring",
-  "Marriage",
-  "Not sure yet",
-];
+import DatingIntentionsPicker from "../../components/DatingIntentionsPicker";
 
 export default function DatingIntentionsScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
   const isOnboarding = route.params?.mode === "onboarding";
+  const onSelect = route.params?.onSelect;
 
-  const [selected, setSelected] = useState<string>(
+  const [value, setValue] = useState<string>(
     route.params?.currentValue || ""
   );
 
-  const handleSelect = (value: string) => {
-    setSelected(value);
-
-    // 🔥 IMPORTANT: notify wrapper immediately
-    if (route.params?.onSelect) {
-      route.params.onSelect(value);
-    }
-  };
-
   const handleDone = () => {
-    if (route.params?.onSelect) {
-      route.params.onSelect(selected);
-    }
+    if (onSelect) onSelect(value);
     navigation.goBack();
   };
 
   return (
     <View style={styles.container}>
-      {/* Header only for Update Profile mode */}
+      {/* Header only for Update Profile */}
       {!isOnboarding && (
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.back}>Back</Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>Dating Intentions</Text>
+          <Text style={styles.headerTitle}>Dating Intentions</Text>
 
           <TouchableOpacity onPress={handleDone}>
             <Text style={styles.done}>Done</Text>
@@ -61,31 +36,7 @@ export default function DatingIntentionsScreen() {
         </View>
       )}
 
-      {/* Title for onboarding */}
-      {isOnboarding && (
-        <View style={styles.onboardingHeader}>
-          <Text style={styles.title}>Dating Intentions</Text>
-          <Text style={styles.subtitle}>
-            What are you looking for right now?
-          </Text>
-        </View>
-      )}
-
-      <FlatList
-        data={datingOptions}
-        keyExtractor={(item) => item}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.option}
-            onPress={() => handleSelect(item)}
-          >
-            <Text style={styles.optionText}>{item}</Text>
-            {selected === item && (
-              <Ionicons name="checkmark" size={20} color="#6B21A8" />
-            )}
-          </TouchableOpacity>
-        )}
-      />
+      <DatingIntentionsPicker value={value} onChange={setValue} />
     </View>
   );
 }
@@ -100,33 +51,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 
-  onboardingHeader: {
-    padding: 20,
-    paddingBottom: 10,
-  },
-
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-
-  subtitle: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginTop: 6,
-  },
-
   back: { color: "#6B21A8", fontWeight: "600" },
   done: { color: "#6B21A8", fontWeight: "600" },
-
-  option: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    borderBottomWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-
-  optionText: { fontSize: 18 },
+  headerTitle: { fontSize: 20, fontWeight: "bold" },
 });
