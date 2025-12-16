@@ -843,9 +843,6 @@ export const updateUserProfile = async (req, res) => {
       currentOnboardingStage: user.onboardingStage,
     });
 
-    // Support both:
-    // { updates: {...} }
-    // { name: "...", gender: "..." }
     const updates =
       req.body.updates && typeof req.body.updates === "object"
         ? req.body.updates
@@ -873,7 +870,10 @@ export const updateUserProfile = async (req, res) => {
       "prompts",
       "photos",
 
-      // 🔹 ONBOARDING CHECKPOINT (CRITICAL FIX)
+      // ✅ ADDED — LOCATION SUPPORT
+      "location",
+
+      // 🔹 ONBOARDING CHECKPOINT
       "onboardingStage",
 
       // Identity + lifestyle fields
@@ -905,6 +905,10 @@ export const updateUserProfile = async (req, res) => {
       "PHONE_VERIFIED",
       "INTRO_DONE",
       "PROFILE_SETUP_DONE",
+
+      // ✅ ADDED — LOCATION CHECKPOINT
+      "LOCATION_DONE",
+
       "DETAILS_DONE",
       "PROMPTS_DONE",
       "PHOTOS_DONE",
@@ -921,7 +925,6 @@ export const updateUserProfile = async (req, res) => {
 
       const value = updates[key];
 
-      // 🔐 Extra safety for onboardingStage
       if (key === "onboardingStage") {
         if (!ALLOWED_ONBOARDING_STAGES.includes(value)) {
           console.log(
@@ -954,9 +957,11 @@ export const updateUserProfile = async (req, res) => {
     await user.save();
     console.log("✅ [updateUserProfile] User saved.");
 
-    // Recalculate completeness
     const profileCompleteness = calculateProfileCompleteness(user);
-    console.log("📊 [updateUserProfile] Profile completeness:", profileCompleteness);
+    console.log(
+      "📊 [updateUserProfile] Profile completeness:",
+      profileCompleteness
+    );
 
     const fixedPhotos = (user.photos || []).map((p) => p);
 
@@ -974,10 +979,8 @@ export const updateUserProfile = async (req, res) => {
       photos: fixedPhotos,
       profileComplete: profileCompleteness,
 
-      // 🔹 IMPORTANT: expose onboardingStage for debugging
       onboardingStage: user.onboardingStage,
 
-      // Extended fields
       pronouns: user.pronouns,
       sexuality: user.sexuality,
       work: user.work,
@@ -1003,7 +1006,6 @@ export const updateUserProfile = async (req, res) => {
 
     console.log("📤 [updateUserProfile] Final profilePayload:", profilePayload);
 
-    // Issue fresh tokens
     const accessToken = jwt.sign(
       {
         id: user._id.toString(),

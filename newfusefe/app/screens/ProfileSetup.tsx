@@ -14,10 +14,10 @@ import { ProfileContext } from '../../ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = 'http://172.20.10.4:5000';
-const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
+const ONBOARDING_STEP_KEY = '@onboarding_step';
 
 export default function ProfileSetupPage() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { profileData, updateProfileData } = useContext(ProfileContext);
 
   const [localProfile, setLocalProfile] = useState({
@@ -26,7 +26,7 @@ export default function ProfileSetupPage() {
     mode: profileData.options.reason || '',
   });
 
-  // 🔹 2.1 — Persist onboarding step locally
+  // 🔹 Persist onboarding step
   useEffect(() => {
     AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'ProfileSetup');
   }, []);
@@ -35,7 +35,7 @@ export default function ProfileSetupPage() {
     localProfile.username.length >= 8 && localProfile.username.length <= 15
   );
 
-  const validateUsername = (text) => {
+  const validateUsername = (text: string) => {
     setLocalProfile({ ...localProfile, username: text });
     setIsUsernameValid(text.length >= 8 && text.length <= 15);
   };
@@ -48,7 +48,6 @@ export default function ProfileSetupPage() {
   const handleNavigate = async () => {
     if (!isComplete) return;
 
-    // 🔹 Existing context update (unchanged)
     updateProfileData('options', {
       ...profileData.options,
       ...localProfile,
@@ -57,10 +56,6 @@ export default function ProfileSetupPage() {
     const token = await AsyncStorage.getItem('jwtToken');
     if (!token) return;
 
-    // =====================================================
-    // 🔥 2.1 CORE CHANGE — BACKEND CHECKPOINT UPDATE
-    // Saves progress server-side (device independent)
-    // =====================================================
     await fetch(`${BASE_URL}/api/profile/update`, {
       method: 'PUT',
       headers: {
@@ -71,16 +66,19 @@ export default function ProfileSetupPage() {
         updates: {
           username: localProfile.username,
           gender: localProfile.gender,
-          onboardingStage: 'PROFILE_SETUP_DONE', // ✅ backend truth
+          onboardingStage: 'PROFILE_SETUP_DONE',
         },
       }),
     });
-    // =====================================================
 
-    // 🔹 2.1 — Advance local resume pointer
-    await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'ProfileDetails');
+    // 🔹 Resume pointer → Location (MANDATORY)
+    await AsyncStorage.setItem(
+      ONBOARDING_STEP_KEY,
+      'LocationSetup'
+    );
 
-    navigation.navigate('ProfileDetails');
+    // 🔹 Navigate to Location screen
+    navigation.navigate('LocationSetup');
   };
 
   return (
@@ -234,6 +232,9 @@ export default function ProfileSetupPage() {
     </View>
   );
 }
+
+
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

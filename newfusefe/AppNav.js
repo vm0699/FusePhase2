@@ -68,6 +68,8 @@ import TwilioNativeCallScreen from "./app/screens/TwilioNativeCallScreen";
 import AgoraCallScreen from "./app/screens/vAgoraCallScreen";
 import AuthGate from "./app/screens/AuthGate";
 import MainTabs from "./app/navigation/MainTabs";
+import OnboardingOptionalWrapper from "./app/screens/onboarding/OnboardingOptionalWrapper";
+import LocationSetupScreen from "./app/screens/LocationSetupScreen";
 
 const Stack = createStackNavigator();
 
@@ -81,6 +83,8 @@ export default function AppNavigator() {
           <Stack.Screen name="CodeVerif" component={CodeVerif} options={{ headerShown: false }} />
           <Stack.Screen name="Intro" component={Intro} options={{ headerShown: false }} />
           <Stack.Screen name="ProfileSetup" component={ProfileSetup} options={{ headerShown: false }} />
+          <Stack.Screen name="LocationSetup" component={LocationSetupScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="OnboardingOptional" component={OnboardingOptionalWrapper} options={{ headerShown: false }} />
           <Stack.Screen name="ProfileDetails" component={ProfileDetails} options={{ headerShown: false }} />
           <Stack.Screen name="PromptSelection" component={PromptSelection} options={{ headerShown: false }} />
           <Stack.Screen name="PhotoUpload" component={PhotoUpload} options={{ headerShown: false }} />

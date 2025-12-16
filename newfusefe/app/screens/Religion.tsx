@@ -1,38 +1,91 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
-const religionOptions = ["Hindu", "Christian", "Muslim", "Jain", "Sikh", "Buddhist", "Atheist", "Spiritual", "Other"];
+const religionOptions = [
+  "Hindu",
+  "Christian",
+  "Muslim",
+  "Jain",
+  "Sikh",
+  "Buddhist",
+  "Atheist",
+  "Spiritual",
+  "Other",
+];
 
 export default function ReligionScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const [selected, setSelected] = useState<string>(route.params?.currentValue || "");
+
+  const isOnboarding = route.params?.mode === "onboarding";
+
+  const [selected, setSelected] = useState<string>(
+    route.params?.currentValue || ""
+  );
+
+  const handleSelect = (value: string) => {
+    setSelected(value);
+
+    // 🔥 Notify onboarding wrapper immediately
+    if (route.params?.onSelect) {
+      route.params.onSelect(value);
+    }
+  };
 
   const handleDone = () => {
-    if (route.params?.onSelect) route.params.onSelect(selected);
+    if (route.params?.onSelect) {
+      route.params.onSelect(selected);
+    }
     navigation.goBack();
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Religious beliefs</Text>
-        <TouchableOpacity onPress={handleDone}>
-          <Text style={styles.done}>Done</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Header for Update Profile mode */}
+      {!isOnboarding && (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.back}>Back</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.title}>Religious beliefs</Text>
+
+          <TouchableOpacity onPress={handleDone}>
+            <Text style={styles.done}>Done</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Onboarding header */}
+      {isOnboarding && (
+        <View style={styles.onboardingHeader}>
+          <Text style={styles.title}>Religious beliefs</Text>
+          <Text style={styles.subtitle}>
+            What best describes your beliefs?
+          </Text>
+        </View>
+      )}
+
       <FlatList
         data={religionOptions}
         keyExtractor={(item) => item}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.option} onPress={() => setSelected(item)}>
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() => handleSelect(item)}
+          >
             <Text style={styles.optionText}>{item}</Text>
-            {selected === item && <Ionicons name="checkmark" size={20} color="#6B21A8" />}
+            {selected === item && (
+              <Ionicons name="checkmark" size={20} color="#6B21A8" />
+            )}
           </TouchableOpacity>
         )}
       />
@@ -42,15 +95,33 @@ export default function ReligionScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
   },
+
+  onboardingHeader: {
+    padding: 20,
+    paddingBottom: 10,
+  },
+
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+
+  subtitle: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginTop: 6,
+  },
+
   back: { color: "#6B21A8", fontWeight: "600" },
   done: { color: "#6B21A8", fontWeight: "600" },
-  title: { fontSize: 20, fontWeight: "bold" },
+
   option: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -59,5 +130,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#E5E7EB",
   },
+
   optionText: { fontSize: 18 },
 });

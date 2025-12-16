@@ -14,6 +14,7 @@ const profileSchema = new Schema(
         "PHONE_VERIFIED",
         "INTRO_DONE",
         "PROFILE_SETUP_DONE",
+        "LOCATION_DONE", // ✅ ADDED
         "DETAILS_DONE",
         "PROMPTS_DONE",
         "PHOTOS_DONE",
@@ -22,7 +23,7 @@ const profileSchema = new Schema(
       default: "PHONE_VERIFIED",
     },
 
-    // ===== BASIC PROFILE (NO LONGER REQUIRED) =====
+    // ===== BASIC PROFILE =====
     name: { type: String, default: "" },
     username: { type: String, default: "" },
     dateOfBirth: { type: String, default: "" },
@@ -32,7 +33,7 @@ const profileSchema = new Schema(
     interests: { type: [String], default: [] },
     values: { type: [String], default: [] },
 
-    // ===== PROMPTS (OPTIONAL DURING ONBOARDING) =====
+    // ===== PROMPTS =====
     prompts: {
       type: [
         {
