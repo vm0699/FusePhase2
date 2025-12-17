@@ -21,11 +21,13 @@ import CollegeInput from "../../../components/CollegeInput";
 import HomeTownInput from "../../../components/HomeTownInput";
 import LanguagesPicker from "../../../components/LanguagesPicker";
 import EthnicityPicker from "../../../components/EthnicityPicker";
-
-
-
-
-
+import ChildrenPicker from "../../../components/ChildrenPicker";
+import PetsPicker from "../../../components/PetsPicker";
+import ZodiacPicker from "../../../components/ZodiacPicker";
+import DrinkingPicker from "../../../components/DrinkingPicker";
+import SmokingPicker from "../../../components/SmokingPicker";
+import MarijuanaPicker from "../../../components/MarijuanaPicker";
+import DrugsPicker from "../../../components/DrugsPicker";
 
 const BASE_URL = "http://172.20.10.4:5000";
 
@@ -84,6 +86,33 @@ const OPTIONAL_ONBOARDING_STEPS = [
     key: "ethnicity",
     Component: EthnicityPicker,
   },
+  {
+    key: "children",
+    Component: ChildrenPicker,
+  },
+  {
+    key: "pets",
+    Component: PetsPicker,
+  },
+  {
+    key: "zodiacSign",
+    Component: ZodiacPicker,
+  },
+  {
+    key: "drinkingHabits",
+    Component: DrinkingPicker,
+  },
+  {
+    key: "smokingHabits",
+    Component: SmokingPicker,
+  },
+  {    key: "marijuanaHabits",
+    Component: MarijuanaPicker,
+  },
+  {    key: "drugUseHabits",
+    Component: DrugsPicker,
+  },
+
 
 
 ];
