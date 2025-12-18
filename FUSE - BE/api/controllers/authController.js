@@ -59,11 +59,15 @@ export const verifyPhoneNumber = async (req, res) => {
         { expiresIn: "7d" }
       );
 
+      console.log("📤 [verifyPhoneNumber] Sending OTP for EXISTING user…");
+      await sendOTP(formattedPhone);
+      console.log("✅ [verifyPhoneNumber] OTP sent to existing user");
+
       console.log("🔑 [verifyPhoneNumber] Tokens issued for EXISTING user");
 
       return res.status(200).json({
         success: true,
-        message: "User found.",
+        message: "OTP sent.",
         data: {
           accessToken,
           refreshToken,
@@ -110,7 +114,7 @@ export const verifyPhoneNumber = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    console.log("📤 [verifyPhoneNumber] Sending OTP…");
+    console.log("📤 [verifyPhoneNumber] Sending OTP for NEW user…");
     await sendOTP(formattedPhone);
     console.log("✅ [verifyPhoneNumber] OTP sent");
 
@@ -136,6 +140,7 @@ export const verifyPhoneNumber = async (req, res) => {
     });
   }
 };
+
 
 /**
  * STEP 2 — VERIFY OTP (FINAL AUTH POINT)

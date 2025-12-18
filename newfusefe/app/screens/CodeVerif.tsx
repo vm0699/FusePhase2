@@ -78,80 +78,92 @@ export default function VerifyCodePage() {
   const isComplete = code.every((digit) => digit !== '');
 
   const verifyOTPCode = async () => {
-    try {
-      console.log('🟣 [VerifyCode] VERIFY OTP clicked');
+  try {
+    console.log('🟣 [VerifyCode] VERIFY OTP clicked');
 
-      let fullPhoneNumber = `+${countryCode}${phoneNumber}`;
-      fullPhoneNumber = fullPhoneNumber.replace(/^(\+91)(\+91)?/, '+91');
+    let fullPhoneNumber = `+${countryCode}${phoneNumber}`;
+    fullPhoneNumber = fullPhoneNumber.replace(/^(\+91)(\+91)?/, '+91');
 
-      console.log('🟣 [VerifyCode] Sending verifyCode for:', fullPhoneNumber);
+    console.log('🟣 [VerifyCode] Sending verifyCode for:', fullPhoneNumber);
 
-      const response = await fetch(
-        'http://172.20.10.4:5000/api/auth/verifyCode',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phoneNumber: fullPhoneNumber,
-            code: code.join(''),
-          }),
-        }
-      );
-
-      console.log('🟣 [VerifyCode] verifyCode response status:', response.status);
-
-      const result = await response.json();
-      console.log('🟣 [VerifyCode] verifyCode response JSON:', result);
-
-      if (!result.success) {
-        Alert.alert('Error', result.message || 'Invalid OTP');
-        return;
+    const response = await fetch(
+      'http://172.20.10.4:5000/api/auth/verifyCode',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumber: fullPhoneNumber,
+          code: code.join(''),
+        }),
       }
+    );
 
-      // ✅ Save JWT (required for AuthGate)
-      if (result?.data?.accessToken) {
-        console.log('🟢 [VerifyCode] Saving jwtToken');
-        await AsyncStorage.setItem('jwtToken', result.data.accessToken);
-      } else {
-        console.log('🟥 [VerifyCode] NO accessToken received');
-      }
+    console.log('🟣 [VerifyCode] verifyCode response status:', response.status);
 
-      // ✅ Save userId safely
-      if (result?.data?.user?.id) {
-        console.log('🟢 [VerifyCode] Saving userId:', result.data.user.id);
-        await AsyncStorage.setItem('userId', String(result.data.user.id));
-      }
+    const result = await response.json();
+    console.log('🟣 [VerifyCode] verifyCode response JSON:', result);
 
-      // ✅ Save username ONLY if non-empty
-      if (
-        typeof result?.data?.user?.username === 'string' &&
-        result.data.user.username.length > 0
-      ) {
-        console.log('🟢 [VerifyCode] Saving username:', result.data.user.username);
-        await AsyncStorage.setItem('username', result.data.user.username);
-      } else {
-        console.log('🟠 [VerifyCode] Username empty or missing');
-      }
+    if (!result.success) {
+      Alert.alert('Error', result.message || 'Invalid OTP');
+      return;
+    }
 
-      await AsyncStorage.removeItem('popup_shown_this_session');
+    // ✅ Save JWT
+    if (result?.data?.accessToken) {
+      console.log('🟢 [VerifyCode] Saving jwtToken');
+      await AsyncStorage.setItem('jwtToken', result.data.accessToken);
+    } else {
+      console.log('🟥 [VerifyCode] NO accessToken received');
+    }
 
-      console.log('🟢 [VerifyCode] OTP VERIFIED — redirecting to AuthGate');
+    // ✅ Save userId
+    if (result?.data?.user?.id) {
+      console.log('🟢 [VerifyCode] Saving userId:', result.data.user.id);
+      await AsyncStorage.setItem('userId', String(result.data.user.id));
+    }
 
-      Alert.alert('Success', 'OTP verified successfully.');
+    // ✅ Save username only if non-empty
+    if (
+      typeof result?.data?.user?.username === 'string' &&
+      result.data.user.username.length > 0
+    ) {
+      console.log('🟢 [VerifyCode] Saving username:', result.data.user.username);
+      await AsyncStorage.setItem('username', result.data.user.username);
+    } else {
+      console.log('🟠 [VerifyCode] Username empty or missing');
+    }
 
-      // ✅ SINGLE SOURCE OF TRUTH — AuthGate
+    await AsyncStorage.removeItem('popup_shown_this_session');
+
+    Alert.alert('Success', 'OTP verified successfully.');
+
+    const onboardingStage = result?.data?.onboardingStage;
+
+    console.log('🟢 [VerifyCode] Onboarding stage:', onboardingStage);
+
+    // ✅ CORRECT BRANCHING
+    if (onboardingStage === 'COMPLETE') {
+      console.log('➡️ [VerifyCode] Existing user → SwipeView');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'SwipeView' }],
+      });
+    } else {
+      console.log('➡️ [VerifyCode] New/incomplete user → AuthGate');
       navigation.reset({
         index: 0,
         routes: [{ name: 'AuthGate' }],
       });
-    } catch (error) {
-      console.error('❌ [VerifyCode] Error verifying OTP:', error);
-      Alert.alert(
-        'Error',
-        `An error occurred while verifying the OTP: ${error.message}`
-      );
     }
-  };
+  } catch (error) {
+    console.error('❌ [VerifyCode] Error verifying OTP:', error);
+    Alert.alert(
+      'Error',
+      `An error occurred while verifying the OTP: ${error.message}`
+    );
+  }
+};
+
 
 
   return (

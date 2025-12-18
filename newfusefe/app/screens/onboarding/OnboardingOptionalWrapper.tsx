@@ -9,9 +9,9 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 
-import PronounsPicker from "../../../components/PronounsPicker"; // 🔥 example
+import PronounsPicker from "../../../components/PronounsPicker";
 import SexualityPicker from "../../../components/SexualityPicker";
-import DatingIntentionsPicker from "../../../components/DatingIntentionsPicker";            
+import DatingIntentionsPicker from "../../../components/DatingIntentionsPicker";
 import PoliticsPicker from "../../../components/PoliticsPicker";
 import ReligionPicker from "../../../components/ReligionPicker";
 import WorkInput from "../../../components/WorkInput";
@@ -31,90 +31,26 @@ import DrugsPicker from "../../../components/DrugsPicker";
 
 const BASE_URL = "http://172.20.10.4:5000";
 
-/**
- * Optional onboarding steps (ORDER MATTERS)
- * Each step defines:
- * - key (backend field)
- * - component (NOT screen)
- */
 const OPTIONAL_ONBOARDING_STEPS = [
-  {
-    key: "pronouns",
-    Component: PronounsPicker,
-  },
-  {
-    key: "sexuality",
-    Component: SexualityPicker,
-  },
-  {
-    key: "datingIntentions",
-    Component: DatingIntentionsPicker,
-  },
-  {
-    key: "politics",
-    Component: PoliticsPicker,
-  },
-  {
-    key: "religion",
-    Component: ReligionPicker,
-  },
-  {
-    key: "work",
-    Component: WorkInput,
-  },
-  {
-    key: "jobTitle",
-    Component: JobTitleInput,
-  },
-  {
-    key: "educationLevel",
-    Component: EduLevelInput,
-  },
-  {
-    key: "college",
-    Component: CollegeInput,
-  },
-  {
-    key: "homeTown",
-    Component: HomeTownInput,
-  },
-  {
-    key: "languages",
-    Component: LanguagesPicker,
-  },
-  {
-    key: "ethnicity",
-    Component: EthnicityPicker,
-  },
-  {
-    key: "children",
-    Component: ChildrenPicker,
-  },
-  {
-    key: "pets",
-    Component: PetsPicker,
-  },
-  {
-    key: "zodiacSign",
-    Component: ZodiacPicker,
-  },
-  {
-    key: "drinkingHabits",
-    Component: DrinkingPicker,
-  },
-  {
-    key: "smokingHabits",
-    Component: SmokingPicker,
-  },
-  {    key: "marijuanaHabits",
-    Component: MarijuanaPicker,
-  },
-  {    key: "drugUseHabits",
-    Component: DrugsPicker,
-  },
-
-
-
+  { key: "pronouns", Component: PronounsPicker },
+  { key: "sexuality", Component: SexualityPicker },
+  { key: "datingIntentions", Component: DatingIntentionsPicker },
+  { key: "politics", Component: PoliticsPicker },
+  { key: "religion", Component: ReligionPicker },
+  { key: "work", Component: WorkInput },
+  { key: "jobTitle", Component: JobTitleInput },
+  { key: "educationLevel", Component: EduLevelInput },
+  { key: "college", Component: CollegeInput },
+  { key: "homeTown", Component: HomeTownInput },
+  { key: "languages", Component: LanguagesPicker },
+  { key: "ethnicity", Component: EthnicityPicker },
+  { key: "children", Component: ChildrenPicker },
+  { key: "pets", Component: PetsPicker },
+  { key: "zodiacSign", Component: ZodiacPicker },
+  { key: "drinkingHabits", Component: DrinkingPicker },
+  { key: "smokingHabits", Component: SmokingPicker },
+  { key: "marijuanaHabits", Component: MarijuanaPicker },
+  { key: "drugUseHabits", Component: DrugsPicker },
 ];
 
 const STORAGE_KEY_PREFIX = "onboarding_optional_progress";
@@ -125,7 +61,7 @@ export default function OnboardingOptionalWrapper() {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [completedKeys, setCompletedKeys] = useState<string[]>([]);
-  const [value, setValue] = useState<any>(null);
+  const [value, setValue] = useState<any>(undefined);
 
   /* ---------------- LOAD SAVED PROGRESS ---------------- */
 
@@ -173,7 +109,7 @@ export default function OnboardingOptionalWrapper() {
     const step = OPTIONAL_ONBOARDING_STEPS[currentIndex];
     if (!step) return;
 
-    if (save && value !== null) {
+    if (save && value !== undefined) {
       const token = await AsyncStorage.getItem("jwtToken");
       if (token) {
         await fetch(`${BASE_URL}/api/profile/update`, {
@@ -197,7 +133,7 @@ export default function OnboardingOptionalWrapper() {
 
     const nextIndex = currentIndex + 1;
 
-    setValue(null);
+    setValue(undefined);
     setCompletedKeys(nextCompleted);
     setCurrentIndex(nextIndex);
 
@@ -221,13 +157,22 @@ export default function OnboardingOptionalWrapper() {
     );
   }
 
-  const StepComponent = OPTIONAL_ONBOARDING_STEPS[currentIndex]?.Component;
+  const step = OPTIONAL_ONBOARDING_STEPS[currentIndex];
+  const StepComponent = step?.Component;
+
+  // 🔥 NORMALIZE VALUE BASED ON STEP TYPE
+  const normalizedValue =
+    step?.key === "languages"
+      ? Array.isArray(value)
+        ? value
+        : []
+      : value ?? "";
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         {StepComponent && (
-          <StepComponent value={value} onChange={setValue} />
+          <StepComponent value={normalizedValue} onChange={setValue} />
         )}
       </View>
 
@@ -250,13 +195,8 @@ export default function OnboardingOptionalWrapper() {
 /* ---------------- STYLES ---------------- */
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  content: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
+  content: { flex: 1 },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -264,20 +204,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: "#eee",
   },
-  skip: {
-    fontSize: 16,
-    color: "#666",
-  },
+  skip: { fontSize: 16, color: "#666" },
   nextButton: {
     backgroundColor: "#e11d48",
     paddingVertical: 12,
     paddingHorizontal: 28,
     borderRadius: 24,
   },
-  nextText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
+  nextText: { color: "#fff", fontWeight: "700" },
   center: {
     flex: 1,
     justifyContent: "center",

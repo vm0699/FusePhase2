@@ -185,17 +185,19 @@ export default function ChatScreen({ route }) {
   }, [messages, username]);
 
   // show matched banner once when status turns accepted
-  useEffect(() => {
-    if (status === "accepted" && showMatchedBanner && !bannerConsumed) {
-      setBannerConsumed(true);
-    }
-  }, [status, showMatchedBanner, bannerConsumed]);
-
-  useEffect(() => {
-    if (bannerConsumed && showMatchedBanner) {
+  // keep match banner visible for 5 seconds
+useEffect(() => {
+  if (status === "accepted" && showMatchedBanner) {
+    const timer = setTimeout(() => {
       setShowMatchedBanner(false);
-    }
-  }, [bannerConsumed, showMatchedBanner]);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }
+}, [status, showMatchedBanner]);
+
+
+  
 
   const sendMessage = async () => {
     if (status !== "accepted" && !bothChatted) {
@@ -329,7 +331,7 @@ export default function ChatScreen({ route }) {
         </View>
       );
     }
-    if (showMatchedBanner && status === "accepted" && !bannerConsumed) {
+    if (showMatchedBanner && status === "accepted") {
       return (
         <View style={styles.matchedBanner}>
           <Text style={styles.matchedText}>🎉 It's a match! Say hi.</Text>
