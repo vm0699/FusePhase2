@@ -75,12 +75,13 @@ export default function ChatScreen({ route }) {
   }, [activeChannelSid]);
 
   useEffect(() => {
-    const init = async () => {
-      await fetchUserData();
-      await fetchTwilioToken();
-    };
-    init();
-  }, []);
+  const init = async () => {
+    await fetchUserData();
+    await fetchTwilioToken();
+    await fetchChatHistory(); // 🔹 PHASE 2
+  };
+  init();
+}, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -113,6 +114,46 @@ export default function ChatScreen({ route }) {
       console.error("Error fetching Twilio Token:", error);
     }
   };
+  const fetchChatHistory = async () => {
+  try {
+    if (!chatId) return;
+
+    const jwtToken = await AsyncStorage.getItem("jwtToken");
+    if (!jwtToken) return;
+
+    const res = await fetch(
+      `${BASE_URL}/api/chat/${chatId}/messages`,
+      {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      console.error("❌ Failed to fetch chat history");
+      return;
+    }
+
+    const data = await res.json();
+
+    console.log("🟣 [PHASE 2] DB messages loaded", data.messages?.length);
+
+    const formatted = (data.messages || []).map((m) => ({
+      id: m.id,
+      authorId: m.authorId,
+      body: m.body,
+      timestamp: m.timestamp,
+      _fromDB: true,
+    }));
+
+    setMessages(formatted);
+    setLoading(false);
+  } catch (err) {
+    console.error("❌ Error loading chat history:", err);
+  }
+};
+
 
   // Initialize compliment preview as first bubble before history loads
   useEffect(() => {
@@ -144,14 +185,33 @@ export default function ChatScreen({ route }) {
         setChannel(chatChannel);
         if (chatChannel.status !== "joined") await chatChannel.join();
 
-        chatChannel.on("messageAdded", (message) => {
-          setMessages((prev) => [...prev, message]);
-          if (!isAtBottom) setShowNewMessageBanner(true);
-        });
+        chatChannel.on("messageAdded", (twilioMessage) => {
+  setMessages((prev) => {
+    // prevent duplicate echo (Twilio may echo own message)
+    const exists = prev.some(
+      (m) => m._twilioSid && m._twilioSid === twilioMessage.sid
+    );
+    if (exists) return prev;
 
-        const messagesPage = await chatChannel.getMessages();
-        setMessages((prev) => [...prev, ...messagesPage.items]);
-        setLoading(false);
+    const normalized = {
+      id: `rt-${twilioMessage.sid}`,
+      authorId:
+        twilioMessage.author === username
+          ? userId
+          : receiverId,
+      body: twilioMessage.body,
+      timestamp: new Date().toISOString(),
+      _fromRealtime: true,
+      _twilioSid: twilioMessage.sid,
+    };
+
+    return [...prev, normalized];
+  });
+
+  if (!isAtBottom) setShowNewMessageBanner(true);
+});
+
+
       } catch (error) {
         console.error("Error initializing Twilio client:", error);
       }
@@ -200,23 +260,61 @@ useEffect(() => {
   
 
   const sendMessage = async () => {
-    if (status !== "accepted" && !bothChatted) {
-      Alert.alert("Chat Locked", "The recipient hasn't accepted the chat yet.");
-      return;
-    }
-    if (!channelAvailable) {
-      Alert.alert("Chat channel unavailable", "Please reopen the chat.");
-      return;
-    }
-    if (!channel || !message.trim()) return;
+  if (status !== "accepted" && !bothChatted) {
+    Alert.alert("Chat Locked", "The recipient hasn't accepted the chat yet.");
+    return;
+  }
+  if (!channelAvailable) {
+    Alert.alert("Chat channel unavailable", "Please reopen the chat.");
+    return;
+  }
+  if (!channel || !message.trim()) return;
+
+  const outgoing = message.trim();
+
+  try {
+    console.log("🟣 [PHASE 3] Sending realtime via Twilio", {
+      chatId,
+      outgoing,
+    });
+
+    // 1) Realtime send (Twilio) — keep current behavior
+    await channel.sendMessage(outgoing);
+
+    setMessage("");
+
+    // 2) Persist to DB (Mongo) — Phase 3
     try {
-      await channel.sendMessage(message);
-      setMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-      Alert.alert("Error", "Failed to send message.");
+      const jwtToken = await AsyncStorage.getItem("jwtToken");
+      if (!jwtToken) {
+        console.log("🟣 [PHASE 3] Missing jwtToken — cannot save to DB");
+        return;
+      }
+
+      const res = await fetch(`${BASE_URL}/api/chat/${chatId}/messages`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: outgoing }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      console.log("🟣 [PHASE 3] DB save response", {
+        ok: res.ok,
+        data,
+      });
+    } catch (dbErr) {
+      console.error("🔴 [PHASE 3] Failed to save message to DB:", dbErr);
     }
-  };
+  } catch (error) {
+    console.error("Error sending message:", error);
+    Alert.alert("Error", "Failed to send message.");
+  }
+};
+
 
   const handleAccept = async () => {
     if (!chatId) {
@@ -394,10 +492,10 @@ useEffect(() => {
         <FlatList
           ref={flatListRef}
           data={messages}
-          keyExtractor={(item, index) => item.sid || index.toString()}
+          keyExtractor={(item, index) => item.id || item.sid || index.toString()}
           onScroll={handleScroll}
           renderItem={({ item }) => {
-            const isMyMessage = item.author?.toLowerCase?.() === username?.toLowerCase?.();
+            const isMyMessage = item.authorId && userId && item.authorId === userId;
             return (
               <View
                 style={[styles.messageBubble, isMyMessage ? styles.myMessage : styles.theirMessage]}

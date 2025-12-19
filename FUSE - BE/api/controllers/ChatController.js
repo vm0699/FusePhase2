@@ -78,6 +78,9 @@ const appendComplimentMessage = async ({ chat, senderId, compliment, senderUsern
   return recentDuplicate.message;
 };
 
+
+
+
 /** Send Compliment & Initiate/Reuse Chat (idempotent, pair-based) */
 export const sendCompliment = async (req, res) => {
   try {
@@ -85,6 +88,12 @@ export const sendCompliment = async (req, res) => {
     const senderId = req.user.id;
     const senderUsername = req.user.username;
     const trimmedCompliment = (compliment || "").trim();
+
+    console.log("🟣 [PHASE 1] sendCompliment called", {
+      senderId,
+      swipedUserId,
+      trimmedCompliment,
+    });
 
     if (!swipedUserId) {
       return res.status(400).json({ success: false, message: "Missing recipient ID" });
@@ -95,20 +104,21 @@ export const sendCompliment = async (req, res) => {
     }
 
     const pairKey = normalizePairKey(senderId, swipedUserId);
+    console.log("🟣 [PHASE 1] Computed pairKey:", pairKey);
 
-    let chat =
-      (await Chat.findOne({ pairKey, status: { $in: ["pending", "accepted"] } })) ||
-      (await Chat.findOne({
-        $or: [
-          { senderId, receiverId: swipedUserId },
-          { senderId: swipedUserId, receiverId: senderId },
-        ],
-        status: { $in: ["pending", "accepted"] },
-      })) ||
-      (await Chat.findOne({ pairKey })) ||
-      null;
+    // ✅ REUSE ONLY IF ACTIVE
+    let chat = await Chat.findOne({
+      pairKey,
+      status: { $in: ["pending", "accepted"] },
+    });
 
+    if (chat) {
+      console.log("🟣 [PHASE 1] Reusing ACTIVE chat:", chat._id.toString());
+    }
+
+    // ❌ DO NOT reuse rejected/closed chats
     if (!chat) {
+      console.log("🟣 [PHASE 1] No active chat found, creating NEW chat");
       chat = new Chat({
         senderId,
         receiverId: swipedUserId,
@@ -116,14 +126,12 @@ export const sendCompliment = async (req, res) => {
         status: "pending",
         messages: [],
       });
-    } else if (["rejected", "closed"].includes(chat.status)) {
-      chat.status = "pending";
-      chat.senderId = chat.senderId || senderId;
-      chat.receiverId = chat.receiverId || swipedUserId;
     }
+
     chat.pairKey = pairKey;
 
     const channelSid = await ensureTwilioChannel(chat, senderId, swipedUserId);
+
     const complimentPreview = await appendComplimentMessage({
       chat,
       senderId,
@@ -132,6 +140,12 @@ export const sendCompliment = async (req, res) => {
     });
 
     await chat.save();
+
+    console.log("🟣 [PHASE 1] Chat saved", {
+      chatId: chat._id.toString(),
+      status: chat.status,
+      channelSid,
+    });
 
     return res.status(200).json({
       success: true,
@@ -144,10 +158,11 @@ export const sendCompliment = async (req, res) => {
       showMatchedBanner: false,
     });
   } catch (error) {
-    console.error("Error sending compliment:", error);
+    console.error("🔴 [PHASE 1] Error sending compliment:", error);
     return res.status(500).json({ success: false, message: "Failed to send compliment" });
   }
 };
+
 
 /** Fetch User Chats (pending + accepted) */
 export const getUserChats = async (req, res) => {
@@ -199,25 +214,51 @@ export const handleChatRequest = async (req, res) => {
     const { chatId, action } = req.body;
     const userId = req.user.id;
 
+    console.log("🟣 [PHASE 1] handleChatRequest called", {
+      chatId,
+      action,
+      userId,
+    });
+
     const chat = await Chat.findById(chatId).populate("senderId receiverId");
     if (!chat) {
       return res.status(404).json({ success: false, message: "Chat not found" });
     }
 
+    // 🔹 Phase-1 safety: do not allow actions on closed chats
+    if (chat.status === "closed") {
+      console.log("🟣 [PHASE 1] Action attempted on CLOSED chat", chatId);
+      return res.status(400).json({
+        success: false,
+        message: "Chat is closed",
+      });
+    }
+
     const senderIdStr = chat.senderId?._id?.toString() || chat.senderId?.toString();
     const receiverIdStr = chat.receiverId?._id?.toString() || chat.receiverId?.toString();
-    const otherUser = senderIdStr === userId?.toString() ? chat.receiverId : chat.senderId;
+
+    const otherUser =
+      senderIdStr === userId?.toString() ? chat.receiverId : chat.senderId;
+
     const complimentPreview =
-      chat.messages && chat.messages.length ? chat.messages[chat.messages.length - 1].message : null;
-    chat.pairKey = chat.pairKey || normalizePairKey(senderIdStr, receiverIdStr);
+      chat.messages && chat.messages.length
+        ? chat.messages[chat.messages.length - 1].message
+        : null;
+
+    chat.pairKey =
+      chat.pairKey || normalizePairKey(senderIdStr, receiverIdStr);
 
     const participantIds = [senderIdStr, receiverIdStr].filter(Boolean);
     if (!participantIds.includes(userId.toString())) {
-      return res.status(403).json({ success: false, message: "Unauthorized to modify this chat request" });
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized to modify this chat request",
+      });
     }
 
     if (action === "accept") {
       const alreadyAccepted = chat.status === "accepted";
+
       if (!alreadyAccepted) {
         chat.status = "accepted";
         await ensureTwilioChannel(
@@ -227,6 +268,12 @@ export const handleChatRequest = async (req, res) => {
         );
         await chat.save();
       }
+
+      console.log("🟣 [PHASE 1] Chat accepted", {
+        chatId: chat._id.toString(),
+        alreadyAccepted,
+      });
+
       return res.status(200).json({
         success: true,
         chatId: chat._id,
@@ -235,17 +282,27 @@ export const handleChatRequest = async (req, res) => {
         showMatchedBanner: !alreadyAccepted,
         complimentPreview: complimentPreview || null,
         otherUser: otherUser
-          ? { _id: otherUser._id, name: otherUser.name, photos: otherUser.photos }
+          ? {
+              _id: otherUser._id,
+              name: otherUser.name,
+              photos: otherUser.photos,
+            }
           : null,
       });
     }
 
     if (action === "reject") {
       const alreadyRejected = ["rejected", "closed"].includes(chat.status);
+
       if (!alreadyRejected) {
         chat.status = "rejected";
         await chat.save();
       }
+
+      console.log("🟣 [PHASE 1] Chat rejected", {
+        chatId: chat._id.toString(),
+      });
+
       return res.status(200).json({
         success: true,
         chatId: chat._id,
@@ -255,12 +312,20 @@ export const handleChatRequest = async (req, res) => {
       });
     }
 
-    return res.status(400).json({ success: false, message: "Invalid action" });
+    return res.status(400).json({
+      success: false,
+      message: "Invalid action",
+    });
   } catch (error) {
-    console.error("Error handling chat request:", error);
-    return res.status(500).json({ success: false, message: "Failed to process chat request" });
+    console.error("🔴 [PHASE 1] Error handling chat request:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to process chat request",
+    });
   }
 };
+
+
 
 export const getTwilioToken = async (req, res) => {
   try {
@@ -292,3 +357,244 @@ export const getTwilioToken = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to generate token" });
   }
 };
+
+
+
+/** Close / Unmatch an Accepted Chat */
+/** Close / Unmatch an accepted chat (Phase 1) */
+/** Close / Unmatch an accepted chat (Phase 1) */
+export const closeChat = async (req, res) => {
+  try {
+    const { chatId } = req.body;
+    const userId = req.user.id;
+
+    console.log("🟣 [PHASE 1] closeChat called", {
+      chatId,
+      userId,
+    });
+
+    if (!chatId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing chatId",
+      });
+    }
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat not found",
+      });
+    }
+
+    const senderIdStr = chat.senderId?.toString();
+    const receiverIdStr = chat.receiverId?.toString();
+    const participantIds = [senderIdStr, receiverIdStr].filter(Boolean);
+
+    if (!participantIds.includes(userId.toString())) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized to close this chat",
+      });
+    }
+
+    // Only accepted chats can be closed
+    if (chat.status !== "accepted") {
+      console.log("🟣 [PHASE 1] closeChat ignored — invalid state", {
+        chatId,
+        status: chat.status,
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: "Only accepted chats can be closed",
+      });
+    }
+
+    // 🔹 ADDITION: delete message history
+    const deletedMessageCount = chat.messages?.length || 0;
+    chat.messages = [];
+
+    chat.status = "closed";
+    await chat.save();
+
+    console.log("🟣 [PHASE 1] Chat closed and history cleared", {
+      chatId: chat._id.toString(),
+      pairKey: chat.pairKey,
+      deletedMessageCount,
+    });
+
+    return res.status(200).json({
+      success: true,
+      chatId: chat._id,
+      status: "closed",
+    });
+  } catch (error) {
+    console.error("🔴 [PHASE 1] Error closing chat:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to close chat",
+    });
+  }
+};
+
+
+
+/** Get chat message history from DB (Phase 2)
+ *  - MongoDB is the source of truth
+ *  - Returns messages normalized for UI
+ *  - Does NOT depend on Twilio
+ */
+export const getChatMessages = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const userId = req.user.id;
+
+    console.log("🟣 [PHASE 2] getChatMessages called", {
+      chatId,
+      userId,
+    });
+
+    if (!chatId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing chatId",
+      });
+    }
+
+    const chat = await Chat.findById(chatId).lean();
+    if (!chat) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat not found",
+      });
+    }
+
+    const senderIdStr = chat.senderId?.toString();
+    const receiverIdStr = chat.receiverId?.toString();
+    const participantIds = [senderIdStr, receiverIdStr].filter(Boolean);
+
+    if (!participantIds.includes(userId.toString())) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized to view this chat",
+      });
+    }
+
+    // Normalize messages for frontend UI
+    const messages = (chat.messages || [])
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+      .map((m, index) => ({
+        id: `${chat._id.toString()}_${index}`,
+        authorId: m.sender?.toString() || null,
+        body: m.message,
+        timestamp: m.timestamp,
+      }));
+
+    console.log("🟣 [PHASE 2] Messages fetched from DB", {
+      chatId: chat._id.toString(),
+      messageCount: messages.length,
+    });
+
+    return res.status(200).json({
+      success: true,
+      chatId: chat._id,
+      messages,
+    });
+  } catch (error) {
+    console.error("🔴 [PHASE 2] Error fetching chat messages:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch chat messages",
+    });
+  }
+};
+
+
+
+/** Save a realtime chat message to DB (Phase 3)
+ *  - Called by sender device after realtime send succeeds
+ *  - Dedupe protection (same sender + same text within 30s)
+ *  - MongoDB remains source of truth
+ */
+export const saveChatMessage = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const userId = req.user.id;
+    const { message } = req.body;
+
+    const trimmed = (message || "").trim();
+
+    console.log("🟣 [PHASE 3] saveChatMessage called", {
+      chatId,
+      userId,
+      trimmed,
+    });
+
+    if (!chatId) {
+      return res.status(400).json({ success: false, message: "Missing chatId" });
+    }
+
+    if (!trimmed) {
+      return res.status(400).json({ success: false, message: "Message cannot be empty" });
+    }
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ success: false, message: "Chat not found" });
+    }
+
+    const senderIdStr = chat.senderId?.toString();
+    const receiverIdStr = chat.receiverId?.toString();
+    const participantIds = [senderIdStr, receiverIdStr].filter(Boolean);
+
+    if (!participantIds.includes(userId.toString())) {
+      return res.status(403).json({ success: false, message: "Unauthorized to write to this chat" });
+    }
+
+    if (chat.status !== "accepted") {
+      console.log("🟣 [PHASE 3] saveChatMessage blocked — chat not accepted", {
+        chatId,
+        status: chat.status,
+      });
+      return res.status(400).json({ success: false, message: "Chat not accepted" });
+    }
+
+    // 🔒 Dedupe: same sender + same message within last 30 seconds
+    const now = Date.now();
+    const recent = (chat.messages || []).slice(-10).find((m) => {
+      const sameSender = m.sender?.toString() === userId.toString();
+      const sameText = m.message === trimmed;
+      const t = m.timestamp ? new Date(m.timestamp).getTime() : 0;
+      return sameSender && sameText && Math.abs(now - t) < 30 * 1000;
+    });
+
+    if (recent) {
+      console.log("🟣 [PHASE 3] Duplicate prevented", {
+        chatId,
+        message: trimmed,
+      });
+      return res.status(200).json({ success: true, duplicated: true });
+    }
+
+    chat.messages.push({
+      sender: userId,
+      message: trimmed,
+      timestamp: new Date(),
+    });
+
+    await chat.save();
+
+    console.log("🟣 [PHASE 3] Message saved to DB", {
+      chatId: chat._id.toString(),
+      totalMessages: chat.messages.length,
+    });
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("🔴 [PHASE 3] Error saving chat message:", error);
+    return res.status(500).json({ success: false, message: "Failed to save message" });
+  }
+};
+

@@ -3,7 +3,10 @@ import {
   sendCompliment, 
   getUserChats, 
   handleChatRequest,
-  getTwilioToken
+  getTwilioToken,
+  closeChat,
+  getChatMessages,
+  saveChatMessage,// 🔹 ADDITION (Phase 2)
 } from "../controllers/ChatController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
@@ -18,7 +21,17 @@ router.post("/handle-chat-request", authMiddleware, handleChatRequest);
 // ✅ Get all user chats
 router.get("/list", authMiddleware, getUserChats);
 
-// ✅ Get Twilio token (FIX: Added authMiddleware)
+// ✅ Get Twilio token
 router.get("/twilio-token", authMiddleware, getTwilioToken);
+
+// 🔹 Phase 1
+// ✅ Close / unmatch an accepted chat
+router.post("/close", authMiddleware, closeChat);
+
+// 🔹 Phase 2
+// ✅ Get chat message history from DB
+router.get("/:chatId/messages", authMiddleware, getChatMessages);
+// ✅ Save realtime message to DB (Phase 3)
+router.post("/:chatId/messages", authMiddleware, saveChatMessage);
 
 export default router;

@@ -27,21 +27,27 @@ export default function SwipeView() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
+  const hasFetchedOnceRef = React.useRef(false);
+  const hasRestoredStateRef = React.useRef(false);
 
   const [compliment, setCompliment] = useState("");
   const [isComplimentPopupOpen, setIsComplimentPopupOpen] = useState(false);
   const [isSendingCompliment, setIsSendingCompliment] = useState(false);
   const [isSendingAction, setIsSendingAction] = useState(false);
 
+
   const swipeAnimation = new Animated.Value(0);
 
   /* ---------------- HINGE-LIKE REFRESH ON FOCUS ---------------- */
 
   useFocusEffect(
-    useCallback(() => {
+  useCallback(() => {
+    if (!hasFetchedOnceRef.current) {
+      hasFetchedOnceRef.current = true;
       fetchProfiles();
-    }, [])
-  );
+    }
+  }, [])
+);
 
   const advanceToNextProfile = () => {
     setCurrentProfileIndex((prev) => prev + 1);
@@ -288,18 +294,24 @@ const handleSendCompliment = async () => {
 
 
 
-  if (loading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#ff5864" />
-      </View>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <View style={styles.loading}>
+  //       <ActivityIndicator size="large" color="#ff5864" />
+  //     </View>
+  //   );
+  // }
 
   const hasProfiles = profiles.length > 0;
   const profileInRange = hasProfiles && currentProfileIndex < profiles.length;
   const profile = profileInRange ? profiles[currentProfileIndex] : null;
   const isCaughtUp = hasProfiles && !profileInRange;
+  React.useEffect(() => {
+  if (isCaughtUp) {
+    hasFetchedOnceRef.current = false;
+  }
+}, [isCaughtUp]);
+
 
   const extraFields = [
     { key: "college", emoji: "🎓" },
@@ -313,6 +325,14 @@ const handleSendCompliment = async () => {
     { key: "languages", emoji: "🗣️" },
     { key: "pets", emoji: "🐶" }
   ];
+
+  if (loading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#ff5864" />
+      </View>
+    );
+  }
 
   return (
   <View style={styles.container}>
