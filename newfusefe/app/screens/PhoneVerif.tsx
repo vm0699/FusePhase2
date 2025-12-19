@@ -51,26 +51,7 @@ export default function PhoneVerificationPage() {
 
       updateProfileData('number', fullPhoneNumber);
 
-      console.log('🟣 [PhoneVerif] Calling verifyPhoneNumber API');
-
-      const response = await fetch(
-        'http://172.20.10.4:5000/api/auth/verifyPhoneNumber',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phoneNumber: fullPhoneNumber }),
-        }
-      );
-
-      console.log('🟣 [PhoneVerif] verifyPhoneNumber status:', response.status);
-
-      const result = await response.json();
-      console.log('🟣 [PhoneVerif] verifyPhoneNumber response:', result);
-
-      if (!result.success) {
-        Alert.alert('Error', result.message || 'Failed to verify phone number');
-        return;
-      }
+      
 
       // ❌ DO NOT save jwtToken here
       // ❌ DO NOT route via AuthGate here
