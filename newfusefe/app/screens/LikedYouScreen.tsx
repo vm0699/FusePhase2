@@ -125,6 +125,7 @@ export default function LikedYouScreen() {
           twilioChatChannelSid: swipeResult.twilioChannelSid || null,
           receiverId: swipedUserId,
           receiverUsername: selectedUser.name,
+          actualReceiverId: swipedUserId,
           otherUser: swipeResult.otherUser || selectedUser,
           chatStatus: "accepted",
           showMatchedBanner: true,
@@ -203,14 +204,18 @@ export default function LikedYouScreen() {
       }
 
       navigation.navigate("ChatScreen", {
-        chatId: expandedProfile.chatId,
-        channelSid: expandedProfile.twilioChannelSid,
-        status: "accepted",
-        showMatchedBanner: true,
-        otherUser: expandedProfile,
-        complimentPreview: expandedProfile.complimentPreview ?? null,
-        chatStatus: "accepted",
-      });
+  chatId: expandedProfile.chatId,
+  channelSid: expandedProfile.twilioChannelSid,
+  twilioChatChannelSid: expandedProfile.twilioChannelSid,
+
+  receiverId: expandedProfile._id,
+  receiverUsername: expandedProfile.name,
+  actualReceiverId: expandedProfile._id,
+
+  chatStatus: "accepted",
+  showMatchedBanner: true,
+  complimentPreview: expandedProfile.complimentPreview ?? null,
+});
     } catch (error) {
       console.error("Accept error:", error);
       navigation.navigate("ChatScreen", {

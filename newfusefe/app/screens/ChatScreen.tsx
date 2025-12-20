@@ -13,8 +13,12 @@ import {
   Modal,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Client as TwilioChatClient } from "twilio-chat";
+// import { Client as TwilioChatClient } from "twilio-chat";
 import { useNavigation } from "@react-navigation/native";
+
+import { chatApi } from "../api/chatApi";
+import { createChatRealtime } from "../realtime/chatRealtime";
+
 
 const BASE_URL = "http://172.20.10.4:5000";
 
@@ -41,11 +45,15 @@ export default function ChatScreen({ route }) {
 
   const navigation = useNavigation();
   const flatListRef = useRef(null);
+  const realtimeRef = useRef(null);
 
-  const [twilioToken, setTwilioToken] = useState(null);
-  const [client, setClient] = useState(null);
-  const [channel, setChannel] = useState(null);
+
+  // const [twilioToken, setTwilioToken] = useState(null);
+  // const [client, setClient] = useState(null);
+  // const [channel, setChannel] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [realtimeReady, setRealtimeReady] = useState(false);
+
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
@@ -59,6 +67,7 @@ export default function ChatScreen({ route }) {
   const [bannerConsumed, setBannerConsumed] = useState(false);
   const [channelAvailable, setChannelAvailable] = useState(!!(channelSid || twilioChatChannelSid));
   const [isUpdatingRequest, setIsUpdatingRequest] = useState(false);
+  
 
   // if both sides have sent at least one message, allow chatting even if not 'accepted'
   const [bothChatted, setBothChatted] = useState(false);
@@ -77,7 +86,7 @@ export default function ChatScreen({ route }) {
   useEffect(() => {
   const init = async () => {
     await fetchUserData();
-    await fetchTwilioToken();
+    // await fetchTwilioToken();
     await fetchChatHistory(); // 🔹 PHASE 2
   };
   init();
@@ -174,57 +183,101 @@ export default function ChatScreen({ route }) {
     }
   }, [complimentPreview, receiverUsername, status]);
 
-  useEffect(() => {
-    if (!twilioToken || !activeChannelSid) return;
-    const initTwilioClient = async () => {
-      try {
-        const twilioClient = client || (await TwilioChatClient.create(twilioToken));
-        if (!client) setClient(twilioClient);
+useEffect(() => {
+  if (!activeChannelSid || !userId || !username) return;
 
-        const chatChannel = await twilioClient.getChannelBySid(activeChannelSid);
-        setChannel(chatChannel);
-        if (chatChannel.status !== "joined") await chatChannel.join();
-
-        chatChannel.on("messageAdded", (twilioMessage) => {
-  setMessages((prev) => {
-    // prevent duplicate echo (Twilio may echo own message)
-    const exists = prev.some(
-      (m) => m._twilioSid && m._twilioSid === twilioMessage.sid
-    );
-    if (exists) return prev;
-
-    const normalized = {
-      id: `rt-${twilioMessage.sid}`,
-      authorId:
-        twilioMessage.author === username
-          ? userId
-          : receiverId,
-      body: twilioMessage.body,
-      timestamp: new Date().toISOString(),
-      _fromRealtime: true,
-      _twilioSid: twilioMessage.sid,
-    };
-
-    return [...prev, normalized];
+  console.log("🟣 [PRE-MIGRATION] Connecting realtime layer", {
+    chatId,
+    activeChannelSid,
   });
 
-  if (!isAtBottom) setShowNewMessageBanner(true);
-});
+  const connectRealtime = async () => {
+    const realtime = createChatRealtime("twilio");
+    realtimeRef.current = realtime;
+
+    await realtime.connect({
+      channelSid: activeChannelSid,
+      myUserId: userId,
+      myUsername: username,
+      otherUserId: receiverId,
+      otherUsername: receiverUsername,
+      onIncoming: (msg) => {
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === msg.id);
+          if (exists) return prev;
+          return [...prev, msg];
+        });
+
+        if (!isAtBottom) setShowNewMessageBanner(true);
+      },
+    });
+
+    // ✅ ADD THIS
+    setRealtimeReady(true);
+  };
+
+  connectRealtime();
+
+  return () => {
+    realtimeRef.current?.disconnect();
+    realtimeRef.current = null;
+
+    // ✅ ADD THIS
+    setRealtimeReady(false);
+  };
+}, [activeChannelSid, userId, username]);
+
+//   useEffect(() => {
+//     if (!twilioToken || !activeChannelSid) return;
+//     const initTwilioClient = async () => {
+//       try {
+//         const twilioClient = client || (await TwilioChatClient.create(twilioToken));
+//         if (!client) setClient(twilioClient);
+
+//         const chatChannel = await twilioClient.getChannelBySid(activeChannelSid);
+//         setChannel(chatChannel);
+//         if (chatChannel.status !== "joined") await chatChannel.join();
+
+//         chatChannel.on("messageAdded", (twilioMessage) => {
+//   setMessages((prev) => {
+//     // prevent duplicate echo (Twilio may echo own message)
+//     const exists = prev.some(
+//       (m) => m._twilioSid && m._twilioSid === twilioMessage.sid
+//     );
+//     if (exists) return prev;
+
+//     const normalized = {
+//       id: `rt-${twilioMessage.sid}`,
+//       authorId:
+//         twilioMessage.author === username
+//           ? userId
+//           : receiverId,
+//       body: twilioMessage.body,
+//       timestamp: new Date().toISOString(),
+//       _fromRealtime: true,
+//       _twilioSid: twilioMessage.sid,
+//     };
+
+//     return [...prev, normalized];
+//   });
+
+//   if (!isAtBottom) setShowNewMessageBanner(true);
+// });
 
 
-      } catch (error) {
-        console.error("Error initializing Twilio client:", error);
-      }
-    };
-    initTwilioClient();
+//       } catch (error) {
+//         console.error("Error initializing Twilio client:", error);
+//       }
+//     };
+//     initTwilioClient();
 
-    return () => {
-      if (client) {
-        client.shutdown();
-        setClient(null);
-      }
-    };
-  }, [twilioToken, activeChannelSid]);
+//     return () => {
+//       if (client) {
+//         client.shutdown();
+//         setClient(null);
+//       }
+//     };
+//   }, [twilioToken, activeChannelSid]);
 
   // compute if both parties have at least one message
   useEffect(() => {
@@ -268,7 +321,7 @@ useEffect(() => {
     Alert.alert("Chat channel unavailable", "Please reopen the chat.");
     return;
   }
-  if (!channel || !message.trim()) return;
+  if (!realtimeRef.current || !message.trim()) return;
 
   const outgoing = message.trim();
 
@@ -279,36 +332,40 @@ useEffect(() => {
     });
 
     // 1) Realtime send (Twilio) — keep current behavior
-    await channel.sendMessage(outgoing);
+    // await channel.sendMessage(outgoing);
+    await realtimeRef.current.send(outgoing);
+
 
     setMessage("");
 
+    await chatApi.persistMessage(chatId, outgoing);
+
     // 2) Persist to DB (Mongo) — Phase 3
-    try {
-      const jwtToken = await AsyncStorage.getItem("jwtToken");
-      if (!jwtToken) {
-        console.log("🟣 [PHASE 3] Missing jwtToken — cannot save to DB");
-        return;
-      }
+    // try {
+    //   const jwtToken = await AsyncStorage.getItem("jwtToken");
+    //   if (!jwtToken) {
+    //     console.log("🟣 [PHASE 3] Missing jwtToken — cannot save to DB");
+    //     return;
+    //   }
 
-      const res = await fetch(`${BASE_URL}/api/chat/${chatId}/messages`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${jwtToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: outgoing }),
-      });
+    //   const res = await fetch(`${BASE_URL}/api/chat/${chatId}/messages`, {
+    //     method: "POST",
+    //     headers: {
+    //       Authorization: `Bearer ${jwtToken}`,
+    //       "Content-Type": "application/json",
+    //     },
+    //     body: JSON.stringify({ message: outgoing }),
+    //   });
 
-      const data = await res.json().catch(() => ({}));
+    //   const data = await res.json().catch(() => ({}));
 
-      console.log("🟣 [PHASE 3] DB save response", {
-        ok: res.ok,
-        data,
-      });
-    } catch (dbErr) {
-      console.error("🔴 [PHASE 3] Failed to save message to DB:", dbErr);
-    }
+    //   console.log("🟣 [PHASE 3] DB save response", {
+    //     ok: res.ok,
+    //     data,
+    //   });
+    // } catch (dbErr) {
+    //   console.error("🔴 [PHASE 3] Failed to save message to DB:", dbErr);
+    // }
   } catch (error) {
     console.error("Error sending message:", error);
     Alert.alert("Error", "Failed to send message.");
@@ -526,7 +583,7 @@ useEffect(() => {
           <TouchableOpacity
             onPress={sendMessage}
             style={styles.sendButton}
-            disabled={status !== "accepted" && !bothChatted}
+            disabled={!realtimeReady || (status !== "accepted" && !bothChatted)}
           >
             <Text style={styles.sendButtonText}>Send</Text>
           </TouchableOpacity>

@@ -108,7 +108,7 @@ export default function ChatListScreen({ navigation }) {
                 <TouchableOpacity
                   onPress={() => {
 navigation.navigate("ChatScreen", {
-                      receiverId: item.user.id,
+                      receiverId: item.user.id || item.user._id,
                       receiverUsername: item.user.name,
                       chatId: item.chatId || item._id,
                       channelSid: item.twilioChatChannelSid,
@@ -116,7 +116,7 @@ navigation.navigate("ChatScreen", {
                       chatStatus: item.status,
                       actualReceiverId: item.actualReceiverId,
                       complimentPreview: item.complimentPreview ?? null,
-                      showMatchedBanner: item.status === "accepted" ? true : false,
+                      showMatchedBanner: false,
                     });
                   }}
                   style={styles.chatItem}
