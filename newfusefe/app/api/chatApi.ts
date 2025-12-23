@@ -16,9 +16,14 @@ type ChatListItem = {
 
 export type NormalizedMessage = {
   id: string;
-  authorId: string | null;
+  authorId: string;
   body: string;
   timestamp: string;
+
+  // 🔹 migration-safe metadata
+  _fromRealtime?: boolean;
+  _fromDB?: boolean;
+  _twilioSid?: string;
 };
 
 async function authHeaders(extra?: Record<string, string>) {

@@ -17,6 +17,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import AgoraTokenPkg from 'agora-access-token';
+import agoraRoutes from "./api/routes/agoraRoutes.js";
+
 const { RtcTokenBuilder, RtcRole } = AgoraTokenPkg;
 
 dotenv.config();
@@ -58,6 +60,8 @@ app.use('/api/user', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/video', videoRoutes);
 app.use('/api/likes', likeRoutes); 
+app.use("/api/agora", agoraRoutes);
+
 
 app.post('/api/video/token', async (req, res) => {
   try {
