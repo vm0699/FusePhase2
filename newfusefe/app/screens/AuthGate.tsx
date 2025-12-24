@@ -1,116 +1,125 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authClient } from '../auth/authClient';
+import { authedFetch } from '../auth/apiClient';
 
 const BASE_URL = 'http://172.20.10.4:5000';
 
 export default function AuthGate({ navigation }) {
   useEffect(() => {
+    let isMounted = true;
+
     const run = async () => {
       try {
-        console.log('🟣 [AuthGate] START');
+        console.log('🟣 [AuthGate] BOOTSTRAP START');
 
-        const token = await AsyncStorage.getItem('jwtToken');
-        console.log('🟣 [AuthGate] jwtToken from storage:', token);
+        /**
+         * 1️⃣ Silent auth bootstrap
+         * - checks access token
+         * - refreshes if expired
+         * - fails ONLY if refresh token missing/invalid
+         */
+        const boot = await authClient.bootstrap();
 
-        // ❌ No token → Login
-        if (!token) {
-          console.log('🟥 [AuthGate] NO TOKEN → redirecting to Login');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
-          return;
-        }
+if (!boot.ok) {
+  console.log(
+    '🟥 [AuthGate] BOOTSTRAP FAILED → Login',
+    'reason' in boot ? boot.reason : 'unknown'
+  );
 
-        console.log('🟣 [AuthGate] Calling GET /api/profile');
+  navigation.reset({
+    index: 0,
+    routes: [{ name: 'Login' }],
+  });
+  return;
+}
 
-        // 🔍 Validate token & fetch user profile
-        const res = await fetch(`${BASE_URL}/api/profile`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+
+        console.log('🟢 [AuthGate] BOOTSTRAP OK → fetching profile');
+
+        /**
+         * 2️⃣ Fetch profile using authedFetch
+         * - token already valid here
+         */
+        const res = await authedFetch({
+          input: `${BASE_URL}/api/profile`,
+          init: { method: 'GET' },
         });
 
-        console.log('🟣 [AuthGate] /profile response status:', res.status);
+        console.log('🟣 [AuthGate] /profile status:', res.status);
 
+        /**
+         * 3️⃣ Handle profile fetch failures safely
+         */
         if (!res.ok) {
-          const errText = await res.text();
-          console.log('🟥 [AuthGate] Profile fetch failed:', errText);
+          // Auth failure AFTER refresh attempt → real logout
+          if (res.status === 401 || res.status === 403) {
+            console.log('🟥 [AuthGate] AUTH FAILED AFTER REFRESH → Login');
+            await authClient.logoutLocal();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+            return;
+          }
 
-          await AsyncStorage.removeItem('jwtToken');
-          console.log('🟥 [AuthGate] jwtToken removed, redirecting to Login');
-
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
+          // Transient backend/network issue → do NOT logout
+          console.log('🟠 [AuthGate] PROFILE FETCH FAILED (non-auth) → stay loading');
           return;
         }
 
         const json = await res.json();
-        console.log('🟣 [AuthGate] Profile response JSON:', json);
-
         const onboardingStage = json?.data?.onboardingStage;
+
         console.log('🟣 [AuthGate] onboardingStage:', onboardingStage);
 
-        // 🚦 Route based on backend checkpoint
+        /**
+         * 4️⃣ Routing logic (UNCHANGED)
+         */
         let nextRoute = 'Login';
 
         switch (onboardingStage) {
           case 'PHONE_VERIFIED':
             nextRoute = 'Intro';
             break;
-
           case 'INTRO_DONE':
             nextRoute = 'ProfileSetup';
             break;
-
           case 'PROFILE_SETUP_DONE':
-            // 🔥 NEW: route into optional onboarding wrapper
             nextRoute = 'LocationSetup';
             break;
-
           case 'LOCATION_DONE':
             nextRoute = 'OnboardingOptional';
             break;
-
           case 'DETAILS_DONE':
             nextRoute = 'PromptSelection';
             break;
-
           case 'PROMPTS_DONE':
             nextRoute = 'PhotoUpload';
             break;
-
           case 'PHOTOS_DONE':
             nextRoute = 'Guidelines';
             break;
-
           case 'COMPLETE':
             nextRoute = 'MainTabs';
             break;
-
           default:
-            console.log(
-              '🟠 [AuthGate] UNKNOWN onboardingStage, defaulting to Intro'
-            );
             nextRoute = 'Intro';
         }
 
-        console.log('🟢 [AuthGate] Navigating to:', nextRoute);
+        if (!isMounted) return;
+
+        console.log('🟢 [AuthGate] NAVIGATE →', nextRoute);
 
         navigation.reset({
           index: 0,
           routes: [{ name: nextRoute }],
         });
-      } catch (error) {
-        console.error('❌ [AuthGate] ERROR:', error);
+      } catch (err) {
+        console.error('❌ [AuthGate] FATAL ERROR', err);
 
-        await AsyncStorage.removeItem('jwtToken');
-        console.log('🟥 [AuthGate] Error → jwtToken removed → Login');
-
+        // Only fatal auth errors reach here
+        await authClient.logoutLocal();
         navigation.reset({
           index: 0,
           routes: [{ name: 'Login' }],
@@ -119,6 +128,10 @@ export default function AuthGate({ navigation }) {
     };
 
     run();
+
+    return () => {
+      isMounted = false;
+    };
   }, [navigation]);
 
   return (

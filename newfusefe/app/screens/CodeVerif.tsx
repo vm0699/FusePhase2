@@ -13,6 +13,8 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CircularNextButton from '../../components/CircularNextButton';
+import { authStore } from '../auth/authStore';
+
 
 const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
 
@@ -109,12 +111,18 @@ export default function VerifyCodePage() {
     }
 
     // ✅ Save JWT
-    if (result?.data?.accessToken) {
-      console.log('🟢 [VerifyCode] Saving jwtToken');
-      await AsyncStorage.setItem('jwtToken', result.data.accessToken);
-    } else {
-      console.log('🟥 [VerifyCode] NO accessToken received');
-    }
+    // ✅ Save access + refresh tokens (CRITICAL for auto-login)
+if (result?.data?.accessToken) {
+  console.log('🟢 [VerifyCode] Saving access + refresh tokens');
+
+  await authStore.setTokens({
+    accessToken: result.data.accessToken,
+    refreshToken: result.data.refreshToken || null,
+  });
+} else {
+  console.log('🟥 [VerifyCode] NO accessToken received');
+}
+
 
     // ✅ Save userId
     if (result?.data?.user?.id) {
