@@ -15,7 +15,7 @@ export default function AuthGate({ navigation }) {
 
         /**
          * 1️⃣ Silent auth bootstrap
-         * - checks access token
+         * - checks access token hi
          * - refreshes if expired
          * - fails ONLY if refresh token missing/invalid
          */
