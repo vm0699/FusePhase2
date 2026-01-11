@@ -28,7 +28,10 @@ export default function SettingsScreen() {
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission Denied", "Enable location in settings to use this feature.");
+      Alert.alert(
+        "Permission Denied",
+        "Enable location in settings to use this feature."
+      );
       return;
     }
     getCurrentLocation();
@@ -103,24 +106,19 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        {/* Location Toggle */}
-        <View style={styles.card}>
+        {/* Delivery Location — replaces toggle UI only */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => navigation.navigate("UpdateDeliveryLocation")}
+        >
           <View style={styles.cardRow}>
-            <Text style={styles.cardText}>Enable Location</Text>
-            <Switch
-              value={locationEnabled}
-              onValueChange={(value) => {
-                if (value) {
-                  requestLocationPermission();
-                } else {
-                  setLocationEnabled(false);
-                  setUserLocation(null);
-                }
-              }}
-            />
+            <Text style={styles.cardText}>Delivery location</Text>
+            <Icon name="chevron-right" size={20} color="#999" />
           </View>
-          <Text style={styles.subText}>Enable location to appear in search results near you.</Text>
-        </View>
+          <Text style={styles.subText}>
+            Update address for gifts, surprises, and future features.
+          </Text>
+        </TouchableOpacity>
 
         {/* Other Settings */}
         {[
@@ -142,7 +140,10 @@ export default function SettingsScreen() {
         ))}
 
         {/* Delete Account */}
-        <TouchableOpacity onPress={() => setShowDeletePopup(true)} style={[styles.card, styles.deleteButton]}>
+        <TouchableOpacity
+          onPress={() => setShowDeletePopup(true)}
+          style={[styles.card, styles.deleteButton]}
+        >
           <Text style={styles.deleteText}>Delete account</Text>
         </TouchableOpacity>
 
@@ -159,16 +160,22 @@ export default function SettingsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Wait. Leaving so soon?</Text>
-            <Text style={styles.modalText}>Deleting your account will remove all chats, likes, and photos.</Text>
+            <Text style={styles.modalText}>
+              Deleting your account will remove all chats, likes, and photos.
+            </Text>
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: "#e53935" }]}
               onPress={handleDeleteAccount}
               disabled={deleting}
             >
-              <Text style={styles.modalButtonText}>{deleting ? "Deleting..." : " Delete"}</Text>
+              <Text style={styles.modalButtonText}>
+                {deleting ? "Deleting..." : " Delete"}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowDeletePopup(false)}>
-              <Text style={{ color: "#666", marginTop: 10 }}>No, I changed my mind</Text>
+              <Text style={{ color: "#666", marginTop: 10 }}>
+                No, I changed my mind
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

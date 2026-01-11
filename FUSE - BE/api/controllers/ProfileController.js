@@ -872,7 +872,7 @@ export const updateUserProfile = async (req, res) => {
 
       // ✅ ADDED — LOCATION SUPPORT
       "location",
-
+      "deliveryAddress",
       // 🔹 ONBOARDING CHECKPOINT
       "onboardingStage",
 
@@ -923,7 +923,23 @@ export const updateUserProfile = async (req, res) => {
         continue;
       }
 
-      const value = updates[key];
+      let value = updates[key];
+
+
+      // ================================
+  // 🔒 AUTO-FILL DELIVERY PHONE (C PART)
+  // ================================
+  if (key === "deliveryAddress" && typeof value === "object" && value !== null) {
+    value = {
+      ...value,
+      phone: user.phoneNumber, // 🔥 enforce phone from token
+    };
+    console.log(
+      "📦 [updateUserProfile] deliveryAddress phone auto-filled:",
+      user.phoneNumber
+    );
+  }
+  // ================================
 
       if (key === "onboardingStage") {
         if (!ALLOWED_ONBOARDING_STAGES.includes(value)) {
@@ -942,6 +958,13 @@ export const updateUserProfile = async (req, res) => {
       }
 
       user[key] = value;
+      if (key === "deliveryAddress") {
+      console.log(
+        "✅ [updateUserProfile] deliveryAddress assigned to user object:",
+        user.deliveryAddress
+      );
+    }
+
       anyFieldUpdated = true;
     }
 

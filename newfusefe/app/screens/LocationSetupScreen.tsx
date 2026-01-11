@@ -7,6 +7,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  TextInput,
+  ScrollView,
 } from "react-native";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -19,10 +21,26 @@ export default function LocationSetupScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 🔹 Delivery address state
+  const [address, setAddress] = useState({
+    name: "",
+    line1: "",
+    line2: "",
+    landmark: "",
+    city: "",
+    pincode: "",
+  });
+
   const handleUseCurrentLocation = async () => {
     try {
       setLoading(true);
       setError(null);
+
+      // 🔒 Basic validation
+      if (!address.name || !address.line1 || !address.city || !address.pincode) {
+        setError("Please fill all required address fields.");
+        return;
+      }
 
       // 1️⃣ Request permission
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -47,7 +65,7 @@ export default function LocationSetupScreen() {
       const token = await AsyncStorage.getItem("jwtToken");
       if (!token) return;
 
-      // 3️⃣ Save to backend (CORRECT FORMAT)
+      // 3️⃣ Save to backend (LOCATION + DELIVERY ADDRESS)
       await fetch(`${BASE_URL}/api/profile/update`, {
         method: "PUT",
         headers: {
@@ -57,6 +75,14 @@ export default function LocationSetupScreen() {
         body: JSON.stringify({
           updates: {
             location: { latitude, longitude },
+            deliveryAddress: {
+              name: address.name,
+              line1: address.line1,
+              line2: address.line2,
+              landmark: address.landmark,
+              city: address.city,
+              pincode: address.pincode,
+            },
             onboardingStage: "LOCATION_DONE",
           },
         }),
@@ -69,7 +95,7 @@ export default function LocationSetupScreen() {
       });
     } catch (err) {
       console.error("❌ [LocationSetup] Failed:", err);
-      setError("Failed to get your location. Try again.");
+      setError("Failed to save location and address. Try again.");
     } finally {
       setLoading(false);
     }
@@ -80,13 +106,52 @@ export default function LocationSetupScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.inner}>
-        <Text style={styles.title}>Location</Text>
+      <ScrollView contentContainerStyle={styles.inner}>
+        <Text style={styles.title}>Delivery Location</Text>
         <Text style={styles.subtitle}>
-          Only your neighbourhood will be shown on your profile.
+          This address is used for gifts, surprises, and future features.
         </Text>
 
         {error && <Text style={styles.error}>{error}</Text>}
+
+        {/* Address Fields */}
+        <TextInput
+          placeholder="Name"
+          style={styles.input}
+          value={address.name}
+          onChangeText={(v) => setAddress({ ...address, name: v })}
+        />
+        <TextInput
+          placeholder="Address line 1"
+          style={styles.input}
+          value={address.line1}
+          onChangeText={(v) => setAddress({ ...address, line1: v })}
+        />
+        <TextInput
+          placeholder="Address line 2 (optional)"
+          style={styles.input}
+          value={address.line2}
+          onChangeText={(v) => setAddress({ ...address, line2: v })}
+        />
+        <TextInput
+          placeholder="Landmark (optional)"
+          style={styles.input}
+          value={address.landmark}
+          onChangeText={(v) => setAddress({ ...address, landmark: v })}
+        />
+        <TextInput
+          placeholder="City"
+          style={styles.input}
+          value={address.city}
+          onChangeText={(v) => setAddress({ ...address, city: v })}
+        />
+        <TextInput
+          placeholder="Pincode"
+          style={styles.input}
+          keyboardType="number-pad"
+          value={address.pincode}
+          onChangeText={(v) => setAddress({ ...address, pincode: v })}
+        />
 
         <TouchableOpacity
           style={styles.button}
@@ -96,10 +161,12 @@ export default function LocationSetupScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Use current location</Text>
+            <Text style={styles.buttonText}>
+              Use current location & continue
+            </Text>
           )}
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -112,29 +179,38 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   inner: {
-    flex: 1,
     padding: 24,
-    justifyContent: "center",
+    paddingBottom: 40,
   },
   title: {
     fontSize: 26,
     fontWeight: "700",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#666",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   error: {
     color: "#dc2626",
     marginBottom: 16,
   },
+  input: {
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    marginBottom: 12,
+  },
   button: {
     backgroundColor: "#e11d48",
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderRadius: 28,
     alignItems: "center",
+    marginTop: 12,
   },
   buttonText: {
     color: "#fff",

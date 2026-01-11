@@ -53,6 +53,16 @@ const profileSchema = new Schema(
       longitude: { type: Number, default: null },
     },
 
+    deliveryAddress: {
+  name: { type: String, default: "" },
+  phone: { type: String, default: "" }, // auto-filled from user phone
+  line1: { type: String, default: "" },
+  line2: { type: String, default: "" },
+  landmark: { type: String, default: "" },
+  city: { type: String, default: "" },
+  pincode: { type: String, default: "" }
+  },
+
     // ===== EDITABLE PROFILE FIELDS =====
     pronouns: { type: String, default: "" },
     sexuality: { type: String, default: "" },

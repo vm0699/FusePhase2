@@ -70,6 +70,7 @@ import AuthGate from "./app/screens/AuthGate";
 import MainTabs from "./app/navigation/MainTabs";
 import OnboardingOptionalWrapper from "./app/screens/onboarding/OnboardingOptionalWrapper";
 import LocationSetupScreen from "./app/screens/LocationSetupScreen";
+import UpdateDeliveryLocation from "./app/screens/UpdateDeliveryLocation";
 
 const Stack = createStackNavigator();
 
@@ -139,6 +140,7 @@ export default function AppNavigator() {
           <Stack.Screen name="AgoraCallScreen" component={AgoraCallScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AuthGate" component={AuthGate} options={{ headerShown: false }} />
           <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+          <Stack.Screen name="UpdateDeliveryLocation" component={UpdateDeliveryLocation} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </ProfileProvider>
