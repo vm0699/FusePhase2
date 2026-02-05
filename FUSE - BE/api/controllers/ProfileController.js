@@ -43,16 +43,38 @@ export const saveUserProfile = async (req, res) => {
 
     console.log("🟢 User found:", existingUser._id.toString());
 
-    // 📝 Save onboarding fields
-    existingUser.name = intro?.name;
-    existingUser.dateOfBirth = intro?.dob;
-    existingUser.username = options?.username;
-    existingUser.gender = options?.gender;
+// 📝 Save onboarding fields (SAFE MERGE — DO NOT WIPE EXISTING DATA)
 
-    existingUser.height = profileDetails?.height;
-    existingUser.interests = profileDetails?.interests || [];
-    existingUser.values = profileDetails?.values || [];
-    existingUser.prompts = prompts || [];
+// intro
+if (intro?.name) existingUser.name = intro.name;
+if (intro?.dob) existingUser.dateOfBirth = intro.dob;
+
+// options
+if (options?.username) existingUser.username = options.username;
+if (options?.gender) existingUser.gender = options.gender;
+
+// profileDetails
+if (profileDetails?.height) existingUser.height = profileDetails.height;
+
+if (
+  Array.isArray(profileDetails?.interests) &&
+  profileDetails.interests.length > 0
+) {
+  existingUser.interests = profileDetails.interests;
+}
+
+if (
+  Array.isArray(profileDetails?.values) &&
+  profileDetails.values.length > 0
+) {
+  existingUser.values = profileDetails.values;
+}
+
+// prompts
+if (Array.isArray(prompts) && prompts.length > 0) {
+  existingUser.prompts = prompts;
+}
+
 
     if (Array.isArray(photos) && photos.length > 0) {
       console.log("📸 Updating photos:", photos);
@@ -179,11 +201,22 @@ export const getProfileByPhoneNumber = async (req, res) => {
     const profileCompleteness = calculateProfileCompleteness(user);
 
     // 🖼 Normalize photo URLs
-    const fixedPhotos = (user.photos || []).map(photo => {
-      if (photo.startsWith("http") || photo.startsWith("data:")) return photo;
-      const normalized = photo.replace(/\\/g, "/");
-      return `http://172.20.10.4:5000/${normalized}`;
-    });
+    // const fixedPhotos = (user.photos || []).map(photo => {
+    //   if (photo.startsWith("http") || photo.startsWith("data:")) return photo;
+    //   const normalized = photo.replace(/\\/g, "/");
+    //   return `http://172.20.10.4:5000/${normalized}`;
+    // });
+    const fixedPhotos = (user.photos || [])
+  .filter(photo => typeof photo === "string" && photo.length > 0)
+  .map(photo => {
+    // 🔵 S3 URL (future)
+    if (photo.startsWith("http")) return photo;
+
+    // 🟢 LOCAL upload
+    const normalized = photo.replace(/\\/g, "/");
+    return `${process.env.BASE_URL || "http://172.20.10.4:5000"}/${normalized}`;
+  });
+
 
     console.log("📤 [getProfileByPhoneNumber] Returning profile snapshot:", {
       name: user.name,

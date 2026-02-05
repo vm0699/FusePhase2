@@ -7,11 +7,15 @@ import {
   StyleSheet,
   Alert,
   Modal,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import RNPickerSelect from 'react-native-picker-select';
 import { ProfileContext } from '../../ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import OnboardingStepper from '../../components/OnboardingStepper';
 
 const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
 
@@ -51,7 +55,7 @@ export default function PhoneVerificationPage() {
 
       updateProfileData('number', fullPhoneNumber);
 
-      
+
 
       // ❌ DO NOT save jwtToken here
       // ❌ DO NOT route via AuthGate here
@@ -119,64 +123,72 @@ export default function PhoneVerificationPage() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Can we get your number, please?</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <OnboardingStepper currentStep={1} totalSteps={5} />
+        <Text style={styles.title}>What's your{'\n'}number?</Text>
 
-      <View style={styles.inputContainer}>
-        <View style={styles.pickerWrapper}>
-          <RNPickerSelect
-            value={countryCode}
-            onValueChange={setCountryCode}
-            style={pickerSelectStyles}
-            useNativeAndroidPickerStyle={false}
-            items={[
-              { label: 'India +91', value: '91' },
-              { label: 'USA +1', value: '1' },
-              { label: 'UK +44', value: '44' },
-            ]}
+        <View style={styles.inputContainer}>
+          <View style={styles.pickerWrapper}>
+            <RNPickerSelect
+              value={countryCode}
+              onValueChange={setCountryCode}
+              style={pickerSelectStyles}
+              useNativeAndroidPickerStyle={false}
+              items={[
+                { label: 'India +91', value: '91' },
+                { label: 'USA +1', value: '1' },
+                { label: 'UK +44', value: '44' },
+              ]}
+            />
+          </View>
+
+          <TextInput
+            style={styles.phoneInput}
+            placeholder="Phone number"
+            placeholderTextColor="#9ca3af"
+            keyboardType="phone-pad"
+            value={phoneNumber}
+            onChangeText={handlePhoneInput}
           />
         </View>
 
-        <TextInput
-          style={styles.phoneInput}
-          placeholder="Phone number"
-          keyboardType="phone-pad"
-          value={phoneNumber}
-          onChangeText={handlePhoneInput}
-        />
-      </View>
+        <Text style={styles.verificationMessage}>
+          Fuse will send a verification code to this number
+        </Text>
 
-      <TouchableOpacity
-        style={[
-          styles.submitButton,
-          isPhoneValid ? styles.activeButton : styles.disabledButton,
-        ]}
-        onPress={handlePhoneSubmit}
-        disabled={!isPhoneValid}
-      >
-        <Text style={styles.submitButtonText}>Continue</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            isPhoneValid ? styles.activeButton : styles.disabledButton,
+          ]}
+          onPress={handlePhoneSubmit}
+          disabled={!isPhoneValid}
+        >
+          <Text style={styles.submitButtonText}>Continue</Text>
+        </TouchableOpacity>
 
-      <Modal visible={showVerification} transparent animationType="slide">
-        <View style={styles.modalBackground}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalText}>
-              Is this your number? +{countryCode}
-              {phoneNumber}
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                handleSendOTP();
-                setShowVerification(false);
-              }}
-              style={styles.modalButton}
-            >
-              <Text style={styles.modalButtonText}>Send OTP</Text>
-            </TouchableOpacity>
+        <Modal visible={showVerification} transparent animationType="slide">
+          <View style={styles.modalBackground}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalText}>
+                Is this your number? +{countryCode}
+                {phoneNumber}
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  handleSendOTP();
+                  setShowVerification(false);
+                }}
+                style={styles.modalButton}
+              >
+                <Text style={styles.modalButtonText}>Send OTP</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </Modal>
-    </View>
+        </Modal>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -184,43 +196,60 @@ export default function PhoneVerificationPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#FAF8F3',
+    padding: 24,
+    paddingTop: 60,
   },
+
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 25,
-    textAlign: 'center',
+    fontSize: 48,
+    fontWeight: '300',
+    color: '#1a1a1a',
+    marginBottom: 30,
+    marginTop: 50,
+    textAlign: 'left',
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    lineHeight: 56,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
     marginBottom: 25,
+    gap: 12,
+  },
+  verificationMessage: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'left',
+    marginTop: -5,
+    paddingHorizontal: 4,
   },
   phoneInput: {
     flex: 1,
-    height: 50,
-    borderColor: '#e60f3f',
-    borderWidth: 2,
-    borderRadius: 12,
+    height: 56,
+    borderColor: '#ff5864',
+    borderWidth: 1.5,
+    borderRadius: 20,
     paddingLeft: 15,
     fontSize: 16,
+    backgroundColor: '#ffffff',
+    color: '#1a1a1a',
   },
   submitButton: {
-    paddingVertical: 16,
-    borderRadius: 10,
+    paddingVertical: 18,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
+    position: 'absolute',
+    bottom: 40,
+    left: 24,
+    right: 24,
   },
-  activeButton: { backgroundColor: '#e60f3f' },
-  disabledButton: { backgroundColor: '#ddd' },
-  submitButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  activeButton: { backgroundColor: '#ff5864' },
+  disabledButton: { backgroundColor: '#ff5864', opacity: 0.4 },
+  submitButtonText: { color: 'white', fontSize: 18, fontWeight: '600', fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif' },
   modalBackground: {
     flex: 1,
     justifyContent: 'center',
@@ -241,7 +270,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   modalButton: {
-    backgroundColor: '#e60f3f',
+    backgroundColor: '#ff5864',
     paddingVertical: 12,
     paddingHorizontal: 35,
     borderRadius: 10,
@@ -252,11 +281,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   pickerWrapper: {
-    width: 120,
-    height: 50,
-    borderColor: '#e60f3f',
-    borderWidth: 2,
-    borderRadius: 12,
+    width: 130,
+    height: 56,
+    borderColor: '#ff5864',
+    borderWidth: 1.5,
+    borderRadius: 20,
     justifyContent: 'center',
     paddingLeft: 10,
     backgroundColor: '#ffffff',
@@ -265,15 +294,17 @@ const styles = StyleSheet.create({
 
 const pickerSelectStyles = StyleSheet.create({
   inputIOS: {
-    height: 50,
-    borderColor: '#e60f3f',
+    height: 56,
+    borderColor: '#acb7ae',
     paddingLeft: 10,
     fontSize: 16,
+    color: '#1a1a1a',
   },
   inputAndroid: {
-    height: 50,
-    borderColor: '#e60f3f',
+    height: 56,
+    borderColor: '#acb7ae',
     paddingLeft: 10,
     fontSize: 16,
+    color: '#1a1a1a',
   },
 });

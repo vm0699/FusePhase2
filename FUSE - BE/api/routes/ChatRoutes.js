@@ -9,6 +9,12 @@ import {
   saveChatMessage,// 🔹 ADDITION (Phase 2)
 } from "../controllers/ChatController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
+import { createGiftOrder,createGiftIntent,acceptGiftIntent,rejectGiftIntent } from "../controllers/ChatController.js";
+import {
+  initiateGiftPayment,
+  confirmGiftPayment,
+} from "../controllers/GiftPaymentController.js";
+
 
 const router = express.Router();
 
@@ -33,5 +39,24 @@ router.post("/close", authMiddleware, closeChat);
 router.get("/:chatId/messages", authMiddleware, getChatMessages);
 // ✅ Save realtime message to DB (Phase 3)
 router.post("/:chatId/messages", authMiddleware, saveChatMessage);
+
+// 🎁 Create gift order from chat
+router.post("/:chatId/gift", authMiddleware, createGiftOrder);
+
+router.post("/:chatId/gift-intent",authMiddleware,createGiftIntent);
+
+router.post("/gift-intent/:intentId/accept", authMiddleware, acceptGiftIntent);
+router.post("/gift-intent/:intentId/reject", authMiddleware, rejectGiftIntent);
+router.post(
+  "/gift-intent/:intentId/pay",
+  authMiddleware,
+  initiateGiftPayment
+);
+
+router.post(
+  "/gift-intent/:intentId/pay/confirm",
+  authMiddleware,
+  confirmGiftPayment
+);
 
 export default router;

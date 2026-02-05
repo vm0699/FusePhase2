@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,10 @@ import { useNavigation } from '@react-navigation/native';
 import { ProfileContext, setFullProfile } from '../../ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { useIsFocused } from '@react-navigation/native';
+import { AppState } from 'react-native';
+
+
 
 const BASE_URL = "http://172.20.10.4:5000";
 const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
@@ -20,6 +24,8 @@ const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
 export default function PhotoUploadPage() {
   const navigation = useNavigation();
   const { profileData, updateProfileData } = useContext(ProfileContext);
+
+
 
   const initializePhotos = () => {
     if (profileData?.photos && Array.isArray(profileData.photos)) {
@@ -32,6 +38,9 @@ export default function PhotoUploadPage() {
 
   const [photos, setPhotos] = useState(initializePhotos);
   const [uploading, setUploading] = useState(false);
+  const isFocused = useIsFocused();
+  const [appReady, setAppReady] = useState(false);
+  const appState = useRef(AppState.currentState);
 
   // 🔹 2.1 — persist current onboarding step (LOCAL resume)
   useEffect(() => {
@@ -46,6 +55,26 @@ export default function PhotoUploadPage() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+  const subscription = AppState.addEventListener("change", nextState => {
+    appState.current = nextState;
+
+    if (nextState === "active") {
+      setAppReady(true);
+    } else {
+      setAppReady(false);
+    }
+  });
+
+  // initial hydration check
+  if (appState.current === "active") {
+    setAppReady(true);
+  }
+
+  return () => subscription.remove();
+}, []);
+
 
   const handlePickPhoto = async (index) => {
     try {

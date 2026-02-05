@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import UserProfile from "../models/UserProfile.js";
 
 const authMiddleware = async (req, res, next) => {
+  console.log("🔑 [DEBUG] authMiddleware hit", req.headers);
   try {
     const token = req.headers.authorization?.split(" ")[1];
     console.log("🔹 Received Authorization Header:", req.headers.authorization);
@@ -62,6 +63,7 @@ const authMiddleware = async (req, res, next) => {
     };
 
     console.log("✅ Authenticated user:", req.user);
+    console.log("🔑 [DEBUG] Passing to next middleware or route");
     next();
   } catch (error) {
     console.error("❌ Auth Middleware Error:", error);
