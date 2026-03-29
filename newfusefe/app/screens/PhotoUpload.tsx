@@ -10,11 +10,12 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
-import { ProfileContext, setFullProfile } from '../../ProfileContext';
+import { ProfileContext } from '../../ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useIsFocused } from '@react-navigation/native';
 import { AppState } from 'react-native';
+import OnboardingStepper from '../../components/OnboardingStepper';
 
 
 
@@ -57,23 +58,23 @@ export default function PhotoUploadPage() {
   }, []);
 
   useEffect(() => {
-  const subscription = AppState.addEventListener("change", nextState => {
-    appState.current = nextState;
+    const subscription = AppState.addEventListener("change", nextState => {
+      appState.current = nextState;
 
-    if (nextState === "active") {
+      if (nextState === "active") {
+        setAppReady(true);
+      } else {
+        setAppReady(false);
+      }
+    });
+
+    // initial hydration check
+    if (appState.current === "active") {
       setAppReady(true);
-    } else {
-      setAppReady(false);
     }
-  });
 
-  // initial hydration check
-  if (appState.current === "active") {
-    setAppReady(true);
-  }
-
-  return () => subscription.remove();
-}, []);
+    return () => subscription.remove();
+  }, []);
 
 
   const handlePickPhoto = async (index) => {
@@ -201,29 +202,29 @@ export default function PhotoUploadPage() {
       // ✅ CRITICAL FIX — REHYDRATE PROFILE FROM DB
       // =====================================================
       const profileRes = await fetch(`${BASE_URL}/api/profile`, {
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-});
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-const profileJson = await profileRes.json();
+      const profileJson = await profileRes.json();
 
-if (profileJson?.success) {
-  const fresh = profileJson.data;
+      if (profileJson?.success) {
+        const fresh = profileJson.data;
 
-  // restore intro safely
-  if (fresh?.name || fresh?.dateOfBirth) {
-    updateProfileData("intro", {
-      name: fresh.name || "",
-      dob: fresh.dateOfBirth || "",
-    });
-  }
+        // restore intro safely
+        if (fresh?.name || fresh?.dateOfBirth) {
+          updateProfileData("intro", {
+            name: fresh.name || "",
+            dob: fresh.dateOfBirth || "",
+          });
+        }
 
-  // restore photos (already uploaded)
-  if (Array.isArray(fresh.photos)) {
-    updateProfileData("photos", fresh.photos);
-  }
-}
+        // restore photos (already uploaded)
+        if (Array.isArray(fresh.photos)) {
+          updateProfileData("photos", fresh.photos);
+        }
+      }
       // =====================================================
 
       await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'Guidelines');
@@ -241,91 +242,161 @@ if (profileJson?.success) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Add at least 4 great photos</Text>
-      <Text style={styles.description}>
-        Whether it’s you with your pet, doing what you love, or at your favorite place — let your photos talk!
-      </Text>
+      <OnboardingStepper currentStep={8} totalSteps={26} />
+      <View style={styles.header}>
+        <Text style={styles.title}>Show your{'\n'}best self</Text>
+        <Text style={styles.subtitle}>
+          Upload at least 4 photos — pick ones that show the real you.
+        </Text>
+      </View>
 
       <View style={styles.grid}>
         {photos.map((photo, index) => (
           <TouchableOpacity
             key={index}
-            style={styles.photoBox}
+            style={[styles.photoBox, photo ? styles.photoBoxFilled : styles.photoBoxEmpty]}
             onPress={() => handlePickPhoto(index)}
           >
             {photo ? (
               <Image source={{ uri: photo }} style={styles.image} />
             ) : (
-              <Text style={styles.placeholder}>+</Text>
+              <View style={styles.addPlaceholder}>
+                <Text style={styles.addIcon}>+</Text>
+                <Text style={styles.addLabel}>Add photo</Text>
+              </View>
             )}
           </TouchableOpacity>
         ))}
       </View>
 
+      <Text style={styles.photoCount}>
+        {photos.filter(p => p !== null).length}/6 photos added
+        {photos.filter(p => p !== null).length < 4 && (
+          <Text style={styles.photoCountWarning}> · Need at least 4</Text>
+        )}
+      </Text>
+
       {uploading && (
-        <ActivityIndicator
-          size="large"
-          color="#ff5864"
-          style={{ marginTop: 16 }}
-        />
+        <ActivityIndicator size="large" color="#ff5864" style={{ marginTop: 16 }} />
       )}
 
       <TouchableOpacity
         style={[
           styles.submitButton,
-          {
-            backgroundColor:
-              photos.filter(p => p !== null).length >= 4
-                ? "#e60f3f"
-                : "#ff586480",
-          },
+          photos.filter(p => p !== null).length >= 4
+            ? styles.activeButton
+            : styles.disabledButton,
         ]}
-        disabled={photos.filter(p => p !== null).length < 4}
+        disabled={photos.filter(p => p !== null).length < 4 || uploading}
         onPress={handleSubmit}
       >
-        <Text style={styles.submitText}>Submit</Text>
+        <Text style={styles.submitText}>
+          {uploading ? 'Uploading...' : 'Continue'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 40 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 30 },
-  description: { fontSize: 14, color: "#555", marginBottom: 20 },
-
+  container: {
+    flex: 1,
+    backgroundColor: '#FAF8F3',
+    paddingTop: 60,
+    paddingHorizontal: 24,
+  },
+  header: {
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 44,
+    fontWeight: '300',
+    color: '#1a1a1a',
+    fontFamily: 'Poppins',
+    lineHeight: 52,
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#6B7280',
+    fontFamily: 'Poppins',
+    lineHeight: 22,
+  },
   grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-
-  photoBox: {
-    width: 100,
-    height: 100,
-    backgroundColor: "#eee",
-    borderRadius: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
     marginBottom: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ccc",
   },
-
-  image: { width: "100%", height: "100%", borderRadius: 10 },
-  placeholder: { fontSize: 32, color: "#aaa" },
-
+  photoBox: {
+    width: '31%',
+    aspectRatio: 0.8,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  photoBoxEmpty: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoBoxFilled: {
+    borderWidth: 0,
+  },
+  addPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addIcon: {
+    fontSize: 28,
+    color: '#D1D5DB',
+    lineHeight: 32,
+  },
+  addLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontFamily: 'Poppins',
+    marginTop: 4,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  photoCount: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    fontFamily: 'Poppins',
+    marginBottom: 8,
+  },
+  photoCountWarning: {
+    color: '#ff5864',
+    fontFamily: 'Poppins',
+  },
   submitButton: {
-    backgroundColor: "#ff5864", // ✅ App color
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
+    paddingVertical: 18,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    bottom: 30,
+    left: 24,
+    right: 24,
   },
-
+  activeButton: {
+    backgroundColor: '#ff5864',
+  },
+  disabledButton: {
+    backgroundColor: '#ff5864',
+    opacity: 0.4,
+  },
   submitText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
   },
 });
+

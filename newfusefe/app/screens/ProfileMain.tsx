@@ -10,15 +10,21 @@ import {
   ActivityIndicator,
   Modal,
   Dimensions,
+  Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ProgressBar } from "react-native-paper";
 import { useFocusEffect } from "@react-navigation/native";
 import { BottomNav } from "../../components/BottomNav";
+import { ElevatedProfileCard } from "../../components/ElevatedProfileCard";
+import { SegmentedControl } from "../../components/SegmentedControl";
 
 const BASE_URL = "http://172.20.10.4:5000";
-const TABS = ["About", "Photos", "Preferences"];
+const TABS = [
+  { id: "About", label: "About" },
+  { id: "Photos", label: "Photos" },
+  { id: "Preferences", label: "Preferences" },
+];
 
 const ICON_MAP: Record<string, string> = {
   Pronouns: "user",
@@ -32,6 +38,10 @@ const ICON_MAP: Record<string, string> = {
   Intentions: "target",
   Zodiac: "moon",
   Religion: "book-open",
+  Phone: "phone",
+  "Date of Birth": "calendar",
+  Gender: "users",
+  Height: "bar-chart-2",
 };
 
 const ProfilePage = ({ navigation }) => {
@@ -88,31 +98,31 @@ const ProfilePage = ({ navigation }) => {
     return unsubscribe;
   }, [navigation]);
 
-const handleLogout = async () => {
-  try {
-    const uid = await AsyncStorage.getItem("userId");
+  const handleLogout = async () => {
+    try {
+      const uid = await AsyncStorage.getItem("userId");
 
-    const keysToRemove = [
-      "jwtToken",
-      "userId",
-      "username",
-      "fullPhoneNumber",
-      "popup_shown_this_session",
-      "temporaryInterests",
-      "hasPendingChats",
-    ];
+      const keysToRemove = [
+        "jwtToken",
+        "userId",
+        "username",
+        "fullPhoneNumber",
+        "popup_shown_this_session",
+        "temporaryInterests",
+        "hasPendingChats",
+      ];
 
-    if (uid) {
-      keysToRemove.push(`filters:${uid}`);
+      if (uid) {
+        keysToRemove.push(`filters:${uid}`);
+      }
+
+      await AsyncStorage.multiRemove(keysToRemove);
+
+      navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+    } catch (e) {
+      Alert.alert("Error", "Logout failed.");
     }
-
-    await AsyncStorage.multiRemove(keysToRemove);
-
-    navigation.reset({ index: 0, routes: [{ name: "Login" }] });
-  } catch (e) {
-    Alert.alert("Error", "Logout failed.");
-  }
-};
+  };
 
 
   const extraFields = [
@@ -136,20 +146,18 @@ const handleLogout = async () => {
   ];
 
   const Chip = ({ icon, text }: { icon?: string; text: string }) => (
-  <View style={styles.chip}>
-    {!!icon && (
-      <View style={styles.iconBubble}>
-        <Icon name={icon} size={14} color="#111827" />
-      </View>
-    )}
-    <Text style={styles.chipText}>{text}</Text>
-  </View>
-);
+    <View style={styles.chip}>
+      {!!icon && (
+        <Icon name={icon} size={12} color="#ff5864" style={{ marginRight: 5 }} />
+      )}
+      <Text style={styles.chipText}>{text}</Text>
+    </View>
+  );
 
   const RowItem = ({ label, value }: { label: string; value: string }) => (
     <View style={styles.rowItem}>
       <View style={styles.iconBubbleRow}>
-        <Icon name={ICON_MAP[label] || "tag"} size={16} color="#111827" />
+        <Icon name={ICON_MAP[label] || "tag"} size={14} color="#1a1a1a" />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.rowLabel}>{label}</Text>
@@ -163,7 +171,7 @@ const handleLogout = async () => {
       case "Photos":
         return userData.photos?.length > 0 ? (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Profile Photos</Text>
+            <Text style={styles.sectionTitle}>Photos</Text>
             <View style={styles.photoGrid}>
               {Array.from({ length: 6 }).map((_, i) => {
                 const photo = userData.photos?.[i] ?? null;
@@ -176,7 +184,7 @@ const handleLogout = async () => {
                   />
                 ) : (
                   <View key={i} style={[styles.gridImage, styles.placeholderBox]}>
-                    <Text style={styles.placeholderText}>+</Text>
+                    <Icon name="plus" size={20} color="#C9C9C9" />
                   </View>
                 );
               })}
@@ -217,7 +225,6 @@ const handleLogout = async () => {
           <>
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Basic Info</Text>
-
               <RowItem label="Phone" value={userData.phoneNumber} />
               <RowItem label="Date of Birth" value={userData.dateOfBirth} />
               <RowItem label="Gender" value={userData.gender} />
@@ -226,7 +233,7 @@ const handleLogout = async () => {
 
             {extraFields.filter((f) => f.value).length > 0 && (
               <View style={styles.card}>
-                <Text style={styles.sectionTitle}>More Info</Text>
+                <Text style={styles.sectionTitle}>More About Me</Text>
                 {extraFields.map(
                   (f, i) => f.value && <RowItem key={i} label={f.label} value={String(f.value)} />
                 )}
@@ -240,14 +247,17 @@ const handleLogout = async () => {
   if (loading || !userData) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#000" />
-        <Text>Loading profile...</Text>
+        <ActivityIndicator size="large" color="#ff5864" />
+        <Text style={styles.loadingText}>Loading profile…</Text>
       </View>
     );
   }
 
+  const completeness = Math.round(userData.profileComplete);
+
   return (
     <View style={styles.container}>
+      {/* Incomplete Profile Modal */}
       <Modal visible={showProfileReminder} transparent animationType="fade">
         <View style={styles.popupOverlay}>
           <View style={styles.popupCard}>
@@ -255,10 +265,14 @@ const handleLogout = async () => {
               style={styles.popupClose}
               onPress={() => setShowProfileReminder(false)}
             >
-              <Icon name="x" size={20} color="#333" />
+              <Icon name="x" size={18} color="#9CA3AF" />
             </TouchableOpacity>
+            <View style={styles.popupIconWrap}>
+              <Icon name="alert-circle" size={28} color="#ff5864" />
+            </View>
+            <Text style={styles.popupTitle}>Profile Incomplete</Text>
             <Text style={styles.popupText}>
-              Your profile is incomplete. Add more info to get better matches!
+              Add more info to get better matches!
             </Text>
             <TouchableOpacity
               style={styles.popupButton}
@@ -273,58 +287,55 @@ const handleLogout = async () => {
         </View>
       </Modal>
 
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollViewContent}
+      >
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>My Profile</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Settings")} style={{ paddingTop: 10 }}>
-            <Icon name="settings" size={24} color="#333" />
+          <Text style={styles.title}>Profile</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Settings")}
+            style={styles.settingsBtn}
+          >
+            <Icon name="settings" size={20} color="#1a1a1a" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.cardProfile}>
-          {userData?.photos?.[0] ? (
-            <Image
-              source={{ uri: userData.photos[0] }}
-              style={styles.profileImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <Image
-              source={{ uri: "https://via.placeholder.com/100" }}
-              style={styles.profileImage}
-              resizeMode="cover"
-            />
-          )}
-          <Text style={styles.userName}>{userData.name || "No name provided"}</Text>
-          <ProgressBar progress={userData.profileComplete / 100} color="#10b981" style={styles.progressBar} />
-          <Text style={styles.profilePercentageText}>
-            {`${Math.round(userData.profileComplete)}% Complete`}
-          </Text>
+        {/* Profile Hero Card */}
+        <View style={styles.heroCardWrap}>
+          <ElevatedProfileCard
+            name={userData.name || "No name"}
+            avatarUrl={userData?.photos?.[0] || "https://via.placeholder.com/100"}
+            completeness={completeness}
+          />
         </View>
 
-        <View style={styles.tabBar}>
-          {TABS.map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tabItem, activeTab === tab && styles.tabItemActive]}
-              onPress={() => setActiveTab(tab)}
-            >
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
-            </TouchableOpacity>
-          ))}
+        {/* Tab Bar */}
+        <View style={styles.tabBarWrap}>
+          <SegmentedControl
+            tabs={TABS}
+            activeTab={activeTab}
+            onTabChange={(tab) => setActiveTab(tab)}
+          />
         </View>
 
+        {/* Tab Content */}
         {renderTabContent()}
 
+        {/* Edit Profile Button */}
         <TouchableOpacity
           style={styles.editProfileButton}
           onPress={() => navigation.navigate("UpdateProfilePage", { userData })}
         >
+          <Icon name="edit-2" size={16} color="#fff" style={{ marginRight: 8 }} />
           <Text style={styles.editProfileText}>Edit Profile</Text>
         </TouchableOpacity>
 
+        {/* Logout */}
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Logout</Text>
+          <Icon name="log-out" size={15} color="#6B7280" style={{ marginRight: 8 }} />
+          <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -335,190 +346,272 @@ const handleLogout = async () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  scrollViewContent: { paddingBottom: 100 },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+const { width } = Dimensions.get("window");
+const PHOTO_GAP = 8;
+const PHOTO_SIZE = (width - 84) / 3;
 
-  // Header
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#FAF8F3" },
+  scrollViewContent: { paddingBottom: 110 },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FAF8F3",
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+  },
+
+  // ── Header ──────────────────────────────────────────────
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 20,
-    backgroundColor: "#fff",
-    elevation: 2,
-    paddingTop: 40,
-  },
-  title: { fontSize: 30, fontWeight: "bold", color: "#111827" },
-
-  // Profile top card
-  cardProfile: {
-    backgroundColor: "#fff",
-    margin: 16,
-    padding: 20,
-    borderRadius: 16,
     alignItems: "center",
-    elevation: 4,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 60 : 44,
+    paddingBottom: 12,
+    backgroundColor: "#FAF8F3",
   },
-  profileImage: { width: 90, height: 90, borderRadius: 45, marginBottom: 12 },
-  userName: { fontSize: 24, fontWeight: "bold", color: "#1f2937" },
-  progressBar: { height: 6, borderRadius: 3, width: "80%", marginTop: 8 },
-  profilePercentageText: { fontSize: 14, color: "#10b981", marginTop: 4 },
-
-  // Generic card
-  card: { margin: 16, backgroundColor: "#fff", borderRadius: 16, padding: 16, elevation: 3 },
-  sectionTitle: { fontSize: 20, fontWeight: "600", marginBottom: 12, color: "#374151" },
-
-  // Chips (Interests / Values)
-  chipWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+    letterSpacing: 0.2,
   },
+  settingsBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  // ── Hero Card ────────────────────────────────────────────
+  heroCardWrap: {
+    marginHorizontal: 16,
+    marginTop: 6,
+    marginBottom: 14,
+  },
+
+  // ── Tab Bar ──────────────────────────────────────────────
+  tabBarWrap: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+
+  // ── Card (generic) ───────────────────────────────────────
+  card: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    padding: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    marginBottom: 14,
+  },
+
+  // ── Chips ────────────────────────────────────────────────
+  chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
+    backgroundColor: "#FFF5F5",
     borderRadius: 999,
     paddingVertical: 6,
-    paddingHorizontal: 10,
-    marginRight: 6,
-    marginBottom: 8,
-    // subtle shadow for iOS
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    // elevation for Android
-    elevation: 1,
+    paddingHorizontal: 12,
+    marginRight: 4,
+    marginBottom: 6,
   },
-  iconBubble: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
+  chipText: {
+    color: "#1a1a1a",
+    fontSize: 13,
+    fontFamily: "Poppins",
+    fontWeight: "500",
   },
-  chipText: { color: "#111827", fontSize: 14, fontWeight: "500" },
 
-  // Row items (About / More Info)
+  // ── Row Items ────────────────────────────────────────────
   rowItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingVertical: 10,
+    gap: 14,
+    paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: "#F9FAFB",
   },
   iconBubbleRow: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#ffffff",
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  rowLabel: { fontSize: 12, color: "#6b7280" },
-  rowValue: { fontSize: 16, color: "#111827", marginTop: 2 },
+  rowLabel: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  rowValue: {
+    fontSize: 15,
+    color: "#1a1a1a",
+    fontFamily: "Poppins",
+    fontWeight: "500",
+    marginTop: 1,
+  },
 
-  // Photo grid
+  // ── Photo Grid ───────────────────────────────────────────
   photoGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginHorizontal: 12,
   },
   gridImage: {
-    width: (Dimensions.get("window").width - 64) / 3,
-    height: (Dimensions.get("window").width - 64) / 3,
+    width: PHOTO_SIZE,
+    height: PHOTO_SIZE,
     borderRadius: 12,
-    marginBottom: 12,
-    backgroundColor: "#eee",
+    backgroundColor: "#F3F4F6",
+    marginBottom: PHOTO_GAP,
   },
   placeholderBox: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#F9FAFB",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderStyle: "dashed",
   },
-  placeholderText: { fontSize: 32, color: "#aaa" },
 
-  // Tabs
-  tabBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginHorizontal: 16,
-    marginVertical: 10,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 8,
-    elevation: 2,
-  },
-  tabItem: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 8 },
-  tabItemActive: { backgroundColor: "#e0f2f1" },
-  tabText: { fontSize: 16, color: "#4b5563" },
-  tabTextActive: { color: "#0f766e", fontWeight: "bold" },
-
-  // Buttons
+  // ── Buttons ──────────────────────────────────────────────
   editProfileButton: {
-    margin: 16,
-    backgroundColor: "#e11d48",
-    padding: 14,
-    borderRadius: 10,
+    marginHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 10,
+    backgroundColor: "#ff5864",
+    paddingVertical: 15,
+    borderRadius: 14,
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    shadowColor: "#ff5864",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  editProfileText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
+  editProfileText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+    fontFamily: "Poppins-Bold",
+  },
   logoutButton: {
-    margin: 16,
-    backgroundColor: "#111827",
-    padding: 14,
-    borderRadius: 10,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
   },
-  logoutText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  logoutText: {
+    color: "#6B7280",
+    fontWeight: "600",
+    fontSize: 14,
+    fontFamily: "Poppins",
+  },
 
   bottomNavWrapper: { position: "absolute", bottom: 0, left: 0, right: 0 },
 
-  // Popup
+  // ── Popup Modal ──────────────────────────────────────────
   popupOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 28,
   },
   popupCard: {
     backgroundColor: "#fff",
     width: "100%",
     maxWidth: 320,
-    padding: 24,
-    borderRadius: 16,
+    padding: 28,
+    borderRadius: 22,
     elevation: 12,
     alignItems: "center",
     position: "relative",
   },
+  popupIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#FFF5F5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  popupTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+    marginBottom: 6,
+  },
   popupText: {
-    fontSize: 16,
-    color: "#1f2937",
-    marginBottom: 16,
+    fontSize: 14,
+    color: "#6B7280",
+    marginBottom: 22,
     textAlign: "center",
+    fontFamily: "Poppins",
+    lineHeight: 20,
   },
   popupButton: {
-    backgroundColor: "#e11d48",
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 8,
+    backgroundColor: "#ff5864",
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 12,
     alignItems: "center",
   },
-  popupButtonText: { color: "#fff", fontWeight: "bold" },
-  popupClose: { position: "absolute", top: 8, right: 8, padding: 4 },
+  popupButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontFamily: "Poppins-Bold",
+    fontSize: 14,
+  },
+  popupClose: { position: "absolute", top: 14, right: 14, padding: 4 },
 });
 
 export default ProfilePage;

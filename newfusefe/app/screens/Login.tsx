@@ -10,12 +10,12 @@ export default function LoginPage({ navigation }) {
   return (
     <LinearGradient colors={['#e60f3f', '#e5dad1']} style={styles.container}>
       {/* Logo */}
-      <Text style={styles.title}>FUSE</Text>
+      <Text style={styles.title}>Fuse</Text>
 
       {/* Animated Heart Using GIF */}
-      <Image 
+      <Image
         source={require('../../assets/heart-animation.gif')} // ✅ Correct Path
-        style={styles.animation}  
+        style={styles.animation}
       />
 
       {/* Button */}
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     textAlign: 'center',
     marginBottom: 20,
-    fontFamily: 'Avenir-Black',
+    fontFamily: 'Poppins-Bold',
   },
   animation: {
     width: 200, // ✅ Adjust size if needed
@@ -75,6 +75,7 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
   },
   infoContainer: {
     alignItems: 'center',
@@ -85,6 +86,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     marginBottom: 10,
+    fontFamily: 'Poppins',
   },
   linkText: {
     textDecorationLine: 'underline',

@@ -524,12 +524,12 @@ useEffect(() => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={80}
+      behavior={Platform.OS === "ios" ? "padding" : "padding"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 8}
     >
       <Modal visible={loading} transparent animationType="fade">
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#fff" />
+          <ActivityIndicator size="large" color="#ff5864" />
           <Text style={styles.tipText}>{datingTips[tipIndex]}</Text>
         </View>
       </Modal>
@@ -549,6 +549,7 @@ useEffect(() => {
         <FlatList
           ref={flatListRef}
           data={messages}
+          contentContainerStyle={styles.listContent}
           keyExtractor={(item, index) => item.id || item.sid || index.toString()}
           onScroll={handleScroll}
           renderItem={({ item }) => {
@@ -557,10 +558,12 @@ useEffect(() => {
               <View
                 style={[styles.messageBubble, isMyMessage ? styles.myMessage : styles.theirMessage]}
               >
-                <Text style={styles.username}>
+                <Text style={[styles.username, isMyMessage && styles.myUsername]}>
                   {isMyMessage ? "You" : receiverUsername || "User"}
                 </Text>
-                <Text style={styles.messageText}>{item.body}</Text>
+                <Text style={[styles.messageText, isMyMessage && styles.myMessageText]}>
+                  {item.body}
+                </Text>
               </View>
             );
           }}
@@ -594,103 +597,164 @@ useEffect(() => {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8f8f8" },
+  container: { flex: 1, backgroundColor: "#FAF8F3" },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
-    backgroundColor: "#ff5864",
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "ios" ? 58 : 40,
+    paddingBottom: 12,
+    backgroundColor: "#FAF8F3",
     position: "relative",
   },
-  backButton: { zIndex: 2 },
-  backButtonText: { fontSize: 24, color: "#fff" },
+  backButton: {
+    zIndex: 2,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  backButtonText: {
+    fontSize: 20,
+    color: "#6B7280",
+    fontFamily: "Poppins-SemiBold",
+    marginTop: -1,
+  },
   headerCenter: {
     position: "absolute",
     left: 0,
     right: 0,
     alignItems: "center",
     justifyContent: "center",
+    paddingTop: Platform.OS === "ios" ? 58 : 40,
   },
-  headerText: { fontSize: 20, color: "#fff", fontWeight: "bold" },
+  headerText: {
+    fontSize: 22,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+  },
   loadingOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.8)",
+    backgroundColor: "rgba(250,248,243,0.95)",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
   },
   tipText: {
     marginTop: 20,
-    fontSize: 16,
-    color: "#fff",
+    fontSize: 14,
+    color: "#6B7280",
     textAlign: "center",
-    fontStyle: "italic",
+    fontFamily: "Poppins",
+    lineHeight: 21,
+  },
+  listContent: {
+    paddingHorizontal: 12,
+    paddingBottom: 14,
   },
   messageBubble: {
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 13,
     margin: 8,
-    borderRadius: 20,
+    borderRadius: 18,
     maxWidth: "75%",
   },
   myMessage: {
     alignSelf: "flex-end",
     backgroundColor: "#ff5864",
+    shadowColor: "#ff5864",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 2,
   },
   theirMessage: {
     alignSelf: "flex-start",
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#F3F4F6",
   },
   username: {
-    fontSize: 12,
-    fontWeight: "bold",
-    marginBottom: 2,
-    color: "#555",
+    fontSize: 11,
+    marginBottom: 3,
+    color: "#9CA3AF",
+    fontFamily: "Poppins-SemiBold",
   },
-  messageText: { fontSize: 16, color: "#000" },
+  myUsername: {
+    color: "#FFE4E7",
+  },
+  messageText: {
+    fontSize: 15,
+    color: "#1a1a1a",
+    fontFamily: "Poppins",
+    lineHeight: 21,
+  },
+  myMessageText: {
+    color: "#fff",
+  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
-    backgroundColor: "#fff",
+    paddingHorizontal: 10,
+    paddingTop: 9,
+    paddingBottom: 5,
+    backgroundColor: "#FAF8F3",
     borderTopWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#F3F4F6",
   },
   input: {
     flex: 1,
     padding: 12,
-    borderWidth: 1,
-    borderColor: "#ddd",
+    borderWidth: 1.2,
+    borderColor: "#E5E7EB",
     borderRadius: 25,
-    fontSize: 16,
-    backgroundColor: "#f8f8f8",
+    fontSize: 15,
+    backgroundColor: "#ffffff",
+    color: "#1a1a1a",
+    fontFamily: "Poppins",
   },
   sendButton: {
     marginLeft: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 11,
+    paddingHorizontal: 18,
     backgroundColor: "#ff5864",
     borderRadius: 25,
   },
-  sendButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  sendButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontFamily: "Poppins-Bold",
+  },
   lockedBanner: {
-    backgroundColor: "#fff3cd",
+    backgroundColor: "#ffffff",
     padding: 12,
     alignItems: "center",
     borderBottomWidth: 1,
-    borderColor: "#ffeeba",
+    borderColor: "#F3F4F6",
   },
-  lockedText: { color: "#856404", fontWeight: "600", marginBottom: 8, textAlign: "center" },
+  lockedText: {
+    color: "#6B7280",
+    fontFamily: "Poppins-SemiBold",
+    marginBottom: 8,
+    textAlign: "center",
+    fontSize: 13,
+  },
   acceptButton: {
-    backgroundColor: "#28a745",
+    backgroundColor: "#ff5864",
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: 22,
     marginTop: 6,
     marginRight: 8,
   },
-  acceptText: { color: "#fff", fontWeight: "600" },
+  acceptText: { color: "#fff", fontFamily: "Poppins-Bold", fontSize: 13 },
   pendingActions: {
     flexDirection: "row",
     alignItems: "center",
@@ -698,14 +762,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   rejectButton: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: 22,
   },
   rejectText: {
-    color: "#333",
-    fontWeight: "600",
+    color: "#6B7280",
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 13,
   },
   newMessageBanner: {
     backgroundColor: "#ff5864",
@@ -717,15 +784,15 @@ const styles = StyleSheet.create({
   },
   newMessageText: {
     color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
+    fontFamily: "Poppins-Bold",
+    fontSize: 13,
   },
   matchedBanner: {
-    backgroundColor: "#e6ffed",
+    backgroundColor: "#ECFDF5",
     padding: 12,
     alignItems: "center",
     borderBottomWidth: 1,
-    borderColor: "#c3f0d7",
+    borderColor: "#D1FAE5",
   },
-  matchedText: { color: "#1b7f4a", fontWeight: "700" },
+  matchedText: { color: "#059669", fontFamily: "Poppins-Bold", fontSize: 13 },
 });

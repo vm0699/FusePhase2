@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
+import FuseTextField from "./FuseTextField";
 
 type Props = {
   value: string | null;
@@ -8,46 +8,12 @@ type Props = {
 
 export default function CollegeInput({ value, onChange }: Props) {
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>College</Text>
-        <Text style={styles.subtitle}>Where did you study?</Text>
-      </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your college"
-        value={value || ""}
-        onChangeText={onChange}
-        autoCapitalize="words"
-      />
-    </View>
+    <FuseTextField
+      title="College or University"
+      subtitle="Where did you study?"
+      placeholder="Enter your college or university"
+      value={value}
+      onChange={onChange}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    padding: 16,
-  },
-  header: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginTop: 6,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-});

@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Alert,
   Modal,
-  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Switch } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
@@ -96,28 +96,45 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
+        <TouchableOpacity
+          style={styles.headerPill}
+          onPress={() => navigation.navigate("Profile")}
+        >
           <Text style={styles.headerButton}>Cancel</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <TouchableOpacity onPress={() => Alert.alert("Settings saved!")}>
-          <Text style={styles.headerButton}>Done</Text>
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Settings</Text>
+          <Text style={styles.headerSubtitle}>
+            Privacy, safety, and app preferences
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.headerPill}
+          onPress={() => Alert.alert("Settings saved!")}
+        >
+          <Text style={styles.headerDone}>Done</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        {/* Delivery Location — replaces toggle UI only */}
+        {/* Delivery Location - replaces toggle UI only */}
         <TouchableOpacity
           style={styles.card}
           onPress={() => navigation.navigate("UpdateDeliveryLocation")}
         >
           <View style={styles.cardRow}>
-            <Text style={styles.cardText}>Delivery location</Text>
-            <Icon name="chevron-right" size={20} color="#999" />
+            <View style={styles.cardTextWrap}>
+              <Text style={styles.cardTitle}>Delivery location</Text>
+              <Text style={styles.subText}>
+                Update address for gifts, surprises, and future features.
+              </Text>
+            </View>
+            <View style={styles.chevronBubble}>
+              <Icon name="chevron-right" size={16} color="#6B7280" />
+            </View>
           </View>
-          <Text style={styles.subText}>
-            Update address for gifts, surprises, and future features.
-          </Text>
         </TouchableOpacity>
 
         {/* Other Settings */}
@@ -134,7 +151,9 @@ export default function SettingsScreen() {
           >
             <View style={styles.cardRow}>
               <Text style={styles.cardText}>{setting.title}</Text>
-              <Icon name="chevron-right" size={20} color="#999" />
+              <View style={styles.chevronBubble}>
+                <Icon name="chevron-right" size={16} color="#6B7280" />
+              </View>
             </View>
           </TouchableOpacity>
         ))}
@@ -164,7 +183,7 @@ export default function SettingsScreen() {
               Deleting your account will remove all chats, likes, and photos.
             </Text>
             <TouchableOpacity
-              style={[styles.modalButton, { backgroundColor: "#e53935" }]}
+              style={styles.modalButton}
               onPress={handleDeleteAccount}
               disabled={deleting}
             >
@@ -173,9 +192,7 @@ export default function SettingsScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowDeletePopup(false)}>
-              <Text style={{ color: "#666", marginTop: 10 }}>
-                No, I changed my mind
-              </Text>
+              <Text style={styles.modalCancelText}>No, I changed my mind</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -185,86 +202,170 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9f9f9" },
+  container: { flex: 1, backgroundColor: "#FAF8F3" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    paddingTop: 48,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "ios" ? 60 : 44,
+    paddingBottom: 16,
   },
-  headerButton: { fontSize: 16, color: "#007aff" },
-  headerTitle: { fontSize: 18, fontWeight: "bold" },
+  headerPill: {
+    minWidth: 72,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+  },
+  headerButton: {
+    fontSize: 14,
+    color: "#6B7280",
+    fontFamily: "Poppins-SemiBold",
+  },
+  headerDone: {
+    fontSize: 14,
+    color: "#ff5864",
+    fontFamily: "Poppins-Bold",
+  },
+  headerTitle: {
+    fontSize: 24,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+    marginTop: 2,
+  },
   scrollViewContent: { paddingBottom: 80 },
   card: {
     backgroundColor: "#fff",
     padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
+    borderRadius: 18,
+    marginBottom: 12,
     marginHorizontal: 16,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
     elevation: 2,
   },
   cardRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
   },
-  cardText: { fontSize: 16, fontWeight: "500" },
-  subText: { fontSize: 14, color: "#666", marginTop: 8 },
+  cardTextWrap: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  cardTitle: {
+    fontSize: 16,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-SemiBold",
+  },
+  cardText: {
+    fontSize: 16,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-SemiBold",
+    marginTop: 3,
+  },
+  subText: {
+    fontSize: 13,
+    color: "#6B7280",
+    marginTop: 6,
+    lineHeight: 20,
+    fontFamily: "Poppins",
+  },
+  chevronBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
+  },
   deleteButton: { justifyContent: "center", alignItems: "center" },
-  deleteText: { color: "#e53935", fontWeight: "bold", fontSize: 16 },
+  deleteText: {
+    color: "#DC2626",
+    fontFamily: "Poppins-Bold",
+    fontSize: 16,
+  },
   footer: { alignItems: "center", marginTop: 16, paddingVertical: 16 },
   footerBar: {
     width: 40,
     height: 4,
-    backgroundColor: "#ccc",
+    backgroundColor: "#D1D5DB",
     borderRadius: 2,
     marginBottom: 8,
   },
-  footerText: { color: "#999", fontSize: 12 },
+  footerText: { color: "#9CA3AF", fontSize: 12, fontFamily: "Poppins" },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
   },
   modalContent: {
     backgroundColor: "#fff",
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 24,
     alignItems: "center",
     width: "100%",
     maxWidth: 340,
-    elevation: 10,
+    elevation: 12,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 17,
+    fontFamily: "Poppins-Bold",
     marginBottom: 10,
-    color: "#111",
+    color: "#1a1a1a",
   },
   modalText: {
-    fontSize: 15,
-    color: "#444",
+    fontSize: 14,
+    color: "#6B7280",
     textAlign: "center",
     marginBottom: 20,
+    lineHeight: 21,
+    fontFamily: "Poppins",
   },
   modalButton: {
+    backgroundColor: "#e53935",
     paddingVertical: 12,
     paddingHorizontal: 30,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   modalButtonText: {
     color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
+    fontFamily: "Poppins-Bold",
+    fontSize: 15,
+  },
+  modalCancelText: {
+    color: "#6B7280",
+    marginTop: 12,
+    fontFamily: "Poppins",
+    fontSize: 14,
   },
 });

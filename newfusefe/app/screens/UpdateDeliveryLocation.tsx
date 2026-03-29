@@ -22,7 +22,6 @@ export default function UpdateDeliveryLocation() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔹 Delivery address state
   const [address, setAddress] = useState({
     name: "",
     line1: "",
@@ -37,20 +36,17 @@ export default function UpdateDeliveryLocation() {
       setLoading(true);
       setError(null);
 
-      // 🔒 Basic validation
       if (!address.name || !address.line1 || !address.city || !address.pincode) {
         setError("Please fill all required address fields.");
         return;
       }
 
-      // 1️⃣ Request permission
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         setError("Location permission is required.");
         return;
       }
 
-      // 2️⃣ Get coordinates
       const position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
@@ -58,7 +54,7 @@ export default function UpdateDeliveryLocation() {
       const latitude = position.coords.latitude;
       const longitude = position.coords.longitude;
 
-      console.log("📍 [UpdateDeliveryLocation] Coordinates:", {
+      console.log("Coordinates:", {
         latitude,
         longitude,
       });
@@ -66,7 +62,6 @@ export default function UpdateDeliveryLocation() {
       const token = await AsyncStorage.getItem("jwtToken");
       if (!token) return;
 
-      // 3️⃣ Save to backend
       await fetch(`${BASE_URL}/api/profile/update`, {
         method: "PUT",
         headers: {
@@ -88,10 +83,9 @@ export default function UpdateDeliveryLocation() {
         }),
       });
 
-      // 4️⃣ Back to Settings
       navigation.goBack();
     } catch (err) {
-      console.error("❌ [UpdateDeliveryLocation] Failed:", err);
+      console.error("Failed:", err);
       setError("Failed to update delivery address. Try again.");
     } finally {
       setLoading(false);
@@ -103,60 +97,69 @@ export default function UpdateDeliveryLocation() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-left" size={26} color="#007aff" />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Icon name="chevron-left" size={18} color="#6B7280" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Delivery Location</Text>
-        <View style={{ width: 26 }} />
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Delivery location</Text>
+          <Text style={styles.headerSubtitle}>Address used for gifts and surprises</Text>
+        </View>
+        <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.inner}>
-        <Text style={styles.subtitle}>
-          Update the address used for gifts, surprises, and future features.
-        </Text>
+      <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
+        <View style={styles.formCard}>
+          <Text style={styles.formIntro}>
+            Keep this up to date so future delivery-based features work properly.
+          </Text>
 
-        {error && <Text style={styles.error}>{error}</Text>}
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {/* Address Fields */}
-        <TextInput
-          placeholder="Name"
-          style={styles.input}
-          value={address.name}
-          onChangeText={(v) => setAddress({ ...address, name: v })}
-        />
-        <TextInput
-          placeholder="Address line 1"
-          style={styles.input}
-          value={address.line1}
-          onChangeText={(v) => setAddress({ ...address, line1: v })}
-        />
-        <TextInput
-          placeholder="Address line 2 (optional)"
-          style={styles.input}
-          value={address.line2}
-          onChangeText={(v) => setAddress({ ...address, line2: v })}
-        />
-        <TextInput
-          placeholder="Landmark (optional)"
-          style={styles.input}
-          value={address.landmark}
-          onChangeText={(v) => setAddress({ ...address, landmark: v })}
-        />
-        <TextInput
-          placeholder="City"
-          style={styles.input}
-          value={address.city}
-          onChangeText={(v) => setAddress({ ...address, city: v })}
-        />
-        <TextInput
-          placeholder="Pincode"
-          style={styles.input}
-          keyboardType="number-pad"
-          value={address.pincode}
-          onChangeText={(v) => setAddress({ ...address, pincode: v })}
-        />
+          <TextInput
+            placeholder="Name"
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+            value={address.name}
+            onChangeText={(v) => setAddress({ ...address, name: v })}
+          />
+          <TextInput
+            placeholder="Address line 1"
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+            value={address.line1}
+            onChangeText={(v) => setAddress({ ...address, line1: v })}
+          />
+          <TextInput
+            placeholder="Address line 2 (optional)"
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+            value={address.line2}
+            onChangeText={(v) => setAddress({ ...address, line2: v })}
+          />
+          <TextInput
+            placeholder="Landmark (optional)"
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+            value={address.landmark}
+            onChangeText={(v) => setAddress({ ...address, landmark: v })}
+          />
+          <TextInput
+            placeholder="City"
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+            value={address.city}
+            onChangeText={(v) => setAddress({ ...address, city: v })}
+          />
+          <TextInput
+            placeholder="Pincode"
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+            keyboardType="number-pad"
+            value={address.pincode}
+            onChangeText={(v) => setAddress({ ...address, pincode: v })}
+          />
+        </View>
 
         <TouchableOpacity
           style={styles.button}
@@ -174,59 +177,100 @@ export default function UpdateDeliveryLocation() {
   );
 }
 
-/* ---------------- STYLES ---------------- */
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#FAF8F3",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === "ios" ? 52 : 20,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    paddingTop: Platform.OS === "ios" ? 60 : 44,
+    paddingBottom: 16,
+  },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 12,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 24,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+    marginTop: 2,
+    textAlign: "center",
+  },
+  headerSpacer: {
+    width: 38,
   },
   inner: {
-    padding: 24,
-    paddingBottom: 40,
+    padding: 16,
+    paddingBottom: 32,
   },
-  subtitle: {
-    fontSize: 15,
-    color: "#666",
-    marginBottom: 20,
+  formCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 22,
+    padding: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
   },
-  error: {
-    color: "#dc2626",
+  formIntro: {
+    fontSize: 14,
+    color: "#6B7280",
+    lineHeight: 21,
+    fontFamily: "Poppins",
     marginBottom: 16,
   },
+  error: {
+    color: "#DC2626",
+    marginBottom: 14,
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 13,
+  },
   input: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#F3F4F6",
+    borderRadius: 16,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 15,
     marginBottom: 12,
+    backgroundColor: "#ffffff",
+    color: "#1a1a1a",
+    fontFamily: "Poppins",
   },
   button: {
-    backgroundColor: "#e11d48",
+    backgroundColor: "#ff5864",
     paddingVertical: 16,
     borderRadius: 28,
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 18,
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: "Poppins-Bold",
   },
 });

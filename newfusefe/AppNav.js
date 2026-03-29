@@ -2,6 +2,8 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { ProfileProvider } from "./ProfileContext";
+import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
+import * as SplashScreen from 'expo-splash-screen';
 
 // Auth + Onboarding
 import Login from "./app/screens/Login";
@@ -75,9 +77,35 @@ import UpdateDeliveryLocation from "./app/screens/UpdateDeliveryLocation";
 const Stack = createStackNavigator();
 
 export default function AppNavigator() {
+  const [fontsLoaded] = useFonts({
+    Poppins_400Regular,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+    'Poppins': Poppins_400Regular,
+    'Poppins-SemiBold': Poppins_600SemiBold,
+    'Poppins-Bold': Poppins_700Bold,
+  });
+
+  React.useEffect(() => {
+    async function prepare() {
+      await SplashScreen.preventAutoHideAsync();
+    }
+    prepare();
+  }, []);
+
+  const onLayoutRootView = React.useCallback(async () => {
+    if (fontsLoaded) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <ProfileProvider>
-      <NavigationContainer>
+      <NavigationContainer onReady={onLayoutRootView}>
         <Stack.Navigator initialRouteName="AuthGate">
           <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
           <Stack.Screen name="PhoneVerif" component={PhoneVerif} options={{ headerShown: false }} />
@@ -136,7 +164,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Liked You" component={LikedYouScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Video Autoplay" component={VideoAutoplaySettingsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Privacy Settings" component={PrivacySettingsScreen} options={{ headerShown: false }} />
-          
+
           <Stack.Screen name="AgoraCallScreen" component={AgoraCallScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AuthGate" component={AuthGate} options={{ headerShown: false }} />
           <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />

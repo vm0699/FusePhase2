@@ -5,51 +5,52 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/Feather";
 
 const PrivacySettingsScreen = () => {
   const navigation = useNavigation();
 
   const handleBack = () => {
-    navigation.navigate("Settings"); // ✅ Back to Settings page
+    navigation.navigate("Settings");
   };
+
+  const paragraphs = [
+    "At Fuse, your privacy and safety are core product requirements, not an afterthought.",
+    "Personal data like photos, interests, and preferences is encrypted and securely stored.",
+    "Your profile is shown based on compatibility and intent, not random exposure.",
+    "Video calls are temporary and not recorded. Chats are only visible after mutual acceptance.",
+    "Your information is never sold or shared without your explicit consent.",
+    "You can request profile deletion at any time and your data will be removed permanently.",
+  ];
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.heading}>Privacy & Security</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Icon name="chevron-left" size={18} color="#6B7280" />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Privacy & security</Text>
+          <Text style={styles.headerSubtitle}>How Fuse protects your data</Text>
+        </View>
+        <View style={styles.headerSpacer} />
+      </View>
 
-        <Text style={styles.paragraph}>
-          At Fuse, your privacy and safety are our highest priorities. We’ve built our features with transparency, consent, and security at the core.
-        </Text>
-
-        <Text style={styles.paragraph}>
-          • All personal data (like photos, interests, and preferences) is encrypted and securely stored.
-        </Text>
-
-        <Text style={styles.paragraph}>
-          • Your profile is only shown to users based on mutual interest or compatibility — never randomly exposed.
-        </Text>
-
-        <Text style={styles.paragraph}>
-          • Video calls are temporary and not recorded. Chats are visible only after mutual acceptance and are end-to-end secured.
-        </Text>
-
-        <Text style={styles.paragraph}>
-          • We never sell or share your information with third parties without your explicit consent.
-        </Text>
-
-        <Text style={styles.paragraph}>
-          • You can request profile deletion at any time, and we will erase your data permanently.
-        </Text>
-
-        <Text style={styles.paragraph}>
-          By using Fuse, you trust us with your experience. And we promise to honor that trust — always.
-        </Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          {paragraphs.map((paragraph, index) => (
+            <View key={index} style={styles.paragraphRow}>
+              <View style={styles.dot} />
+              <Text style={styles.paragraph}>{paragraph}</Text>
+            </View>
+          ))}
+        </View>
 
         <TouchableOpacity style={styles.button} onPress={handleBack}>
-          <Text style={styles.buttonText}>Back to Settings</Text>
+          <Text style={styles.buttonText}>Back to settings</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -59,35 +60,90 @@ const PrivacySettingsScreen = () => {
 export default PrivacySettingsScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: {
-    padding: 24,
-    paddingBottom: 40,
-    justifyContent: "center",
+  container: { flex: 1, backgroundColor: "#FAF8F3" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "ios" ? 60 : 44,
+    paddingBottom: 16,
   },
-  heading: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 24,
-    textAlign: "center",
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 12,
+  },
+  headerTitle: {
+    fontSize: 24,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+    marginTop: 2,
+  },
+  headerSpacer: {
+    width: 38,
+  },
+  content: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 22,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  paragraphRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 14,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#ff5864",
+    marginTop: 8,
+    marginRight: 12,
   },
   paragraph: {
-    fontSize: 16,
-    color: "#374151",
-    marginBottom: 16,
-    lineHeight: 24,
+    flex: 1,
+    fontSize: 14,
+    color: "#6B7280",
+    lineHeight: 22,
+    fontFamily: "Poppins",
   },
   button: {
-    marginTop: 20,
-    backgroundColor: "#e11d48",
-    paddingVertical: 14,
-    borderRadius: 10,
+    marginTop: 18,
+    backgroundColor: "#ff5864",
+    paddingVertical: 16,
+    borderRadius: 28,
     alignItems: "center",
   },
   buttonText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontFamily: "Poppins-Bold",
     fontSize: 16,
   },
 });

@@ -22,7 +22,7 @@ const extraFields = [
   { key: "college", emoji: "🎓" },
   { key: "work", emoji: "💼" },
   { key: "drinking", emoji: "🍷" },
-  { key: "religion", emoji: "🗐" },
+  { key: "religion", emoji: "🕐" },
   { key: "zodiacSign", emoji: "♒" },
   { key: "ethnicity", emoji: "🌍" },
   { key: "politics", emoji: "🏛️" },
@@ -73,7 +73,7 @@ export default function LikedYouScreen() {
         Alert.alert("Error", data.message || "Failed to fetch");
       }
     } catch (error) {
-      console.error("❌ Error fetching liked users:", error);
+      console.error("Error fetching liked users:", error);
       Alert.alert("Error", "Something went wrong");
     } finally {
       setLoading(false);
@@ -150,7 +150,7 @@ export default function LikedYouScreen() {
         Alert.alert("Success", "Like sent!");
       }
     } catch (error) {
-      console.error("ƒ?O Compliment Error:", error);
+      console.error("Compliment error:", error);
       Alert.alert("Error", "Failed to send compliment");
     }
   };
@@ -176,11 +176,10 @@ export default function LikedYouScreen() {
 
       return result;
     } catch (error) {
-      console.error("??O Swipe Action Error:", error);
+      console.error("Swipe action error:", error);
       throw error;
     }
   };
-
 
   const handleAccept = async () => {
     if (!expandedProfile?.chatId || isProcessing) return;
@@ -204,18 +203,16 @@ export default function LikedYouScreen() {
       }
 
       navigation.navigate("ChatScreen", {
-  chatId: expandedProfile.chatId,
-  channelSid: expandedProfile.twilioChannelSid,
-  twilioChatChannelSid: expandedProfile.twilioChannelSid,
-
-  receiverId: expandedProfile._id,
-  receiverUsername: expandedProfile.name,
-  actualReceiverId: expandedProfile._id,
-
-  chatStatus: "accepted",
-  showMatchedBanner: true,
-  complimentPreview: expandedProfile.complimentPreview ?? null,
-});
+        chatId: expandedProfile.chatId,
+        channelSid: expandedProfile.twilioChannelSid,
+        twilioChatChannelSid: expandedProfile.twilioChannelSid,
+        receiverId: expandedProfile._id,
+        receiverUsername: expandedProfile.name,
+        actualReceiverId: expandedProfile._id,
+        chatStatus: "accepted",
+        showMatchedBanner: true,
+        complimentPreview: expandedProfile.complimentPreview ?? null,
+      });
     } catch (error) {
       console.error("Accept error:", error);
       navigation.navigate("ChatScreen", {
@@ -251,11 +248,15 @@ export default function LikedYouScreen() {
         throw new Error(result.message || "Reject failed");
       }
 
-      setLikedUsers((prev) => prev.filter((u) => u.chatId !== expandedProfile.chatId && u._id !== expandedProfile._id));
+      setLikedUsers((prev) =>
+        prev.filter((u) => u.chatId !== expandedProfile.chatId && u._id !== expandedProfile._id)
+      );
       setExpandedProfile(null);
     } catch (error) {
       console.error("Reject error:", error);
-      setLikedUsers((prev) => prev.filter((u) => u.chatId !== expandedProfile.chatId && u._id !== expandedProfile._id));
+      setLikedUsers((prev) =>
+        prev.filter((u) => u.chatId !== expandedProfile.chatId && u._id !== expandedProfile._id)
+      );
       setExpandedProfile(null);
     } finally {
       setIsProcessing(false);
@@ -265,23 +266,26 @@ export default function LikedYouScreen() {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#ff5864" />
+        <ActivityIndicator size="large" color="#E85B5B" />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      <View style={[styles.bgOrb, styles.bgOrbTop]} />
+      <View style={[styles.bgOrb, styles.bgOrbBottom]} />
+
       {showMatchBanner && (
-        <View style={{ backgroundColor: "#ffdbdb", padding: 10, alignItems: "center" }}>
-          <Text style={{ fontSize: 18, fontWeight: "bold", color: "#d32f2f" }}>💖 It's a Match!</Text>
+        <View style={styles.matchBanner}>
+          <Text style={styles.matchBannerText}>Its a match!</Text>
         </View>
       )}
 
       {expandedProfile ? (
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <TouchableOpacity onPress={() => setExpandedProfile(null)} style={{ padding: 10 }}>
-            <ArrowLeft size={24} color="#333" />
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <TouchableOpacity onPress={() => setExpandedProfile(null)} style={styles.backButton}>
+            <ArrowLeft size={20} color="#2C1B17" />
           </TouchableOpacity>
 
           <View style={styles.profileContainer}>
@@ -294,11 +298,11 @@ export default function LikedYouScreen() {
                   <TouchableOpacity
                     style={styles.overlayHeart}
                     onPress={() => {
-                      setSelectedUser(expandedProfile); // ✅ full profile
+                      setSelectedUser(expandedProfile);
                       setModalVisible(true);
                     }}
                   >
-                    <Heart size={24} color="#ff5864" />
+                    <Heart size={20} color="#E85B5B" />
                   </TouchableOpacity>
                 </View>
 
@@ -311,11 +315,11 @@ export default function LikedYouScreen() {
                     <TouchableOpacity
                       style={styles.overlayHeartPrompt}
                       onPress={() => {
-                        setSelectedUser(expandedProfile); // ✅ full profile
+                        setSelectedUser(expandedProfile);
                         setModalVisible(true);
                       }}
                     >
-                      <Heart size={24} color="#ff5864" />
+                      <Heart size={20} color="#E85B5B" />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -323,38 +327,37 @@ export default function LikedYouScreen() {
                 {i === 0 && (
                   <>
                     {expandedProfile.complimentPreview ? (
-                      <Text style={{ marginTop: 8, fontSize: 14 }}>
+                      <Text style={styles.statusText}>
                         Compliment: {expandedProfile.complimentPreview}
                       </Text>
                     ) : null}
-                    <Text style={{ fontSize: 14 }}>
-                      Status: {expandedProfile.status}
-                    </Text>
+                    <Text style={styles.statusText}>Status: {expandedProfile.status}</Text>
                     {expandedProfile.status === "pending" && expandedProfile.chatId ? (
-                      <View style={{ flexDirection: "row", marginTop: 8 }}>
+                      <View style={styles.actionRow}>
                         <TouchableOpacity
-                          style={[styles.overlayHeart, { flex: 1, marginRight: 8, opacity: isProcessing ? 0.6 : 1 }]}
+                          style={[styles.primaryAction, isProcessing && styles.disabledAction]}
                           disabled={isProcessing}
                           onPress={handleAccept}
                         >
-                          <Text style={{ color: "#ff5864", fontWeight: "700" }}>Accept</Text>
+                          <Text style={styles.primaryActionText}>Accept</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          style={[styles.overlayHeart, { flex: 1, backgroundColor: "#f5f5f5", opacity: isProcessing ? 0.6 : 1 }]}
+                          style={[styles.secondaryAction, isProcessing && styles.disabledAction]}
                           disabled={isProcessing}
                           onPress={handleReject}
                         >
-                          <Text style={{ color: "#333", fontWeight: "700" }}>Reject</Text>
+                          <Text style={styles.secondaryActionText}>Reject</Text>
                         </TouchableOpacity>
                       </View>
                     ) : null}
                   </>
                 )}
+
                 {i === 0 && (
                   <View style={styles.detailsBox}>
                     <Text style={styles.infoText}>🎂 {expandedProfile.dateOfBirth}</Text>
                     <Text style={styles.infoText}>👤 {expandedProfile.gender}</Text>
-                    <Text style={styles.infoText}>📋 {expandedProfile.height}</Text>
+                    <Text style={styles.infoText}>📏 {expandedProfile.height}</Text>
 
                     <View style={styles.bubbleContainer}>
                       {expandedProfile.interests?.map((item, index) => (
@@ -366,17 +369,19 @@ export default function LikedYouScreen() {
 
                     <View style={styles.bubbleContainer}>
                       {expandedProfile.values?.map((item, index) => (
-                        <View key={index} style={[styles.bubble, { backgroundColor: "#d4edda" }]}>
+                        <View key={index} style={[styles.bubble, styles.valueBubble]}>
                           <Text style={styles.bubbleText}>💬 {item}</Text>
                         </View>
                       ))}
                     </View>
 
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.extraFieldRow}>
                       {extraFields.map(({ key, emoji }, idx) =>
                         expandedProfile[key] ? (
-                          <View key={idx} style={[styles.bubble, { backgroundColor: "#e0f7fa" }]}>
-                            <Text style={styles.bubbleText}>{emoji} {expandedProfile[key]}</Text>
+                          <View key={idx} style={[styles.bubble, styles.extraBubble]}>
+                            <Text style={styles.bubbleText}>
+                              {emoji} {expandedProfile[key]}
+                            </Text>
                           </View>
                         ) : null
                       )}
@@ -388,16 +393,18 @@ export default function LikedYouScreen() {
           </View>
         </ScrollView>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={styles.header}>Liked Your Profile!</Text>
-          <Text style={styles.subheader}>
-            {likedUsers.length > 0
-              ? `${likedUsers.length} people have liked your profile`
-              : "Here's who liked you recently"}
-          </Text>
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.headerCard}>
+            <Text style={styles.header}>Liked Your Profile</Text>
+            <Text style={styles.subheader}>
+              {likedUsers.length > 0
+                ? `${likedUsers.length} people have liked your profile`
+                : "Here is who liked you recently"}
+            </Text>
+          </View>
 
           {likedUsers.length === 0 ? (
-            <Text style={styles.noLikesText}>No one has liked you yet 😔</Text>
+            <Text style={styles.noLikesText}>No likes yet</Text>
           ) : (
             <View style={styles.gridContainer}>
               {likedUsers.map((profile) => (
@@ -407,7 +414,9 @@ export default function LikedYouScreen() {
                   onPress={() => setExpandedProfile(profile)}
                 >
                   <Image source={{ uri: profile.photos?.[0] }} style={styles.avatarGrid} />
-                  <Text style={styles.miniProfileName}>{profile.name}</Text>
+                  <Text style={styles.miniProfileName} numberOfLines={1}>
+                    {profile.name}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -418,18 +427,20 @@ export default function LikedYouScreen() {
       <Modal visible={isModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <X size={30} color="black" />
+            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+              <X size={24} color="#2C1B17" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Send a Compliment</Text>
             <TextInput
               placeholder="Type compliment..."
+              placeholderTextColor="#9D958C"
               style={styles.input}
               value={compliment}
               onChangeText={setCompliment}
             />
             <TouchableOpacity style={styles.heartButton} onPress={handleSendCompliment}>
-              <Heart size={30} color="white" />
+              <Heart size={20} color="#FFFFFF" />
+              <Text style={styles.heartButtonText}>Send</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -441,51 +452,343 @@ export default function LikedYouScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  loading: { flex: 1, justifyContent: "center", alignItems: "center" },
-  scrollContainer: { paddingBottom: 100 },
-  header: { fontSize: 28, fontWeight: "bold", textAlign: "center", marginTop: 50 },
-  subheader: { fontSize: 16, color: "#666", textAlign: "center", marginBottom: 10 },
-  noLikesText: { fontSize: 16, color: "#999", textAlign: "center", marginTop: 50 },
-  profileContainer: { marginBottom: 40, paddingHorizontal: 16 },
-  name: { fontSize: 24, fontWeight: "bold", marginBottom: 10, textAlign: "center" },
-  mediaBlock: { marginBottom: 20 },
-  image: { width: "100%", height: 400, borderRadius: 12 },
-  overlayHeart: { position: "absolute", top: 10, right: 10, backgroundColor: "white", padding: 6, borderRadius: 50, elevation: 3 },
-  overlayHeartPrompt: { position: "absolute", top: 10, right: 10, backgroundColor: "white", padding: 6, borderRadius: 50, elevation: 3 },
-  detailsBox: { marginTop: 10, padding: 10, borderWidth: 1, borderColor: "#ddd", borderRadius: 10 },
-  infoText: { fontSize: 16, marginVertical: 4 },
-  bubbleContainer: { flexDirection: "row", flexWrap: "wrap", marginTop: 6 },
-  bubble: { backgroundColor: "#ffe5ec", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, margin: 4 },
-  bubbleText: { fontSize: 14 },
-  promptCard: { backgroundColor: "#fff", padding: 16, borderRadius: 12, borderWidth: 1, borderColor: "#eee", marginTop: 10, position: 'relative' },
-  promptTitle: { fontSize: 18, color: "#333", fontWeight: "500", marginBottom: 15 },
-  promptAnswer: { fontSize: 28, fontWeight: "900", fontFamily: "serif", lineHeight: 34 },
-  modalContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" },
-  modalContent: { backgroundColor: "#fff", padding: 20, borderRadius: 10, width: "80%" },
-  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
-  input: { borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 8, marginBottom: 10 },
-  heartButton: { backgroundColor: "#ff5864", padding: 15, borderRadius: 50, alignSelf: "center", marginTop: 10 },
-  miniProfileBox: { flexDirection: "row", alignItems: "center", padding: 12, borderBottomWidth: 1, borderColor: "#eee" },
-  avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 12 },
-  miniProfileName: { fontSize: 18, fontWeight: "bold" },
-    gridContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  container: {
+    flex: 1,
+    backgroundColor: "#FAF8F3",
+  },
+  bgOrb: {
+    position: "absolute",
+    borderRadius: 999,
+    zIndex: 0,
+  },
+  bgOrbTop: {
+    width: 260,
+    height: 260,
+    backgroundColor: "rgba(245, 188, 168, 0.25)",
+    top: -90,
+    right: -70,
+  },
+  bgOrbBottom: {
+    width: 220,
+    height: 220,
+    backgroundColor: "rgba(232, 91, 91, 0.12)",
+    bottom: 80,
+    left: -90,
+  },
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FAF8F3",
+  },
+  scrollContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 100,
+  },
+  matchBanner: {
+    marginHorizontal: 16,
+    marginTop: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "#FDE4DF",
+    alignItems: "center",
+    zIndex: 2,
+  },
+  matchBannerText: {
+    fontSize: 15,
+    color: "#9F2E2E",
+    fontFamily: "Poppins_600SemiBold",
+  },
+  headerCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#F0E5DA",
+    padding: 20,
+    marginBottom: 14,
+    shadowColor: "#2C1B17",
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  header: {
+    fontSize: 26,
+    color: "#2C1B17",
+    textAlign: "center",
+    fontFamily: "Poppins_700Bold",
+  },
+  subheader: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#6F655E",
+    textAlign: "center",
+    fontFamily: "Poppins_400Regular",
+  },
+  noLikesText: {
+    fontSize: 15,
+    color: "#7F766E",
+    textAlign: "center",
+    marginTop: 50,
+    fontFamily: "Poppins_500Medium",
+  },
+  profileContainer: {
+    marginBottom: 40,
+  },
+  backButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#F0E5DA",
+    marginBottom: 14,
+    shadowColor: "#2C1B17",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  name: {
+    fontSize: 24,
+    color: "#2C1B17",
+    marginBottom: 12,
+    textAlign: "center",
+    fontFamily: "Poppins_700Bold",
+  },
+  mediaBlock: {
+    marginBottom: 18,
+  },
+  cardContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    marginBottom: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#F0E5DA",
+    shadowColor: "#2C1B17",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+    position: "relative",
+  },
+  image: {
+    width: "100%",
+    height: 400,
+    borderRadius: 16,
+  },
+  overlayHeart: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#F0E5DA",
+    elevation: 2,
+  },
+  overlayHeartPrompt: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#F0E5DA",
+    elevation: 2,
+  },
+  promptCard: {
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#F0E5DA",
+  },
+  promptTitle: {
+    fontSize: 15,
+    color: "#6F655E",
+    marginBottom: 12,
+    fontFamily: "Poppins_500Medium",
+  },
+  promptAnswer: {
+    fontSize: 24,
+    lineHeight: 32,
+    color: "#2C1B17",
+    fontFamily: "Poppins_700Bold",
+  },
+  statusText: {
+    marginTop: 6,
+    fontSize: 14,
+    color: "#4A403A",
+    fontFamily: "Poppins_500Medium",
+  },
+  actionRow: {
+    flexDirection: "row",
+    marginTop: 10,
+    gap: 10,
+  },
+  primaryAction: {
+    flex: 1,
+    backgroundColor: "#E85B5B",
+    borderRadius: 12,
+    paddingVertical: 11,
+    alignItems: "center",
+  },
+  secondaryAction: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E7DDD3",
+    borderRadius: 12,
+    paddingVertical: 11,
+    alignItems: "center",
+  },
+  primaryActionText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  secondaryActionText: {
+    color: "#2C1B17",
+    fontSize: 14,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  disabledAction: {
+    opacity: 0.6,
+  },
+  detailsBox: {
+    marginTop: 10,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#EFE4D9",
+    borderRadius: 14,
+    backgroundColor: "#FFFFFF",
+  },
+  infoText: {
+    fontSize: 14,
+    color: "#3F3530",
+    marginVertical: 3,
+    fontFamily: "Poppins_500Medium",
+  },
+  bubbleContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 8,
+  },
+  bubble: {
+    backgroundColor: "#FCE8E3",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 18,
+    margin: 4,
+  },
+  valueBubble: {
+    backgroundColor: "#E6F4EA",
+  },
+  extraBubble: {
+    backgroundColor: "#E8F3F8",
+  },
+  bubbleText: {
+    fontSize: 12,
+    color: "#2C1B17",
+    fontFamily: "Poppins_500Medium",
+  },
+  extraFieldRow: {
+    marginTop: 8,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(20, 11, 8, 0.45)",
+    paddingHorizontal: 18,
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    padding: 18,
+    borderRadius: 16,
+    width: "100%",
+    maxWidth: 420,
+    borderWidth: 1,
+    borderColor: "#F0E5DA",
+  },
+  closeButton: {
+    alignSelf: "flex-end",
+  },
+  modalTitle: {
+    fontSize: 18,
+    color: "#2C1B17",
+    marginBottom: 12,
+    fontFamily: "Poppins_700Bold",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#E7DDD3",
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    borderRadius: 12,
+    marginBottom: 14,
+    fontSize: 14,
+    color: "#2C1B17",
+    fontFamily: "Poppins_500Medium",
+  },
+  heartButton: {
+    backgroundColor: "#E85B5B",
+    borderRadius: 12,
+    height: 46,
+    alignSelf: "center",
+    width: 136,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  heartButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  miniProfileName: {
+    fontSize: 15,
+    color: "#2C1B17",
+    fontFamily: "Poppins_600SemiBold",
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
   gridItem: {
     width: "48%",
     alignItems: "center",
-    backgroundColor: "#fff0d9",
-      padding: 12,
-      borderRadius: 12,
-      marginBottom: 12,
-      elevation: 2,
-    },
-    avatarGrid: { width: 70, height: 70, borderRadius: 35, marginBottom: 8 },
-    cardContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    marginBottom: 15,
-    overflow: "hidden",
-    elevation: 3,
-    position: "relative",
-  }
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#F0E5DA",
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 12,
+    shadowColor: "#2C1B17",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  avatarGrid: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    marginBottom: 8,
+  },
 });

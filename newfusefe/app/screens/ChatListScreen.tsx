@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  Alert,
   Image,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BottomNav } from "../../components/BottomNav";
@@ -84,13 +84,19 @@ export default function ChatListScreen({ navigation }) {
   return (
     <View style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ff5864" />
+          <Text style={styles.loadingText}>Loading chats...</Text>
+        </View>
       ) : (
         <>
-          <Text style={styles.heading}>🗣️ Talk with People </Text>
+          <View style={styles.header}>
+            <Text style={styles.heading}>Chats</Text>
+            <Text style={styles.subHeading}>Talk with people you matched with</Text>
+          </View>
 
           <FlatList
-            contentContainerStyle={{ paddingTop: 30 }}
+            contentContainerStyle={styles.listContent}
             data={chats}
             keyExtractor={(item) => item.chatId || item._id}
             renderItem={({ item }) => {
@@ -107,7 +113,7 @@ export default function ChatListScreen({ navigation }) {
               return (
                 <TouchableOpacity
                   onPress={() => {
-navigation.navigate("ChatScreen", {
+                    navigation.navigate("ChatScreen", {
                       receiverId: item.user.id || item.user._id,
                       receiverUsername: item.user.name,
                       chatId: item.chatId || item._id,
@@ -120,14 +126,19 @@ navigation.navigate("ChatScreen", {
                     });
                   }}
                   style={styles.chatItem}
+                  activeOpacity={0.9}
                 >
                   <View style={styles.chatRow}>
                     {profilePic ? (
                       <Image source={{ uri: profilePic }} style={styles.avatar} />
                     ) : (
-                      <View style={styles.avatarPlaceholder} />
+                      <View style={styles.avatarPlaceholder}>
+                        <Text style={styles.avatarInitial}>
+                          {(item.user.name || "?").slice(0, 1).toUpperCase()}
+                        </Text>
+                      </View>
                     )}
-                    <View style={{ flex: 1 }}>
+                    <View style={styles.chatContent}>
                       <Text style={styles.chatName}>
                         {item.user.name || "Unknown User"}
                       </Text>
@@ -135,13 +146,22 @@ navigation.navigate("ChatScreen", {
                         <Text style={styles.complimentPreview} numberOfLines={1}>
                           Compliment: {item.complimentPreview}
                         </Text>
-                      ) : null}
+                      ) : (
+                        <Text style={styles.lastMessageHint}>
+                          Tap to open conversation
+                        </Text>
+                      )}
                     </View>
-                  </View>
-                  <View style={styles.badgeRow}>
-                    <Text style={[styles.badge, isPending ? styles.badgePending : styles.badgeMatched]}>
-                      {isPending ? "Pending" : "Matched"}
-                    </Text>
+                    <View style={styles.badgeRow}>
+                      <Text
+                        style={[
+                          styles.badge,
+                          isPending ? styles.badgePending : styles.badgeMatched,
+                        ]}
+                      >
+                        {isPending ? "Pending" : "Matched"}
+                      </Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               );
@@ -160,25 +180,50 @@ navigation.navigate("ChatScreen", {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: "#FAF8F3" },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 10,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "ios" ? 60 : 44,
+    paddingBottom: 10,
+  },
   heading: {
-    fontSize: 22,
-    fontWeight: "700",
-    textAlign: "center",
-    marginTop: 25,
-    marginBottom: 10,
-    color: "#000",
+    fontSize: 26,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+    letterSpacing: 0.2,
+  },
+  subHeading: {
+    marginTop: 2,
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+  },
+  listContent: {
+    paddingTop: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 92,
   },
   chatItem: {
-    padding: 15,
+    padding: 14,
     marginBottom: 12,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
   },
   chatRow: {
     flexDirection: "row",
@@ -196,26 +241,50 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     marginRight: 12,
-    backgroundColor: "#ddd",
+    backgroundColor: "#FFF5F5",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#FDE2E4",
   },
-  chatName: { fontSize: 18, fontWeight: "600", color: "#333" },
+  avatarInitial: {
+    color: "#ff5864",
+    fontSize: 16,
+    fontFamily: "Poppins-Bold",
+  },
+  chatContent: { flex: 1 },
+  chatName: {
+    fontSize: 16,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-SemiBold",
+  },
+  complimentPreview: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 4,
+    fontFamily: "Poppins",
+  },
+  lastMessageHint: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    marginTop: 4,
+    fontFamily: "Poppins",
+  },
+  badgeRow: { marginLeft: 10 },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    alignSelf: "flex-start",
+    fontSize: 11,
+    fontFamily: "Poppins-Bold",
+  },
+  badgePending: { backgroundColor: "#FFF5F5", color: "#ff5864" },
+  badgeMatched: { backgroundColor: "#ECFDF5", color: "#059669" },
   bottomNavWrapper: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
   },
-  complimentPreview: { fontSize: 12, color: "#555", marginTop: 4 },
-  badgeRow: { marginTop: 6 },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: "flex-start",
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#fff",
-  },
-  badgePending: { backgroundColor: "#f0ad4e" },
-  badgeMatched: { backgroundColor: "#5cb85c" },
 });

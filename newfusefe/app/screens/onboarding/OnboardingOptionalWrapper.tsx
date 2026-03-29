@@ -170,6 +170,8 @@ export default function OnboardingOptionalWrapper() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.bgOrbOne} />
+      <View style={styles.bgOrbTwo} />
       <View style={styles.content}>
         {StepComponent && (
           <StepComponent value={normalizedValue} onChange={setValue} />
@@ -195,23 +197,47 @@ export default function OnboardingOptionalWrapper() {
 /* ---------------- STYLES ---------------- */
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: "#FAF8F3" },
+  bgOrbOne: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "#FFF0F2",
+    top: -42,
+    left: -48,
+  },
+  bgOrbTwo: {
+    position: "absolute",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "#FFE4E8",
+    bottom: 120,
+    right: -40,
+  },
   content: { flex: 1 },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 20,
     borderTopWidth: 1,
-    borderColor: "#eee",
+    borderColor: "#F3F4F6",
+    backgroundColor: "rgba(250,248,243,0.96)",
   },
-  skip: { fontSize: 16, color: "#666" },
+  skip: { fontSize: 16, color: "#6B7280", fontFamily: "Poppins-SemiBold" },
   nextButton: {
-    backgroundColor: "#e11d48",
+    backgroundColor: "#ff5864",
     paddingVertical: 12,
     paddingHorizontal: 28,
-    borderRadius: 24,
+    borderRadius: 999,
+    shadowColor: "#ff5864",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  nextText: { color: "#fff", fontWeight: "700" },
+  nextText: { color: "#fff", fontFamily: "Poppins-Bold" },
   center: {
     flex: 1,
     justifyContent: "center",

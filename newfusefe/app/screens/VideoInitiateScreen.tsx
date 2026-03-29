@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   StyleSheet,
   Alert,
   Platform,
@@ -17,6 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Camera } from "expo-camera";
 import { PermissionsAndroid } from "react-native";
 import { BottomNav } from "../../components/BottomNav";
+import Icon from "react-native-vector-icons/Feather";
 
 export default function VideoInitiateScreen() {
   const [interests, setInterests] = useState("");
@@ -119,23 +119,51 @@ export default function VideoInitiateScreen() {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
-          <Text style={styles.heading}>Enter Interests</Text>
+          <View style={styles.bgOrbOne} />
+          <View style={styles.bgOrbTwo} />
 
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., movies, fitness, travel"
-            placeholderTextColor="#000"
-            value={interests}
-            onChangeText={setInterests}
-            autoCapitalize="none"
-            autoCorrect={false}
-            multiline
-          />
+          <View style={styles.centerWrap}>
+            <View style={styles.visualRow}>
+              <View style={styles.visualDot}>
+                <Icon name="video" size={16} color="#ff5864" />
+              </View>
+              <View style={styles.visualDot}>
+                <Icon name="camera" size={16} color="#ff5864" />
+              </View>
+              <View style={styles.visualDot}>
+                <Icon name="heart" size={16} color="#ff5864" />
+              </View>
+            </View>
 
-          <View style={styles.buttonWrapper}>
-            <TouchableOpacity style={styles.startButton} onPress={handleStartCall}>
-              <Text style={styles.startButtonText}>Start Video Call</Text>
-            </TouchableOpacity>
+            <View style={styles.header}>
+              <Text style={styles.heading}>Video Call</Text>
+              <Text style={styles.subHeading}>Set your interests to find the right match</Text>
+            </View>
+
+            <View style={styles.formCard}>
+              <Text style={styles.label}>Enter interests</Text>
+
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., movies, fitness, travel"
+                placeholderTextColor="#9CA3AF"
+                value={interests}
+                onChangeText={setInterests}
+                autoCapitalize="none"
+                autoCorrect={false}
+                multiline
+              />
+
+              <Text style={styles.helperText}>
+                Use commas to add multiple interests for better matching.
+              </Text>
+
+              <View style={styles.buttonWrapper}>
+                <TouchableOpacity style={styles.startButton} onPress={handleStartCall}>
+                  <Text style={styles.startButtonText}>Start Video Call</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
 
           <View style={styles.bottomNavWrapper}>
@@ -150,27 +178,113 @@ export default function VideoInitiateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 16,
+    backgroundColor: "#FAF8F3",
+    overflow: "hidden",
+  },
+  centerWrap: {
+    flex: 1,
     justifyContent: "center",
-    backgroundColor: "#fff",
+    paddingBottom: 66,
+  },
+  bgOrbOne: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "#FFF0F2",
+    top: -40,
+    left: -50,
+  },
+  bgOrbTwo: {
+    position: "absolute",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "#FFE4E8",
+    bottom: 120,
+    right: -40,
+  },
+  visualRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 14,
+    gap: 10,
+  },
+  visualDot: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  header: {
+    paddingTop: 0,
+    paddingBottom: 12,
+    alignItems: "center",
   },
   heading: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 16,
+    fontSize: 26,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+    letterSpacing: 0.2,
     textAlign: "center",
   },
+  subHeading: {
+    marginTop: 2,
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+    textAlign: "center",
+  },
+  formCard: {
+    marginTop: 8,
+    backgroundColor: "#ffffff",
+    borderRadius: 22,
+    padding: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  label: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    fontFamily: "Poppins-Bold",
+    marginBottom: 10,
+  },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 24,
-    fontSize: 16,
-    backgroundColor: "#f9f9f9",
+    borderWidth: 1.5,
+    borderColor: "#F3F4F6",
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 16,
+    marginBottom: 10,
+    fontSize: 15,
+    backgroundColor: "#ffffff",
+    color: "#1a1a1a",
+    fontFamily: "Poppins",
+    minHeight: 88,
+    textAlignVertical: "top",
+  },
+  helperText: {
+    fontSize: 13,
+    color: "#6B7280",
+    fontFamily: "Poppins",
+    marginBottom: 16,
+    lineHeight: 20,
   },
   buttonWrapper: {
-    marginBottom: 60,
+    marginBottom: 2,
   },
   bottomNavWrapper: {
     position: "absolute",
@@ -179,14 +293,19 @@ const styles = StyleSheet.create({
     right: 0,
   },
   startButton: {
-    backgroundColor: '#ff5864',
+    backgroundColor: "#ff5864",
     paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
+    borderRadius: 14,
+    alignItems: "center",
+    shadowColor: "#ff5864",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
   },
   startButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: "Poppins-Bold",
   },
 });

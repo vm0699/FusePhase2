@@ -23,12 +23,11 @@ export default function WaitingScreen() {
   useEffect(() => {
     try {
       if (!userId || !interests) {
-        console.warn("❌ Invalid params. userId or interests missing.");
+        console.warn("Invalid params. userId or interests missing.");
         return navigation.goBack();
       }
 
-      // Redacted: avoid logging userId/interests
-      console.log("✅ WaitingScreen launched.");
+      console.log("WaitingScreen launched.");
 
       socket.current = io(SOCKET_SERVER, {
         path: "/socket.io",
@@ -40,35 +39,44 @@ export default function WaitingScreen() {
 
       socket.current.on("connect", () => {
         const normalizedInterests = interests.map((i) => i.toLowerCase());
-        // Redacted: avoid logging join payload
-        console.log("✅ Connected to socket. Joining video queue.");
-        socket.current.emit("join_video_queue", { userId, interests: normalizedInterests });
+        console.log("Connected to socket. Joining video queue.");
+        socket.current.emit("join_video_queue", {
+          userId,
+          interests: normalizedInterests,
+        });
       });
 
-      socket.current.on("match_found", async ({ matchedUserId, room, matchedInterest }) => {
-        try {
-          setWaiting(false);
-          // Redacted: avoid logging matched user, room, or interest details
-          console.log("🎯 Match found. Fetching token…");
+      socket.current.on(
+        "match_found",
+        async ({ matchedUserId, room, matchedInterest }) => {
+          try {
+            setWaiting(false);
+            setMatchedInterest(matchedInterest || "");
+            console.log("Match found. Fetching token...");
 
-          const result = await fetchAgoraToken(room);
-          if (!result) {
-            Alert.alert("Error", "Failed to generate video token.");
-            return;
+            const result = await fetchAgoraToken(room);
+            if (!result) {
+              Alert.alert("Error", "Failed to generate video token.");
+              return;
+            }
+
+            navigation.replace("AgoraCallScreen", {
+              channelName: room,
+              token: result.token,
+              uid: result.uid,
+            });
+          } catch (matchErr) {
+            console.error("Error during match_found handler:", matchErr);
           }
-
-          navigation.replace("AgoraCallScreen", {
-            channelName: room,
-            token: result.token,
-            uid: result.uid,
-          });
-        } catch (matchErr) {
-          console.error("❌ Error during match_found handler:", matchErr);
         }
-      });
+      );
 
-      socket.current.on("disconnect", () => console.log("❌ Socket Disconnected"));
-      socket.current.on("connect_error", (err) => console.error("❌ Socket Error:", err));
+      socket.current.on("disconnect", () =>
+        console.log("Socket disconnected")
+      );
+      socket.current.on("connect_error", (err) =>
+        console.error("Socket error:", err)
+      );
 
       const timeout = setTimeout(() => {
         if (waiting) {
@@ -82,43 +90,51 @@ export default function WaitingScreen() {
         if (socket.current) socket.current.disconnect();
       };
     } catch (err) {
-      console.error("❌ useEffect error in WaitingScreen:", err);
+      console.error("useEffect error in WaitingScreen:", err);
     }
   }, []);
 
   const fetchAgoraToken = async (channelName) => {
     try {
       const uid = Math.floor(Math.random() * 10000);
-      // Redacted: avoid logging token URL or params
-      console.log("🌐 Fetching Agora token…");
+      console.log("Fetching Agora token...");
 
-      const response = await fetch(`${NGROK_SERVER_URL}/api/agora/token?channelName=${channelName}&uid=${uid}`);
+      const response = await fetch(
+        `${NGROK_SERVER_URL}/api/agora/token?channelName=${channelName}&uid=${uid}`
+      );
       const data = await response.json();
       if (data.token) {
-        // Redacted: don't log token or uid
         return { token: data.token, uid };
       }
     } catch (error) {
-      console.error("❌ Failed to fetch Agora token:", error);
+      console.error("Failed to fetch Agora token:", error);
     }
     return null;
   };
 
   return (
     <View style={styles.container}>
+      <View style={styles.bgOrbOne} />
+      <View style={styles.bgOrbTwo} />
+
       <View style={styles.card}>
         {waiting ? (
           <>
-            <Text style={styles.heading}>🔍 Searching for a match...</Text>
-            <ActivityIndicator size="large" color="#00BFFF" />
-            <Text style={styles.dots}>.</Text>
+            <Text style={styles.eyebrow}>Video Matchmaking</Text>
+            <Text style={styles.heading}>Searching for a match...</Text>
+            <ActivityIndicator size="large" color="#ff5864" />
+            <Text style={styles.subtext}>
+              Looking for someone with similar interests.
+            </Text>
           </>
         ) : (
           <>
-            <Text style={styles.heading}>🎯 Match Found!</Text>
+            <Text style={styles.eyebrow}>Video Matchmaking</Text>
+            <Text style={styles.heading}>Match found</Text>
             {matchedInterest ? (
               <Text style={styles.matchText}>
-                Shared interest: <Text style={styles.highlight}>{matchedInterest}</Text>
+                Shared interest:{" "}
+                <Text style={styles.highlight}>{matchedInterest}</Text>
               </Text>
             ) : null}
             <Text style={styles.subtext}>Connecting you now...</Text>
@@ -126,7 +142,7 @@ export default function WaitingScreen() {
         )}
 
         <Pressable
-          style={[styles.cancelButton, !waiting && { opacity: 0.5 }]}
+          style={[styles.cancelButton, !waiting && { opacity: 0.55 }]}
           onPress={() => navigation.goBack()}
           disabled={!waiting}
         >
@@ -140,60 +156,93 @@ export default function WaitingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111",
+    backgroundColor: "#FAF8F3",
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 24,
+    overflow: "hidden",
+  },
+  bgOrbOne: {
+    position: "absolute",
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: "#FFF0F2",
+    top: -40,
+    left: -45,
+  },
+  bgOrbTwo: {
+    position: "absolute",
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: "#FFE4E8",
+    bottom: 90,
+    right: -35,
   },
   card: {
-    backgroundColor: "#1c1c1e",
-    padding: 30,
-    borderRadius: 20,
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    borderRadius: 24,
     shadowColor: "#000",
-    shadowOpacity: 0.4,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 6,
-    width: "90%",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 10,
+    elevation: 3,
+    width: "100%",
+    maxWidth: 360,
     alignItems: "center",
   },
+  eyebrow: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    fontFamily: "Poppins-SemiBold",
+    marginBottom: 10,
+  },
   heading: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#f5f5f5",
-    marginBottom: 20,
+    fontSize: 24,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+    marginBottom: 16,
     textAlign: "center",
   },
   subtext: {
-    fontSize: 16,
-    color: "#aaa",
-    marginTop: 10,
+    fontSize: 14,
+    color: "#6B7280",
+    marginTop: 12,
     textAlign: "center",
+    lineHeight: 21,
+    fontFamily: "Poppins",
   },
   matchText: {
-    fontSize: 18,
-    color: "#ccc",
+    fontSize: 14,
+    color: "#6B7280",
     textAlign: "center",
+    fontFamily: "Poppins",
+    lineHeight: 21,
   },
   highlight: {
-    color: "#00E0FF",
-    fontWeight: "bold",
+    color: "#ff5864",
+    fontFamily: "Poppins-Bold",
   },
   cancelButton: {
-    marginTop: 30,
-    backgroundColor: "#ff3b30",
+    marginTop: 24,
+    backgroundColor: "#ff5864",
     paddingVertical: 12,
     paddingHorizontal: 30,
-    borderRadius: 8,
+    borderRadius: 999,
+    shadowColor: "#ff5864",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
   },
   cancelText: {
     color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  dots: {
-    fontSize: 30,
-    color: "#00BFFF",
-    marginTop: 10,
+    fontSize: 15,
+    fontFamily: "Poppins-Bold",
   },
 });

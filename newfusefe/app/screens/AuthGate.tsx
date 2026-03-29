@@ -21,18 +21,18 @@ export default function AuthGate({ navigation }) {
          */
         const boot = await authClient.bootstrap();
 
-if (!boot.ok) {
-  console.log(
-    '🟥 [AuthGate] BOOTSTRAP FAILED → Login',
-    'reason' in boot ? boot.reason : 'unknown'
-  );
+        if (!boot.ok) {
+          console.log(
+            '🟥 [AuthGate] BOOTSTRAP FAILED → Login',
+            'reason' in boot ? boot.reason : 'unknown'
+          );
 
-  navigation.reset({
-    index: 0,
-    routes: [{ name: 'Login' }],
-  });
-  return;
-}
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+          return;
+        }
 
 
         console.log('🟢 [AuthGate] BOOTSTRAP OK → fetching profile');
@@ -63,8 +63,17 @@ if (!boot.ok) {
             return;
           }
 
-          // Transient backend/network issue → do NOT logout
-          console.log('🟠 [AuthGate] PROFILE FETCH FAILED (non-auth) → stay loading');
+          // User not found in DB (cleared data / deleted account) → logout + Login
+          if (res.status === 404) {
+            console.log('🟥 [AuthGate] USER NOT FOUND IN DB → Login');
+            await authClient.logoutLocal();
+            if (!isMounted) return;
+            navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+            return;
+          }
+
+          // Transient backend/network issue (5xx) → do NOT logout, stay loading
+          console.log('🟠 [AuthGate] PROFILE FETCH FAILED (transient) → stay loading');
           return;
         }
 

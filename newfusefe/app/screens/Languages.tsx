@@ -1,69 +1,35 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-
 import LanguagesPicker from "../../components/LanguagesPicker";
+import FuseFieldShell from "../../components/FuseFieldShell";
+import { setProfileEditDraft } from "../utils/profileEditDraft";
 
 export default function LanguagesScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
+  const mode: "onboarding" | "edit" =
+    route.params?.mode === "onboarding" ? "onboarding" : "edit";
+  const fieldKey = route.params?.fieldKey ?? "languages";
   const [value, setValue] = useState<string[]>(
-    Array.isArray(route.params?.currentValue)
-      ? route.params.currentValue
-      : []
+    Array.isArray(route.params?.currentValue) ? route.params.currentValue : []
   );
 
   const handleDone = () => {
-    if (route.params?.onSelect) {
-      route.params.onSelect(value);
+    if (mode === "edit") {
+      setProfileEditDraft(fieldKey, value);
     }
     navigation.goBack();
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>Cancel</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.title}>Languages Spoken</Text>
-
-        <TouchableOpacity onPress={handleDone}>
-          <Text style={styles.done}>Done</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Picker */}
+    <FuseFieldShell
+      title="Languages"
+      mode={mode}
+      onBack={() => navigation.goBack()}
+      onDone={handleDone}
+    >
       <LanguagesPicker value={value} onChange={setValue} />
-    </View>
+    </FuseFieldShell>
   );
 }
-
-/* ---------------- STYLES ---------------- */
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderColor: "#eee",
-  },
-
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-
-  back: { color: "#6B21A8", fontWeight: "600" },
-  done: { color: "#6B21A8", fontWeight: "600" },
-});

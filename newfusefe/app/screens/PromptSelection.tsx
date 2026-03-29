@@ -12,6 +12,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useProfile } from '../../ProfileContext';
+import OnboardingStepper from '../../components/OnboardingStepper';
 
 const BASE_URL = 'http://172.20.10.4:5000';
 const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
@@ -62,13 +63,13 @@ export default function PromptSelectionPage({ navigation }) {
       const updatedPrompts =
         selectedPrompts.length >= 3
           ? [
-              ...selectedPrompts.slice(1),
-              { question: currentPrompt, answer: currentAnswer.trim() },
-            ]
+            ...selectedPrompts.slice(1),
+            { question: currentPrompt, answer: currentAnswer.trim() },
+          ]
           : [
-              ...selectedPrompts,
-              { question: currentPrompt, answer: currentAnswer.trim() },
-            ];
+            ...selectedPrompts,
+            { question: currentPrompt, answer: currentAnswer.trim() },
+          ];
 
       updateProfileData('prompts', updatedPrompts);
       setCurrentPrompt(null);
@@ -113,16 +114,22 @@ export default function PromptSelectionPage({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <OnboardingStepper currentStep={7} totalSteps={26} />
       {/* Header */}
       <View style={styles.headerContainer}>
-        <Text style={styles.header}>Tell us about yourself</Text>
+        <Text style={styles.header}>Tell your{'\n'}story</Text>
         <Text style={styles.subHeader}>
-          Choose and answer up to 3 prompts to show on your profile.
+          Answer 3 prompts to show on your profile.
         </Text>
       </View>
 
       {/* Categories */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryContainer}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryContainer}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 4 }}
+      >
         {Object.keys(PROMPT_CATEGORIES).map((category) => (
           <TouchableOpacity
             key={category}
@@ -148,6 +155,8 @@ export default function PromptSelectionPage({ navigation }) {
       <FlatList
         data={PROMPT_CATEGORIES[activeCategory as keyof typeof PROMPT_CATEGORIES]}
         keyExtractor={(item) => item}
+        style={styles.promptList}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8 }}
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() => handlePromptSelect(item)}
@@ -162,30 +171,37 @@ export default function PromptSelectionPage({ navigation }) {
                 : styles.unselectedPrompt,
             ]}
           >
-            <Text style={styles.promptText}>{item}</Text>
-            <Ionicons name="chevron-forward" size={20} color="#888" />
+            <Text style={[
+              styles.promptText,
+              selectedPrompts.some((p) => p.question === item) && styles.promptTextSelected,
+            ]}>{item}</Text>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={selectedPrompts.some((p) => p.question === item) ? '#ff5864' : '#D1D5DB'}
+            />
           </TouchableOpacity>
         )}
       />
 
       {/* Selected Prompts */}
-      <View style={styles.selectedPromptsContainer}>
-        <Text style={styles.selectedHeader}>Your selected prompts:</Text>
-        {selectedPrompts.map((prompt, index) => (
-          <View key={index} style={styles.selectedPromptCard}>
-            <Text style={styles.selectedPromptQuestion}>{prompt.question}</Text>
-            <Text style={styles.selectedPromptAnswer}>{prompt.answer}</Text>
+      {selectedPrompts.length > 0 && (
+        <View style={styles.selectedPromptsContainer}>
+          <View style={styles.selectedHeader}>
+            <Text style={styles.selectedHeaderText}>Your prompts</Text>
+            <TouchableOpacity onPress={handleClearAll}>
+              <Text style={styles.clearButton}>Clear all</Text>
+            </TouchableOpacity>
           </View>
-        ))}
-      </View>
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        <TouchableOpacity onPress={handleClearAll}>
-          <Text style={styles.clearButton}>Clear all</Text>
-        </TouchableOpacity>
-        <Text style={styles.countText}>{selectedPrompts.length}/3 added</Text>
-      </View>
+          {selectedPrompts.map((prompt, index) => (
+            <View key={index} style={styles.selectedPromptCard}>
+              <Text style={styles.selectedPromptQuestion}>{prompt.question}</Text>
+              <Text style={styles.selectedPromptAnswer}>{prompt.answer}</Text>
+            </View>
+          ))}
+          <Text style={styles.countText}>{selectedPrompts.length}/3 added</Text>
+        </View>
+      )}
 
       {/* Next */}
       <TouchableOpacity
@@ -202,27 +218,27 @@ export default function PromptSelectionPage({ navigation }) {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{currentPrompt}</Text>
             <TextInput
-              placeholder="Type your answer here..."
+              placeholder="Your answer..."
+              placeholderTextColor="#9ca3af"
               value={currentAnswer}
               onChangeText={setCurrentAnswer}
               style={styles.input}
+              multiline
+              autoFocus
             />
             <View style={styles.modalButtons}>
-              <TouchableOpacity onPress={() => setCurrentPrompt(null)}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setCurrentPrompt(null)}
+              >
                 <Text style={styles.modalCancel}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                style={[styles.modalSaveBtn, !currentAnswer.trim() && styles.modalSaveBtnDisabled]}
                 onPress={handleSavePrompt}
                 disabled={!currentAnswer.trim()}
               >
-                <Text
-                  style={[
-                    styles.modalSave,
-                    !currentAnswer.trim() && styles.disabledSave,
-                  ]}
-                >
-                  Save
-                </Text>
+                <Text style={styles.modalSave}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -233,86 +249,198 @@ export default function PromptSelectionPage({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  headerContainer: { marginTop: 25, marginBottom: 16 },
-  header: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  subHeader: { fontSize: 14, color: '#777' },
-
-  categoryContainer: { flexDirection: 'row', marginBottom: -60 },
-  categoryButton: {
-    height: 50,
-    paddingHorizontal: 12,
-    marginHorizontal: 6,
-    borderRadius: 12,
-    backgroundColor: '#eee',
-    justifyContent: 'center',
+  container: { flex: 1, backgroundColor: '#FAF8F3', paddingTop: 60 },
+  headerContainer: { marginTop: 8, marginBottom: 20, paddingHorizontal: 24 },
+  header: {
+    fontSize: 44,
+    fontWeight: '300',
+    color: '#1a1a1a',
+    fontFamily: 'Poppins',
+    lineHeight: 52,
+    marginBottom: 8,
   },
-  activeCategoryButton: { backgroundColor: '#ff5864' },
-  categoryText: { fontSize: 14, color: '#555' },
-  activeCategoryText: { color: '#fff', fontWeight: 'bold' },
+  subHeader: {
+    fontSize: 15,
+    color: '#6B7280',
+    fontFamily: 'Poppins',
+  },
 
+  categoryContainer: { marginBottom: 16, flexGrow: 0 },
+  categoryButton: {
+    height: 40,
+    paddingHorizontal: 18,
+    marginRight: 8,
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  activeCategoryButton: {
+    backgroundColor: '#ff5864',
+    borderColor: '#ff5864',
+  },
+  categoryText: { fontSize: 14, color: '#6B7280', fontFamily: 'Poppins' },
+  activeCategoryText: { color: '#fff', fontFamily: 'Poppins-SemiBold' },
+
+  promptList: { flexGrow: 0, maxHeight: 220 },
   promptButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    marginBottom: 8,
+    borderWidth: 1.5,
   },
-  promptText: { flex: 1, fontSize: 16, color: '#333' },
-  selectedPrompt: { backgroundColor: '#e0f7fa' },
-  unselectedPrompt: { backgroundColor: '#fff' },
+  promptText: {
+    flex: 1,
+    fontSize: 15,
+    color: '#374151',
+    fontFamily: 'Poppins',
+  },
+  promptTextSelected: {
+    color: '#ff5864',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  selectedPrompt: {
+    backgroundColor: '#fff5f6',
+    borderColor: '#ff5864',
+  },
+  unselectedPrompt: {
+    backgroundColor: '#ffffff',
+    borderColor: '#F3F4F6',
+  },
 
-  selectedPromptsContainer: { marginTop: 16 },
-  selectedHeader: { fontSize: 16, fontWeight: 'bold', color: '#555' },
+  selectedPromptsContainer: {
+    marginHorizontal: 24,
+    marginTop: 16,
+  },
+  selectedHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  selectedHeaderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    fontFamily: 'Poppins-SemiBold',
+  },
   selectedPromptCard: {
-    marginTop: 8,
-    padding: 12,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
+    marginBottom: 8,
+    padding: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
   },
-  selectedPromptQuestion: { fontSize: 14, fontWeight: 'bold', color: '#333' },
-  selectedPromptAnswer: { fontSize: 14, color: '#777', marginTop: 4 },
+  selectedPromptQuestion: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontFamily: 'Poppins',
+    marginBottom: 4,
+  },
+  selectedPromptAnswer: {
+    fontSize: 15,
+    color: '#1a1a1a',
+    fontFamily: 'Poppins-SemiBold',
+  },
 
-  footer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
-  clearButton: { color: '#f44336', fontSize: 14 },
-  countText: { fontSize: 14, color: '#555' },
+  clearButton: {
+    color: '#ff5864',
+    fontSize: 13,
+    fontFamily: 'Poppins',
+  },
+  countText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    textAlign: 'right',
+    marginTop: 6,
+    fontFamily: 'Poppins',
+  },
 
   nextButton: {
+    marginHorizontal: 24,
     marginTop: 16,
     marginBottom: 20,
-    paddingVertical: 14,
+    paddingVertical: 18,
     backgroundColor: '#ff5864',
-    borderRadius: 10,
+    borderRadius: 28,
+    alignItems: 'center',
   },
-  disabledNextButton: { backgroundColor: '#ff586480' },
+  disabledNextButton: {
+    opacity: 0.4,
+  },
   nextButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '600',
     color: '#fff',
-    textAlign: 'center',
+    fontFamily: 'Poppins-SemiBold',
   },
 
   modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   modalContent: {
-    padding: 16,
-    marginHorizontal: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    padding: 24,
+    backgroundColor: '#FAF8F3',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingBottom: 36,
   },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 8 },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '500',
+    color: '#1a1a1a',
+    fontFamily: 'Poppins-SemiBold',
+    marginBottom: 16,
+  },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 8,
+    height: 100,
+    borderWidth: 1.5,
+    borderColor: '#ff5864',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#1a1a1a',
+    backgroundColor: '#ffffff',
+    fontFamily: 'Poppins',
+    textAlignVertical: 'top',
+    marginBottom: 16,
   },
-  modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
-  modalCancel: { fontSize: 14, color: '#f44336' },
-  modalSave: { fontSize: 14, color: '#4CAF50' },
+  modalButtons: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 28,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+  },
+  modalCancel: {
+    fontSize: 15,
+    color: '#6B7280',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  modalSaveBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 28,
+    backgroundColor: '#ff5864',
+    alignItems: 'center',
+  },
+  modalSaveBtnDisabled: {
+    opacity: 0.4,
+  },
+  modalSave: {
+    fontSize: 15,
+    color: '#fff',
+    fontFamily: 'Poppins-SemiBold',
+  },
   disabledSave: { color: '#ccc' },
 });
+

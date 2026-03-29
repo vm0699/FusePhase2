@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { User, Users, Heart, Video, MessageCircle } from "lucide-react-native";
 import { useProfile } from "../ProfileContext";
@@ -19,82 +19,101 @@ export function BottomNav(props?: any) {
   const { hasPendingChats } = useProfile();
 
   return (
-    <View style={styles.container}>
-      {navItems.map(({ icon: Icon, label, route: routeName }) => (
-        <TouchableOpacity
-          key={routeName}
-          style={[
-            styles.navItem,
-            (tabState ? tabState.routes[tabState.index]?.name : route.name) === routeName && styles.activeNavItem,
-          ]}
-          onPress={() => navigation.navigate(routeName)}
-        >
-          <View style={styles.iconWrapper}>
-            <Icon
-              size={24}
-              color={
-                (tabState ? tabState.routes[tabState.index]?.name : route.name) === routeName
-                  ? "#acb7ae"
-                  : "#666"
-              }
-            />
-            {label === "Chats" && hasPendingChats && <View style={styles.redDot} />}
-          </View>
-          <Text
-            style={[
-              styles.navLabel,
-              route.name === routeName && styles.activeNavLabel,
-            ]}
-          >
-            {label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+    <View style={styles.outerWrap}>
+      <View style={styles.container}>
+        {navItems.map(({ icon: Icon, label, route: routeName }) => {
+          const isActive =
+            (tabState ? tabState.routes[tabState.index]?.name : route.name) === routeName;
+
+          return (
+            <TouchableOpacity
+              key={routeName}
+              style={[styles.navItem, isActive && styles.activeNavItem]}
+              onPress={() => navigation.navigate(routeName)}
+              activeOpacity={0.9}
+            >
+              <View style={[styles.iconBubble, isActive && styles.activeIconBubble]}>
+                <Icon
+                  size={20}
+                  strokeWidth={2.3}
+                  color={isActive ? "#ff5864" : "#6B7280"}
+                />
+                {label === "Chats" && hasPendingChats && <View style={styles.redDot} />}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  outerWrap: {
     position: "absolute",
-    bottom: 2,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-around",
+    left: 12,
+    right: 12,
+    bottom: Platform.OS === "ios" ? 16 : 10,
     alignItems: "center",
-    height: 60,
-    borderTopWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
+  },
+  container: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    maxWidth: 460,
+    minHeight: 62,
+    borderRadius: 30,
+    paddingHorizontal: 8,
+    paddingTop: 4,
+    paddingBottom: Platform.OS === "ios" ? 10 : 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.6)",
+    backgroundColor: "rgba(255,255,255,0.64)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 22,
+    elevation: 12,
   },
   navItem: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  navLabel: {
-    marginTop: 4,
-    fontSize: 10,
-    color: "#666",
+    paddingVertical: 0,
+    borderRadius: 18,
   },
   activeNavItem: {
-    borderTopWidth: 2,
-    borderTopColor: "#acb7ae",
+    transform: [{ translateY: -2 }],
   },
-  activeNavLabel: {
-    color: "#acb7ae",
-    fontWeight: "600",
-  },
-  iconWrapper: {
+  iconBubble: {
     position: "relative",
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(243,244,246,0.85)",
+  },
+  activeIconBubble: {
+    backgroundColor: "#FFF1F3",
+    borderWidth: 1,
+    borderColor: "#FFD8DD",
+    shadowColor: "#ff5864",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    elevation: 3,
   },
   redDot: {
     position: "absolute",
-    top: -4,
-    right: -4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "red",
+    top: 4,
+    right: 5,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: "#ff5864",
+    borderWidth: 1.5,
+    borderColor: "#fff",
   },
 });

@@ -125,7 +125,7 @@ export default function PhoneVerificationPage() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-        <OnboardingStepper currentStep={1} totalSteps={5} />
+        <OnboardingStepper currentStep={1} totalSteps={26} />
         <Text style={styles.title}>What's your{'\n'}number?</Text>
 
         <View style={styles.inputContainer}>
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     marginTop: 50,
     textAlign: 'left',
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    fontFamily: 'Poppins',
     lineHeight: 56,
   },
   inputContainer: {
@@ -235,6 +235,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#ffffff',
     color: '#1a1a1a',
+    fontFamily: 'Poppins',
   },
   submitButton: {
     paddingVertical: 18,
@@ -249,7 +250,7 @@ const styles = StyleSheet.create({
   },
   activeButton: { backgroundColor: '#ff5864' },
   disabledButton: { backgroundColor: '#ff5864', opacity: 0.4 },
-  submitButtonText: { color: 'white', fontSize: 18, fontWeight: '600', fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif' },
+  submitButtonText: { color: 'white', fontSize: 18, fontWeight: '600', fontFamily: 'Poppins-SemiBold' },
   modalBackground: {
     flex: 1,
     justifyContent: 'center',
@@ -268,6 +269,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 10,
+    fontFamily: 'Poppins-Bold',
   },
   modalButton: {
     backgroundColor: '#ff5864',
@@ -279,6 +281,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
   },
   pickerWrapper: {
     width: 130,

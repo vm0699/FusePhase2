@@ -67,7 +67,15 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("❌ Auth Middleware Error:", error);
-    return res.status(500).json({ success: false, message: "Server error during authentication" });
+    // Include the actual error code in the response to aid debugging
+    return res.status(500).json({
+      success: false,
+      message: "Server error during authentication",
+      ...(process.env.NODE_ENV !== "production" && {
+        detail: error.message,
+        code: error.code,
+      }),
+    });
   }
 };
 

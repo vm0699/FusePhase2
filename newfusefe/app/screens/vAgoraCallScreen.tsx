@@ -13,7 +13,6 @@ import {
   createAgoraRtcEngine,
   IRtcEngine,
   RtcSurfaceView,
-  ChannelMediaOptions,
   ClientRoleType,
   VideoSourceType,
 } from "react-native-agora";
@@ -21,10 +20,7 @@ import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
-import {
-  BannerAd,
-  BannerAdSize,
-} from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
 
 const APP_ID = "9f8005ccb3d34d7c9487f0de149a3111";
 
@@ -129,15 +125,14 @@ export default function AgoraCallScreen() {
         return;
       }
 
-      // Redacted: avoid logging userId/interests
-      console.log("➡️ Skip user → navigating to WaitingScreen");
+      console.log("Skip user -> navigating to WaitingScreen");
 
       navigation.navigate("WaitingScreen", {
         userId,
         interests,
       });
     } catch (err) {
-      console.error("❌ skipUser error:", err);
+      console.error("skipUser error:", err);
       Alert.alert("Error", "Failed to process user information. Try again.");
     }
   };
@@ -145,29 +140,38 @@ export default function AgoraCallScreen() {
   const handleSend = () => {
     if (message.trim()) {
       setChatMessages([...chatMessages, `You: ${message}`]);
-      setChatMessages((prev) => [...prev, `Stranger: ${message}`]); // Simulated
+      setChatMessages((prev) => [...prev, `Stranger: ${message}`]);
       setMessage("");
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#000" barStyle="light-content" />
+      <StatusBar backgroundColor="#FAF8F3" barStyle="dark-content" />
+      <View style={styles.bgOrbOne} />
+      <View style={styles.bgOrbTwo} />
 
-      <View style={styles.banner}>
+      <View style={styles.topBar}>
+        <View style={styles.titleWrap}>
+          <Text style={styles.title}>Random Video</Text>
+          <Text style={styles.subtitle}>Connected room</Text>
+        </View>
+        <TouchableOpacity style={styles.leaveButton} onPress={handleLeave}>
+          <Ionicons name="exit-outline" size={18} color="#ffffff" />
+          <Text style={styles.leaveText}>Leave</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.bannerCard}>
         <BannerAd
           unitId="ca-app-pub-6755071267673135/6679397253"
           size={BannerAdSize.FULL_BANNER}
           requestOptions={{
             requestNonPersonalizedAdsOnly: false,
           }}
-          onAdFailedToLoad={(error) => console.warn('Ad load failed:', error)}
+          onAdFailedToLoad={(error) => console.warn("Ad load failed:", error)}
         />
       </View>
-
-      <TouchableOpacity style={styles.leaveButton} onPress={handleLeave}>
-        <Ionicons name="exit-outline" size={24} color="#fff" />
-      </TouchableOpacity>
 
       <View style={styles.videoContainer}>
         <View style={styles.videoBox}>
@@ -178,11 +182,13 @@ export default function AgoraCallScreen() {
             />
           ) : (
             <View style={styles.videoOff}>
-              <Ionicons name="videocam-off" size={50} color="#fff" />
-              <Text style={styles.statusText}>Camera Off</Text>
+              <Ionicons name="videocam-off" size={44} color="#6B7280" />
+              <Text style={styles.statusText}>Camera off</Text>
             </View>
           )}
-          <View style={styles.label}><Text style={styles.labelText}>You</Text></View>
+          <View style={styles.label}>
+            <Text style={styles.labelText}>You</Text>
+          </View>
         </View>
 
         <View style={styles.videoBox}>
@@ -191,24 +197,28 @@ export default function AgoraCallScreen() {
               <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.video} />
             ) : (
               <View style={styles.videoOff}>
-                <Ionicons name="videocam-off" size={50} color="#fff" />
-                <Text style={styles.statusText}>Camera Off</Text>
+                <Ionicons name="videocam-off" size={44} color="#6B7280" />
+                <Text style={styles.statusText}>Camera off</Text>
               </View>
             )
           ) : (
             <View style={styles.videoOff}>
-              <Ionicons name="person" size={60} color="#666" />
+              <Ionicons name="person" size={48} color="#9CA3AF" />
               <Text style={styles.statusText}>Waiting for connection...</Text>
             </View>
           )}
-          <View style={styles.label}><Text style={styles.labelText}>Stranger</Text></View>
+          <View style={styles.label}>
+            <Text style={styles.labelText}>Stranger</Text>
+          </View>
         </View>
       </View>
 
       <View style={styles.chatContainer}>
         <ScrollView style={styles.chatBox}>
           {chatMessages.map((msg, idx) => (
-            <Text key={idx} style={styles.chatText}>{msg}</Text>
+            <Text key={idx} style={styles.chatText}>
+              {msg}
+            </Text>
           ))}
         </ScrollView>
         <View style={styles.inputRow}>
@@ -217,25 +227,29 @@ export default function AgoraCallScreen() {
             value={message}
             onChangeText={setMessage}
             placeholder="Type a message"
-            placeholderTextColor="#888"
+            placeholderTextColor="#9CA3AF"
           />
           <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
-            <Ionicons name="send" size={20} color="#fff" />
+            <Ionicons name="send" size={18} color="#ffffff" />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.controls}>
         <TouchableOpacity style={styles.controlButton} onPress={toggleMute}>
-          <Ionicons name={muted ? "mic-off" : "mic"} size={24} color="#fff" />
+          <Ionicons name={muted ? "mic-off" : "mic"} size={21} color="#1a1a1a" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.controlButton} onPress={toggleVideo}>
-          <Ionicons name={videoOn ? "videocam" : "videocam-off"} size={24} color="#fff" />
+          <Ionicons
+            name={videoOn ? "videocam" : "videocam-off"}
+            size={21}
+            color="#1a1a1a"
+          />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.controlButton} onPress={skipUser}>
-          <Ionicons name="play-skip-forward" size={24} color="#fff" />
+        <TouchableOpacity style={styles.skipButton} onPress={skipUser}>
+          <Ionicons name="play-skip-forward" size={21} color="#ffffff" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -243,103 +257,175 @@ export default function AgoraCallScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000" },
-  banner: {
-    height: 60,
-    backgroundColor: "#000",
-    justifyContent: "center",
-    alignItems: "center",
+  container: {
+    flex: 1,
+    backgroundColor: "#FAF8F3",
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    overflow: "hidden",
+  },
+  bgOrbOne: {
+    position: "absolute",
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: "#FFF0F2",
+    top: -30,
+    left: -25,
+  },
+  bgOrbTwo: {
+    position: "absolute",
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "#FFE4E8",
+    bottom: 26,
+    right: -24,
+  },
+  topBar: {
     flexDirection: "row",
-    paddingHorizontal: 10,
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
-  bannerText: { color: "#fff", fontWeight: "bold", fontSize: 16, flex: 1 },
+  titleWrap: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  title: {
+    fontSize: 19,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+  },
+  subtitle: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+  },
   leaveButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    left: 320,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#ff5864",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 13,
+    gap: 6,
   },
-  videoContainer: { flex: 1, flexDirection: "column", padding: 8 },
+  leaveText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontFamily: "Poppins-Bold",
+  },
+  bannerCard: {
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: "#ffffff",
+    marginBottom: 8,
+  },
+  videoContainer: { flex: 1, flexDirection: "column", gap: 8 },
   videoBox: {
     flex: 1,
-    marginVertical: 5,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#ffffff",
     position: "relative",
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
   },
   video: { flex: 1 },
   videoOff: {
     flex: 1,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#F9FAFB",
     justifyContent: "center",
     alignItems: "center",
   },
   statusText: {
-    color: "#ccc",
-    fontSize: 14,
+    color: "#6B7280",
+    fontSize: 13,
     marginTop: 8,
+    fontFamily: "Poppins",
   },
   label: {
     position: "absolute",
     top: 10,
     left: 10,
-    backgroundColor: "#222",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
   },
   labelText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "bold",
+    color: "#1a1a1a",
+    fontSize: 11,
+    fontFamily: "Poppins-SemiBold",
   },
   controls: {
     flexDirection: "row",
     justifyContent: "space-evenly",
-    backgroundColor: "#111",
-    paddingVertical: 12,
+    alignItems: "center",
+    paddingVertical: 10,
+    marginTop: 8,
   },
   controlButton: {
-    backgroundColor: "#333",
-    padding: 14,
-    borderRadius: 30,
+    backgroundColor: "#ffffff",
+    padding: 12,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#555",
+    borderColor: "#E5E7EB",
+  },
+  skipButton: {
+    backgroundColor: "#ff5864",
+    padding: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#ff5864",
   },
   chatContainer: {
-    maxHeight: 160,
-    backgroundColor: "#111",
-    borderTopWidth: 1,
-    borderColor: "#444",
+    maxHeight: 170,
+    backgroundColor: "#ffffff",
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
+    marginTop: 8,
+    overflow: "hidden",
   },
   chatBox: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    maxHeight: 100,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    maxHeight: 104,
   },
   chatText: {
-    color: "#fff",
-    marginBottom: 4,
+    color: "#1a1a1a",
+    marginBottom: 5,
+    fontFamily: "Poppins",
+    fontSize: 13,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
     borderTopWidth: 1,
-    borderColor: "#333",
-    padding: 5,
+    borderColor: "#F3F4F6",
+    padding: 6,
   },
   input: {
     flex: 1,
-    backgroundColor: "#222",
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    color: "#fff",
+    backgroundColor: "#F9FAFB",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    color: "#1a1a1a",
+    fontFamily: "Poppins",
+    fontSize: 13,
   },
   sendButton: {
-    marginLeft: 10,
-    backgroundColor: "#555",
+    marginLeft: 8,
+    backgroundColor: "#ff5864",
     padding: 10,
-    borderRadius: 20,
+    borderRadius: 999,
   },
 });

@@ -5,31 +5,39 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import Icon from "react-native-vector-icons/Feather"; // Using Feather Icons for consistency
+import Icon from "react-native-vector-icons/Feather";
 
 interface NotificationOptionProps {
   title: string;
   description?: string;
   onPress?: () => void;
+  isLast?: boolean;
 }
 
 const NotificationOption: React.FC<NotificationOptionProps> = ({
   title,
   description,
   onPress,
+  isLast,
 }) => {
   return (
-    <View style={styles.optionContainer}>
-      <TouchableOpacity style={styles.optionButton} onPress={onPress}>
+    <TouchableOpacity
+      style={[styles.optionButton, isLast && styles.optionButtonLast]}
+      onPress={onPress}
+    >
+      <View style={styles.optionTextWrap}>
         <Text style={styles.optionText}>{title}</Text>
-        <Icon name="chevron-right" size={20} color="#999" />
-      </TouchableOpacity>
-      {description && (
-        <Text style={styles.optionDescription}>{description}</Text>
-      )}
-    </View>
+        {description ? (
+          <Text style={styles.optionDescription}>{description}</Text>
+        ) : null}
+      </View>
+      <View style={styles.chevronBubble}>
+        <Icon name="chevron-right" size={16} color="#6B7280" />
+      </View>
+    </TouchableOpacity>
   );
 };
 
@@ -49,9 +57,15 @@ const NotificationSection: React.FC<NotificationSectionProps> = ({
   return (
     <View style={styles.sectionContainer}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {options.map((option, index) => (
-        <NotificationOption key={index} {...option} />
-      ))}
+      <View style={styles.sectionCard}>
+        {options.map((option, index) => (
+          <NotificationOption
+            key={index}
+            {...option}
+            isLast={index === options.length - 1}
+          />
+        ))}
+      </View>
     </View>
   );
 };
@@ -66,7 +80,7 @@ export default function NotificationSettings() {
         {
           title: "New messages",
           description:
-            "Turning off this notification means you will miss out on new messages from your connections.",
+            "Turning this off means you may miss messages from your connections.",
           onPress: () => navigation.navigate("New Messages"),
         },
       ],
@@ -88,26 +102,27 @@ export default function NotificationSettings() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Icon name="chevron-left" size={24} color="#000" />
+          <Icon name="chevron-left" size={18} color="#6B7280" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Notifications</Text>
+          <Text style={styles.headerSubtitle}>
+            Choose how Fuse keeps in touch
+          </Text>
+        </View>
+        <View style={styles.headerSpacer} />
       </View>
 
-      {/* Content */}
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.description}>
-          Choose how you'd like us to keep in touch.
-        </Text>
-
         {sections.map((section, index) => (
           <NotificationSection
             key={index}
@@ -123,74 +138,114 @@ export default function NotificationSettings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB", // Light gray background
+    backgroundColor: "#FAF8F3",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    paddingTop:40,
-    borderBottomColor: "#E5E7EB",
+    paddingTop: Platform.OS === "ios" ? 60 : 44,
+    paddingBottom: 16,
   },
   backButton: {
-    padding: 8,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 12,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginLeft: 10,
+    fontSize: 24,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+    marginTop: 2,
+  },
+  headerSpacer: {
+    width: 38,
   },
   scrollContainer: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 30,
-  },
-  description: {
-    fontSize: 16,
-    color: "#6B7280",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 32,
   },
   sectionContainer: {
-    marginTop: 20,
-    paddingHorizontal: 16,
+    marginTop: 8,
+    marginHorizontal: 16,
+    marginBottom: 14,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#6B7280",
+    fontSize: 12,
+    color: "#9CA3AF",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    fontFamily: "Poppins-SemiBold",
     marginBottom: 10,
   },
-  optionContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 5,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 10,
-    flexDirection: "column",
-    elevation: 2, // Shadow for Android
+  sectionCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    paddingHorizontal: 18,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
   },
   optionButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  optionButtonLast: {
+    borderBottomWidth: 0,
+  },
+  optionTextWrap: {
+    flex: 1,
+    paddingRight: 12,
   },
   optionText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#111827",
+    fontSize: 15,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-SemiBold",
   },
   optionDescription: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#6B7280",
     marginTop: 5,
+    lineHeight: 20,
+    fontFamily: "Poppins",
+  },
+  chevronBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
   },
 });

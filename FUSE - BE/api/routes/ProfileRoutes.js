@@ -22,8 +22,11 @@ router.post('/', authMiddleware, saveUserProfile);
 
 router.put('/update', authMiddleware, updateUserProfile);
 
-// ✅ FIX: Upload photos separately (if needed)
-router.post('/upload-photos', authMiddleware, upload.array('photos', 6), uploadPhotos);
+// ✅ FIX: Multer MUST run BEFORE authMiddleware on multipart routes.
+// authMiddleware does an async DB call; if the stream hasn't been consumed yet
+// the TCP receive buffer fills up → ECONNRESET. Parsing first, then authenticating.
+router.post('/upload-photos', upload.array('photos', 6), authMiddleware, uploadPhotos);
+
 
 // GET: Fetch user profile by phone number (requires authentication)
 router.get('/', authMiddleware, getProfileByPhoneNumber);

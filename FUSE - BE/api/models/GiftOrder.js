@@ -1,63 +1,67 @@
 import mongoose from "mongoose";
 
-const GiftOrderSchema = new mongoose.Schema(
+const { Schema } = mongoose;
+
+const GiftOrderSchema = new Schema(
   {
     chatId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Chat",
       required: true,
     },
 
-    // Link back to the original intent (optional for older orders)
+    // May be null for legacy/manual orders
     intentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "GiftIntent",
       default: null,
     },
 
     senderId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "UserProfile",
       required: true,
     },
 
     recipientId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "UserProfile",
       required: true,
     },
 
+    // Mirrors GiftIntent tier when available
     tier: {
       type: String,
-      enum: ["LOW", "MID", "HIGH"],
-      default: "LOW",
+      enum: ["LOW", "MID", "HIGH", null],
+      default: null,
     },
 
     items: [
       {
-        itemId: String, // internal Fuse ID
+        itemId: String,
         name: String,
         quantity: Number,
         price: Number,
         source: {
           type: String,
-          default: "FUSE_MANUAL", // e.g. BLINKIT, ZEPTO later
+          enum: ["FUSE_MANUAL", "EXTERNAL_VENDOR"],
+          default: "FUSE_MANUAL",
         },
       },
     ],
 
     source: {
       type: String,
+      enum: ["FUSE_MANUAL", "EXTERNAL_VENDOR"],
       default: "FUSE_MANUAL",
     },
 
-    // 💰 Total amount paid by both sides together
     totalAmount: {
       type: Number,
       required: true,
     },
 
-    // 💰 Split of who actually paid how much
+    // Who actually paid what (from GiftPayment)
     senderPaidAmount: {
       type: Number,
       default: 0,
@@ -72,9 +76,8 @@ const GiftOrderSchema = new mongoose.Schema(
       default: "INR",
     },
 
-    // 📈 Revenue knobs (we can tune later)
+    // Platform economics (we can refine later)
     platformFee: {
-      // what Fuse keeps as margin (included inside totalAmount)
       type: Number,
       default: 0,
     },
@@ -83,34 +86,51 @@ const GiftOrderSchema = new mongoose.Schema(
       default: 0,
     },
     vendorCost: {
-      // actual bill from Blinkit/local partner when you order manually
       type: Number,
       default: 0,
     },
 
+    // Fulfilment lifecycle
     status: {
       type: String,
       enum: [
-        "CREATED",          // payments done, ready for manual fulfilment
-        "PAYMENT_PENDING",  // should not happen for new flow, but safe
-        "READY_TO_FULFILL", // confirmed + validated by ops
-        "FULFILLED",        // delivered
+        "CREATED",     // payment done, yet to process
+        "PROCESSING",  // vendor / ops picked it up
+        "DISPATCHED",  // out for delivery
+        "DELIVERED",   // reached
+        "FAILED",      // delivery failed
         "CANCELLED",
-        "REFUNDED",
       ],
       default: "CREATED",
     },
 
-    // Delivery snapshot (copied from recipient profile at order time)
+    // Frozen delivery snapshot (FULL, but we won’t expose all of it in APIs)
     deliverySnapshot: {
       name: String,
       phone: String,
       line1: String,
       line2: String,
       city: String,
+      state: String,
       pincode: String,
-      notes: String,
+      landmark: String,
+      label: String, // e.g. "Home", "Work"
     },
+
+    // Tracking info (can be used to show in UI)
+    trackingUrl: {
+      type: String,
+      default: null,
+    },
+    vendorOrderId: {
+      type: String,
+      default: null,
+    },
+
+    // Lifecycle timestamps
+    dispatchedAt: Date,
+    deliveredAt: Date,
+    cancelledAt: Date,
 
     note: {
       type: String,

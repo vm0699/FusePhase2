@@ -9,11 +9,13 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import CircularNextButton from '../../components/CircularNextButton';
 import { authStore } from '../auth/authStore';
+import OnboardingStepper from '../../components/OnboardingStepper';
 
 
 const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
@@ -80,118 +82,118 @@ export default function VerifyCodePage() {
   const isComplete = code.every((digit) => digit !== '');
 
   const verifyOTPCode = async () => {
-  try {
-    console.log('🟣 [VerifyCode] VERIFY OTP clicked');
+    try {
+      console.log('🟣 [VerifyCode] VERIFY OTP clicked');
 
-    let fullPhoneNumber = `+${countryCode}${phoneNumber}`;
-    fullPhoneNumber = fullPhoneNumber.replace(/^(\+91)(\+91)?/, '+91');
+      let fullPhoneNumber = `+${countryCode}${phoneNumber}`;
+      fullPhoneNumber = fullPhoneNumber.replace(/^(\+91)(\+91)?/, '+91');
 
-    console.log('🟣 [VerifyCode] Sending verifyCode for:', fullPhoneNumber);
+      console.log('🟣 [VerifyCode] Sending verifyCode for:', fullPhoneNumber);
 
-    const response = await fetch(
-      'http://172.20.10.4:5000/api/auth/verifyCode',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phoneNumber: fullPhoneNumber,
-          code: code.join(''),
-        }),
+      const response = await fetch(
+        'http://172.20.10.4:5000/api/auth/verifyCode',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phoneNumber: fullPhoneNumber,
+            code: code.join(''),
+          }),
+        }
+      );
+
+      console.log('🟣 [VerifyCode] verifyCode response status:', response.status);
+
+      const result = await response.json();
+      console.log('🟣 [VerifyCode] verifyCode response JSON:', result);
+
+      if (!result.success) {
+        Alert.alert('Error', result.message || 'Invalid OTP');
+        return;
       }
-    );
 
-    console.log('🟣 [VerifyCode] verifyCode response status:', response.status);
+      // ✅ Save JWT
+      // ✅ Save access + refresh tokens (CRITICAL for auto-login)
+      if (result?.data?.accessToken) {
+        console.log('🟢 [VerifyCode] Saving access + refresh tokens');
 
-    const result = await response.json();
-    console.log('🟣 [VerifyCode] verifyCode response JSON:', result);
+        await authStore.setTokens({
+          accessToken: result.data.accessToken,
+          refreshToken: result.data.refreshToken || null,
+        });
+      } else {
+        console.log('🟥 [VerifyCode] NO accessToken received');
+      }
 
-    if (!result.success) {
-      Alert.alert('Error', result.message || 'Invalid OTP');
-      return;
+
+      // ✅ Save userId
+      if (result?.data?.user?.id) {
+        console.log('🟢 [VerifyCode] Saving userId:', result.data.user.id);
+        await AsyncStorage.setItem('userId', String(result.data.user.id));
+      }
+
+      // ✅ Save username only if non-empty
+      if (
+        typeof result?.data?.user?.username === 'string' &&
+        result.data.user.username.length > 0
+      ) {
+        console.log('🟢 [VerifyCode] Saving username:', result.data.user.username);
+        await AsyncStorage.setItem('username', result.data.user.username);
+      } else {
+        console.log('🟠 [VerifyCode] Username empty or missing');
+      }
+
+      await AsyncStorage.removeItem('popup_shown_this_session');
+
+      Alert.alert('Success', 'OTP verified successfully.');
+
+      const onboardingStage = result?.data?.onboardingStage;
+
+      console.log('🟢 [VerifyCode] Onboarding stage:', onboardingStage);
+
+      // ✅ CORRECT BRANCHING
+      if (onboardingStage === 'COMPLETE') {
+        console.log('➡️ [VerifyCode] Existing user → SwipeView');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'SwipeView' }],
+        });
+      } else {
+        console.log('➡️ [VerifyCode] New/incomplete user → AuthGate');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'AuthGate' }],
+        });
+      }
+    } catch (error) {
+      console.error('❌ [VerifyCode] Error verifying OTP:', error);
+      Alert.alert(
+        'Error',
+        `An error occurred while verifying the OTP: ${error.message}`
+      );
     }
-
-    // ✅ Save JWT
-    // ✅ Save access + refresh tokens (CRITICAL for auto-login)
-if (result?.data?.accessToken) {
-  console.log('🟢 [VerifyCode] Saving access + refresh tokens');
-
-  await authStore.setTokens({
-    accessToken: result.data.accessToken,
-    refreshToken: result.data.refreshToken || null,
-  });
-} else {
-  console.log('🟥 [VerifyCode] NO accessToken received');
-}
-
-
-    // ✅ Save userId
-    if (result?.data?.user?.id) {
-      console.log('🟢 [VerifyCode] Saving userId:', result.data.user.id);
-      await AsyncStorage.setItem('userId', String(result.data.user.id));
-    }
-
-    // ✅ Save username only if non-empty
-    if (
-      typeof result?.data?.user?.username === 'string' &&
-      result.data.user.username.length > 0
-    ) {
-      console.log('🟢 [VerifyCode] Saving username:', result.data.user.username);
-      await AsyncStorage.setItem('username', result.data.user.username);
-    } else {
-      console.log('🟠 [VerifyCode] Username empty or missing');
-    }
-
-    await AsyncStorage.removeItem('popup_shown_this_session');
-
-    Alert.alert('Success', 'OTP verified successfully.');
-
-    const onboardingStage = result?.data?.onboardingStage;
-
-    console.log('🟢 [VerifyCode] Onboarding stage:', onboardingStage);
-
-    // ✅ CORRECT BRANCHING
-    if (onboardingStage === 'COMPLETE') {
-      console.log('➡️ [VerifyCode] Existing user → SwipeView');
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'SwipeView' }],
-      });
-    } else {
-      console.log('➡️ [VerifyCode] New/incomplete user → AuthGate');
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'AuthGate' }],
-      });
-    }
-  } catch (error) {
-    console.error('❌ [VerifyCode] Error verifying OTP:', error);
-    Alert.alert(
-      'Error',
-      `An error occurred while verifying the OTP: ${error.message}`
-    );
-  }
-};
+  };
 
 
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.content}>
-          <Text style={styles.title}>Verify your number</Text>
-          <Text style={styles.description}>
-            Enter the code we've sent by text to {phoneNumber}.
-          </Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <OnboardingStepper currentStep={2} totalSteps={26} />
 
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.changeNumber}>Change number</Text>
-          </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            <Text style={styles.title}>Verify your number</Text>
+            <Text style={styles.description}>
+              Enter the code we've sent by text to {phoneNumber}.
+            </Text>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Code</Text>
             <View style={styles.codeInputContainer}>
               {Array(6)
                 .fill(0)
@@ -209,81 +211,119 @@ if (result?.data?.accessToken) {
                   />
                 ))}
             </View>
+
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text style={styles.changeNumber}>Change number</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.timerText}>
+              This code should arrive within {timer}s
+            </Text>
           </View>
+        </ScrollView>
 
-          <Text style={styles.timerText}>
-            This code should arrive within {timer}s
-          </Text>
-        </View>
-      </ScrollView>
-
-      <CircularNextButton
-        onPress={verifyOTPCode}
-        disabled={!isComplete || timer <= 0}
-      />
-    </KeyboardAvoidingView>
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            isComplete && timer > 0 ? styles.activeButton : styles.disabledButton,
+          ]}
+          onPress={verifyOTPCode}
+          disabled={!isComplete || timer <= 0}
+        >
+          <Text style={styles.nextButtonText}>Next</Text>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
-    padding: 20,
+    backgroundColor: '#FAF8F3',
+    paddingTop: 60,
+    paddingHorizontal: 24,
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'space-between',
-    paddingBottom: 60,
+    paddingBottom: 100,
   },
   content: {
-    maxWidth: 400,
-    alignSelf: 'center',
-    marginBottom: 30,
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingTop: 80,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'black',
-    marginBottom: 20,
+    fontSize: 32,
+    fontWeight: '300',
+    color: '#1a1a1a',
+    marginBottom: 16,
+    textAlign: 'center',
+    fontFamily: 'Poppins-Bold',
   },
   description: {
     fontSize: 16,
-    color: '#555',
-    marginBottom: 20,
-  },
-  changeNumber: {
-    fontSize: 16,
-    color: 'black',
-    textDecorationLine: 'underline',
-    marginBottom: 20,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: 'black',
+    color: '#6B7280',
+    marginBottom: 40,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    lineHeight: 24,
+    fontFamily: 'Poppins',
   },
   codeInputContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 24,
+    width: '100%',
   },
   inputField: {
     width: 50,
     height: 50,
-    borderColor: '#acb7ae',
-    borderWidth: 1,
-    borderRadius: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: '#D1D5DB',
     textAlign: 'center',
-    fontSize: 20,
+    fontSize: 24,
+    color: '#1a1a1a',
+    fontWeight: '500',
+    backgroundColor: 'transparent',
+  },
+  changeNumber: {
+    fontSize: 16,
+    color: '#1a1a1a',
+    textAlign: 'center',
+    marginBottom: 12,
+    fontFamily: 'Poppins-SemiBold',
   },
   timerText: {
     fontSize: 14,
-    color: '#555',
-    marginTop: 20,
+    color: '#6B7280',
     textAlign: 'center',
+    fontFamily: 'Poppins',
+  },
+  nextButton: {
+    paddingVertical: 18,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    position: 'absolute',
+    bottom: 40,
+    left: 24,
+    right: 24,
+  },
+  activeButton: {
+    backgroundColor: '#ff5864'
+  },
+  disabledButton: {
+    backgroundColor: '#ff5864',
+    opacity: 0.4
+  },
+  nextButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'Poppins-Bold',
   },
 });

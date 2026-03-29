@@ -12,15 +12,15 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { ProfileContext } from "../../ProfileContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-import DraggableFlatList, {
-  RenderItemParams,
-} from "react-native-draggable-flatlist";
+import DraggableFlatList from "react-native-draggable-flatlist";
+import { consumeProfileEditDraft } from "../utils/profileEditDraft";
 
 const BASE_URL = "http://172.20.10.4:5000";
 
@@ -42,6 +42,19 @@ export default function EditProfilePage() {
   const [isPhotoChanged, setIsPhotoChanged] = useState(false);
 
   const changedIndexes = useRef<Set<number>>(new Set());
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const pendingDraft = consumeProfileEditDraft();
+
+      if (pendingDraft) {
+        setTempFields((prev) => ({
+          ...prev,
+          [pendingDraft.fieldKey]: pendingDraft.value,
+        }));
+      }
+    }, [])
+  );
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -318,56 +331,62 @@ export default function EditProfilePage() {
     items: { title: string; key: string; value: any }[]
   ) => (
     <View style={styles.sectionBlock}>
-      <Text style={styles.section}>{title}</Text>
-      {items.map((item, index) => (
-        <TouchableOpacity
-          key={index}
-          style={styles.itemRow}
-          onPress={() => {
-            const screenMap: Record<string, string> = {
-              Pronouns: "PronounsScreen",
-              Sexuality: "SexualityScreen",
-              "College or university": "College",
-              Work: "Work",
-              "Dating Intentions": "DatingIntentions",
-              "Education level": "EduLevel",
-              "Home town": "HomeTown",
-              "I'm interested in": "Interests",
-              "Job title": "JobTitle",
-              "Languages spoken": "Languages",
-              Politics: "Politics",
-              "Religious beliefs": "Religion",
-              Ethnicity: "Ethnicity",
-              Children: "Children",
-              Pets: "Pets",
-              "Zodiac sign": "Zodiac",
-              Drinking: "Drinking",
-              Smoking: "Smoking",
-              Marijuana: "Marijuana",
-              Drugs: "Drugs",
-            };
-            if (screenMap[item.title]) {
-              // @ts-ignore
-              navigation.navigate(screenMap[item.title], {
-                currentValue: tempFields[item.key] || item.value,
-                onSelect: (val: any) => {
-                  setTempFields((prev) => ({ ...prev, [item.key]: val }));
-                },
-              });
-            }
-          }}
-        >
-          <View>
-            <Text style={styles.itemTitle}>{item.title}</Text>
-            <Text style={styles.itemValue}>
-              {Array.isArray(tempFields[item.key])
-                ? tempFields[item.key].join(", ")
-                : tempFields[item.key] ?? item.value ?? "Not set"}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </TouchableOpacity>
-      ))}
+      <Text style={styles.sectionEyebrow}>{title}</Text>
+      <View style={styles.sectionCard}>
+        {items.map((item, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.itemRow,
+              index === items.length - 1 && styles.itemRowLast,
+            ]}
+            onPress={() => {
+              const screenMap: Record<string, string> = {
+                Pronouns: "PronounsScreen",
+                Sexuality: "SexualityScreen",
+                "College or university": "College",
+                Work: "Work",
+                "Dating Intentions": "DatingIntentions",
+                "Education level": "EduLevel",
+                "Home town": "HomeTown",
+                "I'm interested in": "Interests",
+                "Job title": "JobTitle",
+                "Languages spoken": "Languages",
+                Politics: "Politics",
+                "Religious beliefs": "Religion",
+                Ethnicity: "Ethnicity",
+                Children: "Children",
+                Pets: "Pets",
+                "Zodiac sign": "Zodiac",
+                Drinking: "Drinking",
+                Smoking: "Smoking",
+                Marijuana: "Marijuana",
+                Drugs: "Drugs",
+              };
+              if (screenMap[item.title]) {
+                // @ts-ignore
+                navigation.navigate(screenMap[item.title], {
+                  mode: "edit",
+                  fieldKey: item.key,
+                  currentValue: tempFields[item.key] || item.value,
+                });
+              }
+            }}
+          >
+            <View style={styles.itemCopy}>
+              <Text style={styles.itemTitle}>{item.title}</Text>
+              <Text style={styles.itemValue}>
+                {Array.isArray(tempFields[item.key])
+                  ? tempFields[item.key].join(", ")
+                  : tempFields[item.key] ?? item.value ?? "Not set"}
+              </Text>
+            </View>
+            <View style={styles.chevronBubble}>
+              <Ionicons name="chevron-forward" size={16} color="#6B7280" />
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 
@@ -376,7 +395,7 @@ export default function EditProfilePage() {
     index,
     drag,
     isActive,
-  }: RenderItemParams<string | null>) => {
+  }: any) => {
     return (
       <View style={styles.photoWrapper}>
         <TouchableOpacity
@@ -412,47 +431,68 @@ export default function EditProfilePage() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.contentContainer}
+    >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate("Profile" as never)}>
+        <TouchableOpacity
+          style={styles.headerPill}
+          onPress={() => navigation.navigate("Profile" as never)}
+        >
           <Text style={styles.cancel}>Cancel</Text>
         </TouchableOpacity>
 
-        <View>
+        <View style={styles.headerCenter}>
           <Text style={styles.name}>{name || "Name"}</Text>
-          <Text style={styles.completion}>{completion}% complete</Text>
+          <View style={styles.completionPill}>
+            <Text style={styles.completion}>{completion}% complete</Text>
+          </View>
         </View>
-        <TouchableOpacity onPress={handleDone}>
+
+        <TouchableOpacity style={styles.headerPill} onPress={handleDone}>
           {updating ? (
-            <ActivityIndicator color="#6B21A8" />
+            <ActivityIndicator color="#ff5864" />
           ) : (
             <Text style={styles.done}>Done</Text>
           )}
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.section}>My photos & videos</Text>
-
-      <View style={styles.draggableContainer}>
-        <DraggableFlatList
-          data={photos}
-          numColumns={3}
-          keyExtractor={(_, index) => index.toString()}
-          renderItem={renderPhotoItem}
-          onDragEnd={({ data }) => {
-            // data is (string | null)[]
-            let normalized = [...data];
-            while (normalized.length < 6) normalized.push(null);
-            if (normalized.length > 6) normalized = normalized.slice(0, 6);
-            setPhotos(normalized);
-            setIsPhotoChanged(true);
-          }}
-          scrollEnabled={false}
-        />
+      <View style={styles.heroCard}>
+        <Text style={styles.heroEyebrow}>Profile Editor</Text>
+        <Text style={styles.heroTitle}>Refresh how your profile feels.</Text>
+        <Text style={styles.heroBody}>
+          Curate photos, identity, and preferences with the same clean Fuse look.
+        </Text>
       </View>
 
-      <Text style={styles.editText}>Tap to edit, long-press to drag & reorder</Text>
-      <Text style={styles.warning}>Up to 6 photos/videos recommended</Text>
+      <View style={styles.sectionBlock}>
+        <Text style={styles.sectionEyebrow}>My photos & videos</Text>
+        <View style={styles.photoSectionCard}>
+          <View style={styles.draggableContainer}>
+            <DraggableFlatList
+              data={photos}
+              numColumns={3}
+              keyExtractor={(_, index) => index.toString()}
+              renderItem={renderPhotoItem}
+              onDragEnd={({ data }) => {
+                // data is (string | null)[]
+                let normalized = [...data];
+                while (normalized.length < 6) normalized.push(null);
+                if (normalized.length > 6) normalized = normalized.slice(0, 6);
+                setPhotos(normalized);
+                setIsPhotoChanged(true);
+              }}
+              scrollEnabled={false}
+            />
+          </View>
+
+          <Text style={styles.editText}>Tap to edit, long-press to drag and reorder</Text>
+          <Text style={styles.warning}>Up to 6 photos or videos recommended</Text>
+        </View>
+      </View>
 
       {renderInfoSection("Identity", [
         { title: "Pronouns", key: "pronouns", value: profileData?.pronouns },
@@ -548,59 +588,170 @@ export default function EditProfilePage() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: "#FAF8F3" },
+  contentContainer: {
+    paddingBottom: 40,
+  },
   header: {
-    padding: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "ios" ? 60 : 44,
+    paddingBottom: 18,
   },
-  cancel: { color: "#ff5864", fontWeight: "600" },
-  done: { color: "#ff5864", fontWeight: "600" },
-  name: { fontSize: 32, fontWeight: "bold", textAlign: "center" },
-  completion: { fontSize: 18, color: "#F97316", textAlign: "center" },
-  section: {
-    fontSize: 22,
-    fontWeight: "500",
+  headerPill: {
+    minWidth: 72,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerCenter: {
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  cancel: {
+    color: "#6B7280",
+    fontWeight: "600",
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 14,
+  },
+  done: {
+    color: "#ff5864",
+    fontWeight: "700",
+    fontFamily: "Poppins-Bold",
+    fontSize: 14,
+  },
+  name: {
+    fontSize: 24,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+    textAlign: "center",
+  },
+  completionPill: {
+    marginTop: 4,
+    backgroundColor: "#FFF5F5",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  completion: {
+    fontSize: 12,
+    color: "#ff5864",
+    textAlign: "center",
+    fontFamily: "Poppins-SemiBold",
+  },
+  heroCard: {
+    marginHorizontal: 16,
+    marginBottom: 18,
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  heroEyebrow: {
+    fontSize: 12,
     color: "#9CA3AF",
-    marginLeft: 16,
-    marginTop: 20,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    fontFamily: "Poppins-SemiBold",
+    marginBottom: 8,
+  },
+  heroTitle: {
+    fontSize: 22,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+    marginBottom: 8,
+  },
+  heroBody: {
+    fontSize: 14,
+    color: "#6B7280",
+    lineHeight: 22,
+    fontFamily: "Poppins",
+  },
+  sectionBlock: {
+    marginTop: 2,
+    marginBottom: 18,
+    marginHorizontal: 16,
+  },
+  sectionEyebrow: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    fontFamily: "Poppins-SemiBold",
+    marginBottom: 10,
+  },
+  sectionCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  photoSectionCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    paddingTop: 14,
+    paddingBottom: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
 
   draggableContainer: {
-    paddingHorizontal: 16,
-    marginTop: 12,
+    paddingHorizontal: 12,
   },
 
   photoWrapper: {
-    margin: 6,
+    margin: 7,
   },
 
   photoBox: {
-    width: 100,
-    height: 100,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#FCA5A5",
+    width: 98,
+    height: 98,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: "#FDE2E4",
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
-    backgroundColor: "#fff",
+    backgroundColor: "#FFF8F8",
   },
   photoBoxActive: {
-    opacity: 0.85,
-    borderColor: "#fb7185",
+    opacity: 0.92,
+    borderColor: "#ff5864",
   },
   photo: {
     width: "100%",
     height: "100%",
-    borderRadius: 10,
+    borderRadius: 16,
   },
   placeholderBox: {
     width: 80,
     height: 80,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 8,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -608,44 +759,78 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 6,
     right: 6,
-    backgroundColor: "#6B21A8",
-    padding: 4,
+    backgroundColor: "#ff5864",
+    width: 24,
+    height: 24,
     borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
   },
   deleteBadge: {
     position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: "#111827",
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: -3,
+    right: -3,
+    backgroundColor: "#1a1a1a",
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
   },
   editText: {
     textAlign: "center",
-    fontSize: 16,
-    color: "#9CA3AF",
+    fontSize: 14,
+    color: "#6B7280",
     marginTop: 12,
+    fontFamily: "Poppins",
   },
   warning: {
     textAlign: "center",
-    fontSize: 18,
-    color: "#DC2626",
+    fontSize: 13,
+    color: "#9CA3AF",
     marginTop: 4,
+    fontFamily: "Poppins",
   },
-  sectionBlock: { marginTop: 24 },
   itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "#F3F4F6",
   },
-  itemTitle: { fontSize: 18, fontWeight: "600" },
-  itemValue: { fontSize: 18, color: "#9CA3AF" },
+  itemRowLast: {
+    borderBottomWidth: 0,
+  },
+  itemCopy: {
+    flex: 1,
+    paddingRight: 14,
+  },
+  itemTitle: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    fontFamily: "Poppins-SemiBold",
+    marginBottom: 3,
+  },
+  itemValue: {
+    fontSize: 15,
+    color: "#1a1a1a",
+    fontFamily: "Poppins",
+  },
+  chevronBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
+  },
 });
