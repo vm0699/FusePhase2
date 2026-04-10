@@ -2,11 +2,12 @@
 // Updated UpdateProfilePage with My Vices section
 // Updated with Hinge-style photo management (drag, delete, reorder)
 
-import React, { useState, useEffect, useContext, useRef } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   Image,
   ScrollView,
   StyleSheet,
@@ -23,6 +24,14 @@ import DraggableFlatList from "react-native-draggable-flatlist";
 import { consumeProfileEditDraft } from "../utils/profileEditDraft";
 
 const BASE_URL = "http://172.20.10.4:5000";
+const PHOTO_SLOT_COUNT = 6;
+
+const hasOwn = (obj: Record<string, any>, key: string) =>
+  Object.prototype.hasOwnProperty.call(obj, key);
+
+const isLocalAssetUri = (uri: string | null) =>
+  typeof uri === "string" &&
+  (uri.startsWith("file://") || uri.startsWith("content://") || uri.startsWith("ph://"));
 
 export default function EditProfilePage() {
   const navigation = useNavigation();
@@ -33,15 +42,14 @@ export default function EditProfilePage() {
   const [height, setHeight] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
-  const [photos, setPhotos] = useState<(string | null)[]>(Array(6).fill(null));
+  const [photos, setPhotos] = useState<(string | null)[]>(Array(PHOTO_SLOT_COUNT).fill(null));
   const [prompts, setPrompts] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [completion, setCompletion] = useState(0);
   const [tempFields, setTempFields] = useState<Record<string, any>>({});
   const [updating, setUpdating] = useState(false);
   const [isPhotoChanged, setIsPhotoChanged] = useState(false);
-
-  const changedIndexes = useRef<Set<number>>(new Set());
+  const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -79,7 +87,6 @@ export default function EditProfilePage() {
             gender,
             photos,
             prompts,
-            phoneNumber,
             pronouns,
             sexuality,
             college,
@@ -111,7 +118,7 @@ export default function EditProfilePage() {
           let photoSlots: (string | null)[] = Array.isArray(photos)
             ? [...photos]
             : [];
-          while (photoSlots.length < 6) photoSlots.push(null);
+          while (photoSlots.length < PHOTO_SLOT_COUNT) photoSlots.push(null);
           setPhotos(photoSlots);
 
           setPrompts(prompts || []);
@@ -177,7 +184,6 @@ export default function EditProfilePage() {
         const updated = [...photos];
         updated[index] = uri;
         setPhotos(updated);
-        changedIndexes.current.add(index);
         setIsPhotoChanged(true);
       }
     } catch (error) {
@@ -205,12 +211,12 @@ export default function EditProfilePage() {
 
     try {
       // 1️⃣ First upload any locally changed photos via upload-photos
-      const updatedPhotos = [...photos];
+      const uploadedPhotoSlots = [...photos];
 
-      for (const index of Array.from(changedIndexes.current)) {
-        const uri = photos[index];
+      for (let index = 0; index < uploadedPhotoSlots.length; index++) {
+        const uri = uploadedPhotoSlots[index];
 
-        if (!uri) {
+        if (!isLocalAssetUri(uri)) {
           continue;
         }
 
@@ -247,16 +253,24 @@ export default function EditProfilePage() {
           throw new Error(data.message || "Upload failed");
         }
 
-        if (data.data?.photos?.[index]) {
-          updatedPhotos[index] = data.data.photos[index];
+        const latestUploadedPhoto =
+          Array.isArray(data.data?.uploadedUrls) && data.data.uploadedUrls.length > 0
+            ? data.data.uploadedUrls[0]
+            : Array.isArray(data.data?.photos)
+              ? data.data.photos[index]
+              : null;
+
+        if (!latestUploadedPhoto) {
+          throw new Error("Uploaded photo URL missing from response.");
         }
+
+        uploadedPhotoSlots[index] = latestUploadedPhoto;
       }
 
-      setPhotos(updatedPhotos);
-      changedIndexes.current.clear();
+      setPhotos(uploadedPhotoSlots);
 
       // 2️⃣ Build updates payload (tempFields + reordered photos)
-      const cleanPhotos = updatedPhotos.filter(
+      const cleanPhotos = uploadedPhotoSlots.filter(
         (p): p is string => !!p
       ); // remove nulls, keep order
 
@@ -364,11 +378,14 @@ export default function EditProfilePage() {
                 Drugs: "Drugs",
               };
               if (screenMap[item.title]) {
+                const currentValue = hasOwn(tempFields, item.key)
+                  ? tempFields[item.key]
+                  : item.value;
                 // @ts-ignore
                 navigation.navigate(screenMap[item.title], {
                   mode: "edit",
                   fieldKey: item.key,
-                  currentValue: tempFields[item.key] || item.value,
+                  currentValue,
                 });
               }
             }}
@@ -376,9 +393,17 @@ export default function EditProfilePage() {
             <View style={styles.itemCopy}>
               <Text style={styles.itemTitle}>{item.title}</Text>
               <Text style={styles.itemValue}>
-                {Array.isArray(tempFields[item.key])
-                  ? tempFields[item.key].join(", ")
-                  : tempFields[item.key] ?? item.value ?? "Not set"}
+                {(() => {
+                  const rawValue = hasOwn(tempFields, item.key)
+                    ? tempFields[item.key]
+                    : item.value;
+
+                  if (Array.isArray(rawValue)) {
+                    return rawValue.length > 0 ? rawValue.join(", ") : "Not set";
+                  }
+
+                  return rawValue || "Not set";
+                })()}
               </Text>
             </View>
             <View style={styles.chevronBubble}>
@@ -398,14 +423,21 @@ export default function EditProfilePage() {
   }: any) => {
     return (
       <View style={styles.photoWrapper}>
-        <TouchableOpacity
+        <Pressable
           style={[
             styles.photoBox,
             isActive && styles.photoBoxActive,
           ]}
-          onLongPress={drag}
+          onLongPress={() => {
+            setIsDraggingPhoto(true);
+            drag();
+          }}
           delayLongPress={150}
-          onPress={() => handlePickPhoto(index)}
+          onPress={() => {
+            if (!isDraggingPhoto) {
+              handlePickPhoto(index);
+            }
+          }}
         >
           {item ? (
             <Image source={{ uri: item }} style={styles.photo} />
@@ -414,10 +446,13 @@ export default function EditProfilePage() {
               <Ionicons name="add" size={24} color="#aaa" />
             </View>
           )}
+          <View style={styles.slotBadge}>
+            <Text style={styles.slotBadgeText}>{index + 1}</Text>
+          </View>
           <View style={styles.plusCircle}>
             <Ionicons name="add" size={16} color="#fff" />
           </View>
-        </TouchableOpacity>
+        </Pressable>
         {item && (
           <TouchableOpacity
             style={styles.deleteBadge}
@@ -435,6 +470,7 @@ export default function EditProfilePage() {
       style={styles.container}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.contentContainer}
+      scrollEnabled={!isDraggingPhoto}
     >
       <View style={styles.header}>
         <TouchableOpacity
@@ -477,15 +513,24 @@ export default function EditProfilePage() {
               numColumns={3}
               keyExtractor={(_, index) => index.toString()}
               renderItem={renderPhotoItem}
+              containerStyle={styles.draggableList}
               onDragEnd={({ data }) => {
                 // data is (string | null)[]
                 let normalized = [...data];
-                while (normalized.length < 6) normalized.push(null);
-                if (normalized.length > 6) normalized = normalized.slice(0, 6);
+                while (normalized.length < PHOTO_SLOT_COUNT) {
+                  normalized.push(null);
+                }
+                if (normalized.length > PHOTO_SLOT_COUNT) {
+                  normalized = normalized.slice(0, PHOTO_SLOT_COUNT);
+                }
                 setPhotos(normalized);
                 setIsPhotoChanged(true);
+                setIsDraggingPhoto(false);
               }}
+              onRelease={() => setIsDraggingPhoto(false)}
+              onDragBegin={() => setIsDraggingPhoto(true)}
               scrollEnabled={false}
+              activationDistance={0}
             />
           </View>
 
@@ -722,14 +767,19 @@ const styles = StyleSheet.create({
   draggableContainer: {
     paddingHorizontal: 12,
   },
+  draggableList: {
+    overflow: "visible",
+  },
 
   photoWrapper: {
-    margin: 7,
+    width: "33.333%",
+    paddingHorizontal: 6,
+    marginBottom: 12,
   },
 
   photoBox: {
-    width: 98,
-    height: 98,
+    width: "100%",
+    aspectRatio: 1,
     borderRadius: 18,
     borderWidth: 1.5,
     borderColor: "#FDE2E4",
@@ -741,6 +791,7 @@ const styles = StyleSheet.create({
   photoBoxActive: {
     opacity: 0.92,
     borderColor: "#ff5864",
+    transform: [{ scale: 1.03 }],
   },
   photo: {
     width: "100%",
@@ -777,6 +828,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
+  },
+  slotBadge: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(26,26,26,0.72)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+  },
+  slotBadgeText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontFamily: "Poppins-Bold",
   },
   editText: {
     textAlign: "center",

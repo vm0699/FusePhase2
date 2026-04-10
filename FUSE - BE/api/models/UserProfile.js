@@ -53,6 +53,18 @@ const profileSchema = new Schema(
       longitude: { type: Number, default: null },
     },
 
+    locationGeo: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: null,
+      },
+      coordinates: {
+        type: [Number],
+        default: null,
+      },
+    },
+
     deliveryAddress: {
   name: { type: String, default: "" },
   phone: { type: String, default: "" }, // auto-filled from user phone
@@ -114,6 +126,26 @@ const profileSchema = new Schema(
   },
   { timestamps: true }
 );
+
+profileSchema.pre("save", function syncLocationGeo(next) {
+  const latitude = this.location?.latitude;
+  const longitude = this.location?.longitude;
+
+  if (typeof latitude === "number" && typeof longitude === "number") {
+    this.locationGeo = {
+      type: "Point",
+      coordinates: [longitude, latitude],
+    };
+  } else {
+    this.locationGeo = null;
+  }
+
+  next();
+});
+
+profileSchema.index({ locationGeo: "2dsphere" });
+profileSchema.index({ gender: 1, updatedAt: -1 });
+profileSchema.index({ gender: 1, dateOfBirth: 1, updatedAt: -1 });
 
 const UserProfile = model("UserProfile", profileSchema);
 

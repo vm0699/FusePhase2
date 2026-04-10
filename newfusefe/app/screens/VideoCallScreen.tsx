@@ -18,8 +18,7 @@ type VideoCallScreenRouteParams = {
   twilioToken: string;
 };
 
-const NGROK_URL =
-  "https://5944-2401-4900-9165-6c9a-201e-1a66-85b-68fa.ngrok-free.app";
+const SERVER_URL = "http://172.20.10.4:5000";
 
 export default function VideoCallScreen() {
   const navigation = useNavigation();
@@ -40,13 +39,13 @@ export default function VideoCallScreen() {
     } else {
       console.log(
         "Twilio WebView URL:",
-        `${NGROK_URL}/room/${room}?token=${twilioToken}&room=${room}`
+        `${SERVER_URL}/room/${room}?token=${twilioToken}&room=${room}`
       );
 
       if (Platform.OS === "web") {
         console.log("Opening video call in browser...");
         Linking.openURL(
-          `${NGROK_URL}/room/${room}?token=${twilioToken}&room=${room}`
+          `${SERVER_URL}/room/${room}?token=${twilioToken}&room=${room}`
         );
       }
     }
@@ -84,7 +83,7 @@ export default function VideoCallScreen() {
         <WebView
           key={reloadKey}
           source={{
-            uri: `${NGROK_URL}/room/${room}?token=${twilioToken}&room=${room}`,
+            uri: `${SERVER_URL}/room/${room}?token=${twilioToken}&room=${room}`,
           }}
           style={styles.webView}
           allowsInlineMediaPlayback

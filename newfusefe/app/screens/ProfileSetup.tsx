@@ -17,7 +17,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingStepper from '../../components/OnboardingStepper';
 
 const BASE_URL = 'http://172.20.10.4:5000';
-const ONBOARDING_STEP_KEY = '@onboarding_step';
 
 export default function ProfileSetupPage() {
   const navigation = useNavigation<any>();
@@ -28,11 +27,6 @@ export default function ProfileSetupPage() {
     gender: profileData.options.gender || '',
     mode: profileData.options.reason || '',
   });
-
-  // 🔹 Persist onboarding step
-  useEffect(() => {
-    AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'ProfileSetup');
-  }, []);
 
   const [isUsernameValid, setIsUsernameValid] = useState(
     localProfile.username.length >= 8 && localProfile.username.length <= 15
@@ -74,13 +68,6 @@ export default function ProfileSetupPage() {
       }),
     });
 
-    // 🔹 Resume pointer → Location (MANDATORY)
-    await AsyncStorage.setItem(
-      ONBOARDING_STEP_KEY,
-      'LocationSetup'
-    );
-
-    // 🔹 Navigate to Location screen
     navigation.navigate('LocationSetup');
   };
 

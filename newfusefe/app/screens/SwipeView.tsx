@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
-  Alert,
   Animated,
   ScrollView,
   Image,
@@ -19,33 +18,113 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { X, Heart, SlidersHorizontal } from "lucide-react-native";
 import { BottomNav } from "../../components/BottomNav";
 import { ProfileInfoCard } from "../../components/ProfileInfoCard";
+import { FusePopup } from "../../components/FusePopup";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
 const BASE_URL = "http://172.20.10.4:5000";
+const DISCOVERY_PAGE_SIZE = 8;
+const PREFETCH_THRESHOLD = 3;
+const DISCOVERY_SESSION_STORAGE_PREFIX = "swipeDiscoverySession:";
+const SWIPE_BG_COLOR = "#FFF1F2";
+const FILTERS_APPLIED_NOTICE_KEY = "filtersAppliedNoticePending";
+
+type DiscoveryFilters = {
+  ageRange?: { min: number; max: number };
+  ageFlex?: boolean;
+  distanceKm?: number;
+  distanceFlex?: boolean;
+  interests?: string[];
+} | null;
+
+type DiscoveryProfile = {
+  _id: string;
+  name?: string;
+  age?: number;
+  photos?: string[];
+  prompts?: Array<{ question?: string; answer?: string }>;
+  interests?: string[];
+  values?: string[];
+  gender?: string;
+  height?: string;
+  dateOfBirth?: string;
+  pronouns?: string;
+  sexuality?: string;
+  work?: string;
+  jobTitle?: string;
+  college?: string;
+  educationLevel?: string;
+  lives_in?: string;
+  homeTown?: string;
+  religion?: string;
+  zodiacSign?: string;
+  politics?: string;
+  ethnicity?: string;
+  drinking?: string;
+  smoking?: string;
+  marijuana?: string;
+  drugs?: string;
+  datingIntentions?: string;
+  relationshipType?: string;
+  children?: string;
+  familyPlans?: string;
+  pets?: string;
+  languages?: string[];
+};
+
+type DiscoverySession = {
+  filtersKey: string;
+  profiles: DiscoveryProfile[];
+  currentProfileIndex: number;
+  currentPage: number;
+  hasMoreProfiles: boolean;
+  recycledDeck: boolean;
+};
 
 export default function SwipeView() {
   const navigation = useNavigation();
 
-  const [profiles, setProfiles] = useState([]);
+  const [profiles, setProfiles] = useState<DiscoveryProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [hasMoreProfiles, setHasMoreProfiles] = useState(true);
+  const [recycledDeck, setRecycledDeck] = useState(false);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
   const hasFetchedOnceRef = React.useRef(false);
+  const currentPageRef = React.useRef(0);
+  const activeFiltersKeyRef = React.useRef("default");
+  const discoverySessionKeyRef = React.useRef<string | null>(null);
+  const requestInFlightRef = React.useRef(false);
+  const deckResetInFlightRef = React.useRef(false);
+  const swipeActionLockRef = React.useRef<string | null>(null);
 
   const [compliment, setCompliment] = useState("");
   const [isComplimentPopupOpen, setIsComplimentPopupOpen] = useState(false);
   const [isSendingCompliment, setIsSendingCompliment] = useState(false);
   const [isSendingAction, setIsSendingAction] = useState(false);
-  // Tracks which individual heart is in liked/filled state
+  const [popupState, setPopupState] = useState<{
+    visible: boolean;
+    title: string;
+    message?: string;
+    tone?: "default" | "success" | "error" | "info";
+  }>({ visible: false, title: "" });
   const [likedKey, setLikedKey] = useState<string | null>(null);
-  // Tracks the actual content (photo URL or prompt object) being liked
   const [likedContent, setLikedContent] = useState<any>(null);
-  // Per-heart bloom animation refs keyed by 'photo-{i}' or 'prompt-{i}'
   const heartScaleRefs = React.useRef<Record<string, Animated.Value>>({});
 
-  // Animations for the compliment popup (Hinge-style centered card)
   const modalOpacity = React.useRef(new Animated.Value(0)).current;
   const modalScale = React.useRef(new Animated.Value(0.9)).current;
+
+  const showPopup = useCallback(
+    (
+      title: string,
+      message?: string,
+      tone: "default" | "success" | "error" | "info" = "default"
+    ) => {
+      setPopupState({ visible: true, title, message, tone });
+    },
+    []
+  );
 
   const getHeartScale = (key: string): Animated.Value => {
     if (!heartScaleRefs.current[key]) {
@@ -56,59 +135,319 @@ export default function SwipeView() {
 
   const swipeAnimation = React.useRef(new Animated.Value(0)).current;
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!hasFetchedOnceRef.current) {
-        hasFetchedOnceRef.current = true;
-        fetchProfiles();
-      }
-    }, [])
-  );
-
   const advanceToNextProfile = () => setCurrentProfileIndex((p) => p + 1);
 
-  const fetchProfiles = async () => {
-    setLoading(true);
-    try {
-      const token = await AsyncStorage.getItem("jwtToken");
-      const userId = await AsyncStorage.getItem("userId");
-      if (!token) return;
+  const loadDiscoveryContext = async () => {
+    const token = await AsyncStorage.getItem("jwtToken");
+    const userId = await AsyncStorage.getItem("userId");
 
-      let filters = null;
-      if (userId) {
-        const stored = await AsyncStorage.getItem(`filters:${userId}`);
-        if (stored) {
-          try { filters = JSON.parse(stored); } catch { }
-        }
+    let filters: DiscoveryFilters = null;
+    if (userId) {
+      const stored = await AsyncStorage.getItem("filters:" + userId);
+      if (stored) {
+        try {
+          filters = JSON.parse(stored);
+        } catch {}
       }
+    }
 
-      const response = await fetch(`${BASE_URL}/api/profile/filteredProfiles`, {
-        method: filters ? "POST" : "GET",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: filters ? JSON.stringify({ filters }) : undefined,
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Fetch failed");
-      setProfiles(result.profiles || []);
-      setCurrentProfileIndex(0);
-    } catch (e) {
-      console.error("❌ fetchProfiles:", e);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+    return {
+      token,
+      userId,
+      filters,
+      filtersKey: userId ? JSON.stringify(filters || null) : "default",
+      sessionStorageKey: userId
+        ? DISCOVERY_SESSION_STORAGE_PREFIX + userId
+        : null,
+    };
+  };
+
+  const persistDiscoverySession = async (session: DiscoverySession) => {
+    if (!discoverySessionKeyRef.current) return;
+
+    try {
+      await AsyncStorage.setItem(
+        discoverySessionKeyRef.current,
+        JSON.stringify(session)
+      );
+    } catch (error) {
+      console.error("persistDiscoverySession:", error);
     }
   };
 
-  const onRefresh = () => { setRefreshing(true); fetchProfiles(); };
+  const clearPersistedDiscoverySession = async () => {
+    if (!discoverySessionKeyRef.current) return;
+
+    try {
+      await AsyncStorage.removeItem(discoverySessionKeyRef.current);
+    } catch (error) {
+      console.error("clearPersistedDiscoverySession:", error);
+    }
+  };
+
+  const restoreDiscoverySession = async ({
+    filtersKey,
+    sessionStorageKey,
+  }: {
+    filtersKey: string;
+    sessionStorageKey: string | null;
+  }) => {
+    if (!sessionStorageKey) return false;
+
+    try {
+      const stored = await AsyncStorage.getItem(sessionStorageKey);
+      if (!stored) return false;
+
+      const parsed: DiscoverySession = JSON.parse(stored);
+      if (!parsed || parsed.filtersKey !== filtersKey) {
+        await AsyncStorage.removeItem(sessionStorageKey);
+        return false;
+      }
+
+      const safeProfiles = Array.isArray(parsed.profiles) ? parsed.profiles : [];
+      const maxIndex = safeProfiles.length ? safeProfiles.length - 1 : 0;
+      const safeIndex = Math.max(
+        0,
+        Math.min(parsed.currentProfileIndex || 0, maxIndex)
+      );
+
+      activeFiltersKeyRef.current = filtersKey;
+      currentPageRef.current = Math.max(parsed.currentPage || 0, 0);
+      setProfiles(safeProfiles);
+      setCurrentProfileIndex(safeIndex);
+      setHasMoreProfiles(Boolean(parsed.hasMoreProfiles));
+      setRecycledDeck(Boolean(parsed.recycledDeck));
+      setLoading(false);
+      setRefreshing(false);
+      setIsFetchingMore(false);
+
+      return safeProfiles.length > 0;
+    } catch (error) {
+      console.error("restoreDiscoverySession:", error);
+      try {
+        await AsyncStorage.removeItem(sessionStorageKey);
+      } catch {}
+      return false;
+    }
+  };
+
+  const fetchProfilesPage = async ({
+    page,
+    reset = false,
+    showLoader = false,
+  }: {
+    page: number;
+    reset?: boolean;
+    showLoader?: boolean;
+  }) => {
+    if (requestInFlightRef.current) return;
+
+    requestInFlightRef.current = true;
+    if (showLoader) {
+      setLoading(true);
+    } else {
+      setIsFetchingMore(true);
+    }
+
+    try {
+      const { token, filters, filtersKey, sessionStorageKey } =
+        await loadDiscoveryContext();
+      if (!token) return;
+
+      discoverySessionKeyRef.current = sessionStorageKey;
+
+      const response = await fetch(BASE_URL + "/api/profile/filteredProfiles", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filters,
+          page,
+          limit: DISCOVERY_PAGE_SIZE,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Fetch failed");
+
+      const incomingProfiles: DiscoveryProfile[] = Array.isArray(result.profiles)
+        ? result.profiles
+        : [];
+      const pagination = result.pagination || {};
+
+      activeFiltersKeyRef.current = filtersKey;
+      currentPageRef.current = page;
+      setHasMoreProfiles(Boolean(pagination.hasMore));
+      setRecycledDeck(Boolean(pagination.recycled));
+
+      setProfiles((prev) => {
+        if (reset) {
+          return incomingProfiles;
+        }
+
+        const seen = new Set(prev.map((item) => item._id));
+        const merged = [...prev];
+        for (const item of incomingProfiles) {
+          if (!item?._id || seen.has(item._id)) continue;
+          seen.add(item._id);
+          merged.push(item);
+        }
+        return merged;
+      });
+
+      if (reset) {
+        setCurrentProfileIndex(0);
+      }
+    } catch (e) {
+      console.error("fetchProfiles:", e);
+    } finally {
+      requestInFlightRef.current = false;
+      setLoading(false);
+      setRefreshing(false);
+      setIsFetchingMore(false);
+      deckResetInFlightRef.current = false;
+    }
+  };
+
+  const resetAndFetchProfiles = async ({
+    showLoader = false,
+    refreshingState = false,
+  }: {
+    showLoader?: boolean;
+    refreshingState?: boolean;
+  } = {}) => {
+    if (deckResetInFlightRef.current) return;
+
+    deckResetInFlightRef.current = true;
+    if (refreshingState) {
+      setRefreshing(true);
+    }
+    setHasMoreProfiles(true);
+    setRecycledDeck(false);
+    currentPageRef.current = 0;
+
+    await fetchProfilesPage({
+      page: 1,
+      reset: true,
+      showLoader,
+    });
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      (async () => {
+        const { filtersKey, sessionStorageKey } = await loadDiscoveryContext();
+        if (!isActive) return;
+
+        discoverySessionKeyRef.current = sessionStorageKey;
+
+        if (!hasFetchedOnceRef.current) {
+          hasFetchedOnceRef.current = true;
+          const restored = await restoreDiscoverySession({
+            filtersKey,
+            sessionStorageKey,
+          });
+          if (restored) {
+            activeFiltersKeyRef.current = filtersKey;
+            return;
+          }
+          await resetAndFetchProfiles({ showLoader: true });
+          return;
+        }
+
+        if (activeFiltersKeyRef.current !== filtersKey) {
+          await resetAndFetchProfiles({ showLoader: true });
+        }
+
+        const pendingFiltersNotice = await AsyncStorage.getItem(
+          FILTERS_APPLIED_NOTICE_KEY
+        );
+        if (pendingFiltersNotice === "1" && isActive) {
+          await AsyncStorage.removeItem(FILTERS_APPLIED_NOTICE_KEY);
+          showPopup(
+            "Filters applied",
+            "We’ll prioritize your selected preferences. If matches run low, discovery may gently widen results so you still see people.",
+            "info"
+          );
+        }
+      })();
+
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
+
+  React.useEffect(() => {
+    const remainingProfiles = profiles.length - currentProfileIndex;
+
+    if (
+      loading ||
+      refreshing ||
+      isFetchingMore ||
+      !hasMoreProfiles ||
+      currentProfileIndex >= profiles.length ||
+      remainingProfiles > PREFETCH_THRESHOLD
+    ) {
+      return;
+    }
+
+    fetchProfilesPage({ page: currentPageRef.current + 1 });
+  }, [currentProfileIndex, hasMoreProfiles, isFetchingMore, loading, profiles.length, refreshing]);
+
+  React.useEffect(() => {
+    if (
+      loading ||
+      refreshing ||
+      isFetchingMore ||
+      deckResetInFlightRef.current ||
+      currentProfileIndex < profiles.length ||
+      profiles.length === 0
+    ) {
+      return;
+    }
+
+    resetAndFetchProfiles();
+  }, [currentProfileIndex, isFetchingMore, loading, profiles.length, refreshing]);
+
+  React.useEffect(() => {
+    if (!hasFetchedOnceRef.current || loading || !activeFiltersKeyRef.current) {
+      return;
+    }
+
+    if (!profiles.length) {
+      clearPersistedDiscoverySession();
+      return;
+    }
+
+    persistDiscoverySession({
+      filtersKey: activeFiltersKeyRef.current,
+      profiles,
+      currentProfileIndex,
+      currentPage: currentPageRef.current,
+      hasMoreProfiles,
+      recycledDeck,
+    });
+  }, [currentProfileIndex, hasMoreProfiles, loading, profiles, recycledDeck]);
+
+  const onRefresh = () => {
+    resetAndFetchProfiles({ refreshingState: true });
+  };
 
   const sendSwipeAction = async (swipedUserId, action) => {
     const token = await AsyncStorage.getItem("jwtToken");
     if (!token) return;
-    await fetch(`${BASE_URL}/api/profile/swipe`, {
+    const response = await fetch(`${BASE_URL}/api/profile/swipe`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ swipedUserId, action }),
     });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.message || "Failed to record swipe");
+    return result;
   };
 
   const sendComplimentRequest = async (swipedUserId, complimentText) => {
@@ -199,6 +538,8 @@ export default function SwipeView() {
   const handleSwipe = async (direction) => {
     if (!profiles.length || currentProfileIndex >= profiles.length || isSendingAction || isSendingCompliment) return;
     const swipedUserId = profiles[currentProfileIndex]?._id;
+    if (!swipedUserId || swipeActionLockRef.current === swipedUserId) return;
+    swipeActionLockRef.current = swipedUserId;
     Animated.timing(swipeAnimation, {
       toValue: direction === "right" ? 300 : -300,
       duration: 300,
@@ -209,6 +550,7 @@ export default function SwipeView() {
         // Default to liking the first photo if they just swipe the whole card
         const firstPhoto = profile?.photos?.[0];
         openComplimentModal('photo-0', { type: 'photo', url: firstPhoto });
+        swipeActionLockRef.current = null;
       } else {
         (async () => {
           try {
@@ -216,9 +558,12 @@ export default function SwipeView() {
             await sendSwipeAction(swipedUserId, "dislike");
             advanceToNextProfile();
           } catch {
-            Alert.alert("Error", "Failed to record dislike.");
+            showPopup("Error", "Failed to record dislike.", "error");
           } finally {
             setIsSendingAction(false);
+            if (swipeActionLockRef.current === swipedUserId) {
+              swipeActionLockRef.current = null;
+            }
           }
         })();
       }
@@ -228,6 +573,8 @@ export default function SwipeView() {
   const handleSendCompliment = async () => {
     const swipedUserId = profiles[currentProfileIndex]?._id;
     if (!swipedUserId || currentProfileIndex >= profiles.length || isSendingAction || isSendingCompliment) return;
+    if (swipeActionLockRef.current === swipedUserId) return;
+    swipeActionLockRef.current = swipedUserId;
     const complimentText = compliment.trim();
     setIsSendingCompliment(true);
     setIsSendingAction(true);
@@ -259,25 +606,29 @@ export default function SwipeView() {
           complimentPreview: complimentText || null,
         });
       } else {
-        Alert.alert(complimentText ? "Compliment sent!" : "Like sent", complimentText ? "Chat created." : "They'll see you in their Liked You.");
+        showPopup(
+          complimentText ? "Compliment sent" : "Like sent",
+          complimentText
+            ? "Chat created."
+            : "They will see you in their Liked You.",
+          "success"
+        );
       }
     } catch (e) {
       console.error("❌ handleSendCompliment:", e);
-      Alert.alert("Error", "Something went wrong.");
+      showPopup("Error", "Something went wrong.", "error");
     } finally {
       setIsSendingCompliment(false);
       setIsSendingAction(false);
+      if (swipeActionLockRef.current === swipedUserId) {
+        swipeActionLockRef.current = null;
+      }
     }
   };
 
   const hasProfiles = profiles.length > 0;
   const profileInRange = hasProfiles && currentProfileIndex < profiles.length;
   const profile = profileInRange ? profiles[currentProfileIndex] : null;
-  const isCaughtUp = hasProfiles && !profileInRange;
-
-  React.useEffect(() => {
-    if (isCaughtUp) hasFetchedOnceRef.current = false;
-  }, [isCaughtUp]);
 
   // Only show fields that have values — no emojis, clean text
   const infoFields = [
@@ -330,7 +681,7 @@ export default function SwipeView() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ff5864" />
           }
         >
-          {profile.photos.map((photo, i) => (
+          {(profile.photos || []).map((photo, i) => (
             <View key={i} style={styles.card}>
 
               {/* PHOTO */}
@@ -371,13 +722,13 @@ export default function SwipeView() {
               </View>
 
               {/* PROFILE INFO CARD — shown only on first photo */}
-              {i === 0 && profile.prompts[0] && (
+              {i === 0 && profile.prompts?.[0] && (
                 <View style={styles.promptCard}>
                   {(() => {
                     const hKey = "prompt-0";
                     const scale = getHeartScale(hKey);
                     const liked = likedKey === hKey;
-                    const promptObj = profile.prompts[0];
+                    const promptObj = profile.prompts?.[0];
                     return (
                       <TouchableOpacity
                         style={styles.promptHeartBtn}
@@ -396,9 +747,9 @@ export default function SwipeView() {
                     );
                   })()}
                   <Text style={[styles.promptQ, { paddingRight: 52 }]}>
-                    {profile.prompts[0].question}
+                    {profile.prompts?.[0]?.question}
                   </Text>
-                  <Text style={styles.promptA}>{profile.prompts[0].answer}</Text>
+                  <Text style={styles.promptA}>{profile.prompts?.[0]?.answer}</Text>
                 </View>
               )}
 
@@ -436,14 +787,14 @@ export default function SwipeView() {
               )}
 
               {/* PROMPT CARD */}
-              {i !== 0 && profile.prompts[i] && (
+              {i !== 0 && profile.prompts?.[i] && (
                 <View style={styles.promptCard}>
                   {/* Prompt heart — top right, per-item state */}
                   {(() => {
                     const hKey = `prompt-${i}`;
                     const scale = getHeartScale(hKey);
                     const liked = likedKey === hKey;
-                    const promptObj = profile.prompts[i];
+                    const promptObj = profile.prompts?.[i];
                     return (
                       <TouchableOpacity
                         style={styles.promptHeartBtn}
@@ -461,8 +812,8 @@ export default function SwipeView() {
                       </TouchableOpacity>
                     );
                   })()}
-                  <Text style={[styles.promptQ, { paddingRight: 52 }]}>{profile.prompts[i].question}</Text>
-                  <Text style={styles.promptA}>{profile.prompts[i].answer}</Text>
+                  <Text style={[styles.promptQ, { paddingRight: 52 }]}>{profile.prompts?.[i]?.question}</Text>
+                  <Text style={styles.promptA}>{profile.prompts?.[i]?.answer}</Text>
                 </View>
               )}
             </View>
@@ -471,12 +822,28 @@ export default function SwipeView() {
         </ScrollView>
       ) : (
         <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>
-            {isCaughtUp ? "All caught up" : "No profiles"}
-          </Text>
-          <Text style={styles.emptyBody}>
-            {isCaughtUp ? "Pull to refresh for more" : "Try adjusting your filters"}
-          </Text>
+          {isFetchingMore ? (
+            <>
+              <ActivityIndicator size="large" color="#ff5864" />
+              <Text style={styles.emptyTitle}>Loading more profiles</Text>
+              <Text style={styles.emptyBody}>
+                {recycledDeck
+                  ? "Refreshing your deck from earlier swipes."
+                  : "Pulling the next batch for you."}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.emptyTitle}>
+                {recycledDeck ? "Your deck has refreshed" : "No profiles"}
+              </Text>
+              <Text style={styles.emptyBody}>
+                {recycledDeck
+                  ? "Previously swiped profiles are back in rotation."
+                  : "Try adjusting your filters."}
+              </Text>
+            </>
+          )}
         </View>
       )}
 
@@ -554,6 +921,13 @@ export default function SwipeView() {
       )}
 
       <BottomNav />
+      <FusePopup
+        visible={popupState.visible}
+        title={popupState.title}
+        message={popupState.message}
+        tone={popupState.tone}
+        onClose={() => setPopupState((prev) => ({ ...prev, visible: false }))}
+      />
     </View>
   );
 }
@@ -561,13 +935,13 @@ export default function SwipeView() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAF8F3",
+    backgroundColor: SWIPE_BG_COLOR,
   },
   centered: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FAF8F3",
+    backgroundColor: SWIPE_BG_COLOR,
   },
 
   // TOP BAR

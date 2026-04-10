@@ -20,11 +20,11 @@ import OnboardingStepper from '../../components/OnboardingStepper';
 
 
 const BASE_URL = "http://172.20.10.4:5000";
-const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
 
 export default function PhotoUploadPage() {
   const navigation = useNavigation();
   const { profileData, updateProfileData } = useContext(ProfileContext);
+  const submitLockRef = useRef(false);
 
 
 
@@ -42,11 +42,6 @@ export default function PhotoUploadPage() {
   const isFocused = useIsFocused();
   const [appReady, setAppReady] = useState(false);
   const appState = useRef(AppState.currentState);
-
-  // 🔹 2.1 — persist current onboarding step (LOCAL resume)
-  useEffect(() => {
-    AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'PhotoUpload');
-  }, []);
 
   useEffect(() => {
     (async () => {
@@ -79,14 +74,35 @@ export default function PhotoUploadPage() {
 
   const handlePickPhoto = async (index) => {
     try {
+      const isReplacingExistingPhoto = Boolean(photos[index]);
+      const availableIndexes = isReplacingExistingPhoto
+        ? [index]
+        : [
+            index,
+            ...photos
+              .map((photo, slotIndex) =>
+                photo === null && slotIndex !== index ? slotIndex : null
+              )
+              .filter((slotIndex) => slotIndex !== null),
+          ];
+
       const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
+        allowsEditing: isReplacingExistingPhoto,
+        allowsMultipleSelection: !isReplacingExistingPhoto,
+        selectionLimit: availableIndexes.length,
         quality: 1,
       });
 
       if (!result.canceled && result.assets?.length > 0) {
         let updated = [...photos];
-        updated[index] = result.assets[0].uri;
+        result.assets
+          .slice(0, availableIndexes.length)
+          .forEach((asset, assetIndex) => {
+            const targetIndex = availableIndexes[assetIndex];
+            if (typeof targetIndex === 'number') {
+              updated[targetIndex] = asset.uri;
+            }
+          });
         setPhotos(updated);
         updateProfileData("photos", updated);
       }
@@ -96,6 +112,10 @@ export default function PhotoUploadPage() {
   };
 
   const handleSubmit = async () => {
+    if (submitLockRef.current || uploading) {
+      return;
+    }
+
     const filledPhotos = photos.filter(photo => photo !== null);
     if (filledPhotos.length < 4) {
       Alert.alert("Incomplete", "Please upload at least 4 photos.");
@@ -103,12 +123,15 @@ export default function PhotoUploadPage() {
     }
 
     try {
+      submitLockRef.current = true;
       setUploading(true);
       const token = await AsyncStorage.getItem("jwtToken");
       const phoneNumber = profileData.number;
 
       const formData = new FormData();
       formData.append("phoneNumber", phoneNumber);
+      formData.append("replaceAll", "true");
+      formData.append("onboardingStage", "PHOTOS_DONE");
 
       const compressAndCalculateSize = async (uris, fallback = false) => {
         let totalSize = 0;
@@ -179,55 +202,10 @@ export default function PhotoUploadPage() {
 
       // 🔽 INSIDE handleSubmit(), REPLACE ONLY THIS PART
 
-      const uploadedPhotos = uploadJson.data.photos;
+      const uploadedPhotos = Array.isArray(uploadJson.data?.photos)
+        ? uploadJson.data.photos
+        : [];
       updateProfileData("photos", uploadedPhotos);
-
-      // =====================================================
-      // 🔥 BACKEND CHECKPOINT ONLY
-      // =====================================================
-      await fetch(`${BASE_URL}/api/profile/update`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          updates: {
-            onboardingStage: "PHOTOS_DONE",
-          },
-        }),
-      });
-
-      // =====================================================
-      // ✅ CRITICAL FIX — REHYDRATE PROFILE FROM DB
-      // =====================================================
-      const profileRes = await fetch(`${BASE_URL}/api/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const profileJson = await profileRes.json();
-
-      if (profileJson?.success) {
-        const fresh = profileJson.data;
-
-        // restore intro safely
-        if (fresh?.name || fresh?.dateOfBirth) {
-          updateProfileData("intro", {
-            name: fresh.name || "",
-            dob: fresh.dateOfBirth || "",
-          });
-        }
-
-        // restore photos (already uploaded)
-        if (Array.isArray(fresh.photos)) {
-          updateProfileData("photos", fresh.photos);
-        }
-      }
-      // =====================================================
-
-      await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'Guidelines');
 
       Alert.alert("Success", "Photos uploaded!");
       navigation.navigate("Guidelines");
@@ -237,6 +215,7 @@ export default function PhotoUploadPage() {
       Alert.alert("Error", error.message || "Something went wrong.");
     } finally {
       setUploading(false);
+      submitLockRef.current = false;
     }
   };
 

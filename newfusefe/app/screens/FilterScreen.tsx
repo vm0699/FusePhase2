@@ -15,7 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StackNavigationProp } from "@react-navigation/stack";
 
 type RootStackParamList = {
-  Interests: { fromFilter?: boolean };
+  Interests: { fromFilter?: boolean; currentValue?: string[] };
   FilterScreen: undefined;
 };
 
@@ -30,6 +30,8 @@ type DiscoveryFilters = {
 };
 
 const BASE_URL = "http://172.20.10.4:5000";
+const TEMP_DISCOVERY_INTERESTS_KEY = "temporaryInterests";
+const FILTERS_APPLIED_NOTICE_KEY = "filtersAppliedNoticePending";
 
 const FilterScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -42,6 +44,11 @@ const FilterScreen = () => {
   const [userInterests, setUserInterests] = useState<string[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
+  const handleCancel = async () => {
+    await AsyncStorage.removeItem(TEMP_DISCOVERY_INTERESTS_KEY);
+    navigation.goBack();
+  };
+
   useEffect(() => {
     if (!isFocused) return;
 
@@ -52,6 +59,17 @@ const FilterScreen = () => {
 
       if (!uid || !token) return;
 
+      let tempInterests: string[] | null = null;
+      const temp = await AsyncStorage.getItem(TEMP_DISCOVERY_INTERESTS_KEY);
+      if (temp) {
+        try {
+          const parsed = JSON.parse(temp);
+          if (Array.isArray(parsed)) {
+            tempInterests = parsed;
+          }
+        } catch {}
+      }
+
       const stored = await AsyncStorage.getItem(`filters:${uid}`);
       if (stored) {
         try {
@@ -60,20 +78,14 @@ const FilterScreen = () => {
           setAgeExpand(parsed.ageFlex);
           setDistance(parsed.distanceKm);
           setDistanceExpand(parsed.distanceFlex);
-          setUserInterests(parsed.interests || []);
+          setUserInterests(tempInterests ?? (parsed.interests || []));
           return;
         } catch {}
       }
 
-      const temp = await AsyncStorage.getItem("temporaryInterests");
-      if (temp) {
-        try {
-          const parsed = JSON.parse(temp);
-          if (Array.isArray(parsed)) {
-            setUserInterests(parsed);
-            return;
-          }
-        } catch {}
+      if (tempInterests) {
+        setUserInterests(tempInterests);
+        return;
       }
 
       const res = await fetch(`${BASE_URL}/api/profile`, {
@@ -101,19 +113,22 @@ const FilterScreen = () => {
     };
 
     await AsyncStorage.setItem(`filters:${userId}`, JSON.stringify(filters));
+    await AsyncStorage.setItem(FILTERS_APPLIED_NOTICE_KEY, "1");
+    await AsyncStorage.removeItem(TEMP_DISCOVERY_INTERESTS_KEY);
     navigation.goBack();
   };
 
   const clearFilters = async () => {
     if (!userId) return;
     await AsyncStorage.removeItem(`filters:${userId}`);
+    await AsyncStorage.removeItem(TEMP_DISCOVERY_INTERESTS_KEY);
     navigation.goBack();
   };
 
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerPill} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.headerPill} onPress={handleCancel}>
           <Text style={styles.headerButton}>Cancel</Text>
         </TouchableOpacity>
 
@@ -206,7 +221,12 @@ const FilterScreen = () => {
 
         <TouchableOpacity
           style={styles.row}
-          onPress={() => navigation.navigate("Interests", { fromFilter: true })}
+          onPress={() =>
+            navigation.navigate("Interests", {
+              fromFilter: true,
+              currentValue: userInterests,
+            })
+          }
         >
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={styles.chipsContainer}>

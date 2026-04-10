@@ -9,108 +9,167 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import io from "socket.io-client";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const NGROK_SERVER_URL = "http://172.20.10.4:5000";
-const SOCKET_SERVER = "wss://www.fusedating.co.in";
+const SERVER_URL = "http://172.20.10.4:5000";
 
 export default function WaitingScreen() {
   const navigation = useNavigation();
   const { userId, interests } = useRoute().params;
   const socket = useRef(null);
+  const waitingRef = useRef(true);
+  const navigatedRef = useRef(false);
+  const timeoutRef = useRef(null);
   const [waiting, setWaiting] = useState(true);
   const [matchedInterest, setMatchedInterest] = useState("");
 
   useEffect(() => {
+    let isMounted = true;
+
+    const leaveQueueAndDisconnect = (reason = "left") => {
+      if (socket.current) {
+        socket.current.emit("leave_video_queue", { userId, reason });
+        socket.current.disconnect();
+        socket.current = null;
+      }
+    };
+
+    const fetchAgoraToken = async (channelName) => {
+      try {
+        const uid = Math.floor(Math.random() * 1000000) + 1;
+        const jwtToken = await AsyncStorage.getItem("jwtToken");
+        if (!jwtToken) {
+          navigation.replace("Login");
+          return null;
+        }
+
+        const response = await fetch(
+          `${SERVER_URL}/api/agora/token?channelName=${encodeURIComponent(
+            channelName
+          )}&uid=${uid}`,
+          {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.message || "Failed to fetch Agora token");
+        }
+
+        if (data.token) {
+          return { token: data.token, uid: data.uid || uid };
+        }
+      } catch (error) {
+        console.error("Failed to fetch Agora token:", error);
+      }
+      return null;
+    };
+
+    const handleMatchFound = async ({ matchedUserId, room, matchedInterest }) => {
+      if (!isMounted || navigatedRef.current) return;
+
+      try {
+        waitingRef.current = false;
+        setWaiting(false);
+        setMatchedInterest(matchedInterest || "");
+        navigatedRef.current = true;
+
+        const result = await fetchAgoraToken(room);
+        if (!result) {
+          Alert.alert("Error", "Failed to generate video token.");
+          navigatedRef.current = false;
+          waitingRef.current = true;
+          setWaiting(true);
+          return;
+        }
+
+        leaveQueueAndDisconnect("matched");
+
+        navigation.replace("AgoraCallScreen", {
+          channelName: room,
+          token: result.token,
+          uid: result.uid,
+          userId,
+          interests,
+          matchedUserId,
+          matchedInterest: matchedInterest || null,
+        });
+      } catch (matchErr) {
+        console.error("Error during match_found handler:", matchErr);
+        navigatedRef.current = false;
+        waitingRef.current = true;
+        setWaiting(true);
+      }
+    };
+
     try {
       if (!userId || !interests) {
         console.warn("Invalid params. userId or interests missing.");
         return navigation.goBack();
       }
 
-      console.log("WaitingScreen launched.");
-
-      socket.current = io(SOCKET_SERVER, {
+      socket.current = io(SERVER_URL, {
         path: "/socket.io",
-        transports: ["websocket"],
+        transports: ["websocket", "polling"],
         forceNew: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 2000,
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1500,
+        timeout: 15000,
       });
 
       socket.current.on("connect", () => {
         const normalizedInterests = interests.map((i) => i.toLowerCase());
-        console.log("Connected to socket. Joining video queue.");
         socket.current.emit("join_video_queue", {
           userId,
           interests: normalizedInterests,
         });
       });
 
-      socket.current.on(
-        "match_found",
-        async ({ matchedUserId, room, matchedInterest }) => {
-          try {
-            setWaiting(false);
-            setMatchedInterest(matchedInterest || "");
-            console.log("Match found. Fetching token...");
+      socket.current.on("queue_joined", () => {
+        waitingRef.current = true;
+        setWaiting(true);
+      });
 
-            const result = await fetchAgoraToken(room);
-            if (!result) {
-              Alert.alert("Error", "Failed to generate video token.");
-              return;
-            }
+      socket.current.on("match_found", handleMatchFound);
 
-            navigation.replace("AgoraCallScreen", {
-              channelName: room,
-              token: result.token,
-              uid: result.uid,
-            });
-          } catch (matchErr) {
-            console.error("Error during match_found handler:", matchErr);
-          }
-        }
-      );
+      socket.current.on("queue_error", (err) => {
+        console.error("Queue error:", err);
+        Alert.alert("Error", err?.message || "Failed to join video queue.");
+      });
 
-      socket.current.on("disconnect", () =>
-        console.log("Socket disconnected")
-      );
-      socket.current.on("connect_error", (err) =>
-        console.error("Socket error:", err)
-      );
+      socket.current.on("disconnect", () => {
+        console.log("Socket disconnected");
+      });
 
-      const timeout = setTimeout(() => {
-        if (waiting) {
+      socket.current.on("connect_error", (err) => {
+        console.error("Socket error:", err);
+      });
+
+      timeoutRef.current = setTimeout(() => {
+        if (waitingRef.current && !navigatedRef.current) {
+          leaveQueueAndDisconnect("timeout");
           Alert.alert("No match found", "Please try again later.");
           navigation.goBack();
         }
       }, 60000);
 
       return () => {
-        clearTimeout(timeout);
-        if (socket.current) socket.current.disconnect();
+        isMounted = false;
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        if (!navigatedRef.current) {
+          leaveQueueAndDisconnect("screen_unmount");
+        }
       };
     } catch (err) {
       console.error("useEffect error in WaitingScreen:", err);
     }
   }, []);
-
-  const fetchAgoraToken = async (channelName) => {
-    try {
-      const uid = Math.floor(Math.random() * 10000);
-      console.log("Fetching Agora token...");
-
-      const response = await fetch(
-        `${NGROK_SERVER_URL}/api/agora/token?channelName=${channelName}&uid=${uid}`
-      );
-      const data = await response.json();
-      if (data.token) {
-        return { token: data.token, uid };
-      }
-    } catch (error) {
-      console.error("Failed to fetch Agora token:", error);
-    }
-    return null;
-  };
 
   return (
     <View style={styles.container}>

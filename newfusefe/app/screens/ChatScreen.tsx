@@ -4,9 +4,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   FlatList,
   ActivityIndicator,
-  Alert,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +18,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { chatApi } from "../api/chatApi";
 import { createChatRealtime } from "../realtime/chatRealtime";
+import { FusePopup } from "../../components/FusePopup";
 
 
 const BASE_URL = "http://172.20.10.4:5000";
@@ -28,6 +29,15 @@ const datingTips = [
   "📌 Be yourself, not a highlight reel.",
   "⏳ Good things take time—like this chat loading!",
   "🤝 Keep it light, kind, and respectful.",
+];
+
+const REPORT_REASONS = [
+  "Harassment",
+  "Spam",
+  "Inappropriate messages",
+  "Fake profile",
+  "Safety concern",
+  "Other",
 ];
 
 export default function ChatScreen({ route }) {
@@ -67,6 +77,18 @@ export default function ChatScreen({ route }) {
   const [bannerConsumed, setBannerConsumed] = useState(false);
   const [channelAvailable, setChannelAvailable] = useState(!!(channelSid || twilioChatChannelSid));
   const [isUpdatingRequest, setIsUpdatingRequest] = useState(false);
+  const [popupState, setPopupState] = useState<{
+    visible: boolean;
+    title: string;
+    message?: string;
+    tone?: "default" | "success" | "error" | "info";
+    onClose?: () => void;
+  }>({ visible: false, title: "" });
+  const [showSafetyMenu, setShowSafetyMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReportReason, setSelectedReportReason] = useState("Harassment");
+  const [reportNotes, setReportNotes] = useState("");
+  const [isSubmittingSafety, setIsSubmittingSafety] = useState(false);
   
 
   // if both sides have sent at least one message, allow chatting even if not 'accepted'
@@ -75,19 +97,32 @@ export default function ChatScreen({ route }) {
   const initialChannelSid = channelSid || twilioChatChannelSid;
   const [activeChannelSid, setActiveChannelSid] = useState(initialChannelSid);
 
+  const showPopup = (
+    title: string,
+    message?: string,
+    tone: "default" | "success" | "error" | "info" = "default",
+    onClose?: () => void
+  ) => {
+    setPopupState({ visible: true, title, message, tone, onClose });
+  };
+
   useEffect(() => {
     setChannelAvailable(!!activeChannelSid);
     if (!activeChannelSid) {
       setLoading(false);
-      Alert.alert("Chat channel unavailable", "Please reopen the chat.");
+      showPopup("Chat channel unavailable", "Please reopen the chat.", "error");
     }
   }, [activeChannelSid]);
 
   useEffect(() => {
   const init = async () => {
-    await fetchUserData();
-    // await fetchTwilioToken();
-    await fetchChatHistory(); // 🔹 PHASE 2
+    try {
+      await fetchUserData();
+      // await fetchTwilioToken();
+      await fetchChatHistory(); // 🔹 PHASE 2
+    } finally {
+      setLoading(false);
+    }
   };
   init();
 }, []);
@@ -109,20 +144,6 @@ export default function ChatScreen({ route }) {
     }
   };
 
-  const fetchTwilioToken = async () => {
-    try {
-      const jwtToken = await AsyncStorage.getItem("jwtToken");
-      if (!jwtToken) return;
-      const response = await fetch(`${BASE_URL}/api/chat/twilio-token`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${jwtToken}` },
-      });
-      const data = await response.json();
-      if (response.ok && data.token) setTwilioToken(data.token);
-    } catch (error) {
-      console.error("Error fetching Twilio Token:", error);
-    }
-  };
   const fetchChatHistory = async () => {
   try {
     if (!chatId) return;
@@ -157,7 +178,6 @@ export default function ChatScreen({ route }) {
     }));
 
     setMessages(formatted);
-    setLoading(false);
   } catch (err) {
     console.error("❌ Error loading chat history:", err);
   }
@@ -173,7 +193,7 @@ export default function ChatScreen({ route }) {
         return [
           {
             sid: "local-compliment",
-            author: receiverUsername || "User",
+            authorId: null,
             body: complimentPreview,
             _localCompliment: true,
           },
@@ -184,7 +204,7 @@ export default function ChatScreen({ route }) {
   }, [complimentPreview, receiverUsername, status]);
 
 useEffect(() => {
-  if (!activeChannelSid || !userId || !username) return;
+  if (!activeChannelSid || !userId) return;
 
   console.log("🟣 [PRE-MIGRATION] Connecting realtime layer", {
     chatId,
@@ -225,7 +245,7 @@ useEffect(() => {
     // ✅ ADD THIS
     setRealtimeReady(false);
   };
-}, [activeChannelSid, userId, username]);
+}, [activeChannelSid, receiverId, receiverUsername, userId, username]);
 
 //   useEffect(() => {
 //     if (!twilioToken || !activeChannelSid) return;
@@ -281,21 +301,21 @@ useEffect(() => {
 
   // compute if both parties have at least one message
   useEffect(() => {
-    if (!username) {
+    if (!userId) {
       setBothChatted(false);
       return;
     }
     let my = false;
     let their = false;
     for (const m of messages) {
-      const a = m?.author?.toLowerCase?.();
-      if (!a) continue;
-      if (username && a === username.toLowerCase()) my = true;
-      else their = true; // in 1:1, any non-me author is the other person
+      const authorId = m?.authorId?.toString?.();
+      if (!authorId) continue;
+      if (authorId === userId.toString()) my = true;
+      else their = true;
       if (my && their) break;
     }
     setBothChatted(my && their);
-  }, [messages, username]);
+  }, [messages, userId]);
 
   // show matched banner once when status turns accepted
   // keep match banner visible for 5 seconds
@@ -314,11 +334,11 @@ useEffect(() => {
 
   const sendMessage = async () => {
   if (status !== "accepted" && !bothChatted) {
-    Alert.alert("Chat Locked", "The recipient hasn't accepted the chat yet.");
+    showPopup("Chat locked", "The recipient has not accepted the chat yet.", "info");
     return;
   }
   if (!channelAvailable) {
-    Alert.alert("Chat channel unavailable", "Please reopen the chat.");
+    showPopup("Chat channel unavailable", "Please reopen the chat.", "error");
     return;
   }
   if (!realtimeRef.current || !message.trim()) return;
@@ -368,14 +388,14 @@ useEffect(() => {
     // }
   } catch (error) {
     console.error("Error sending message:", error);
-    Alert.alert("Error", "Failed to send message.");
+    showPopup("Error", "Failed to send message.", "error");
   }
 };
 
 
   const handleAccept = async () => {
     if (!chatId) {
-      Alert.alert("Error", "Chat missing. Please reopen from chat list.");
+      showPopup("Error", "Chat missing. Please reopen from chat list.", "error");
       return;
     }
     if (isUpdatingRequest) return;
@@ -399,7 +419,7 @@ useEffect(() => {
           const errorData = await response.json();
           errorMsg = errorData.message || errorMsg;
         }
-        Alert.alert("Error", errorMsg);
+        showPopup("Error", errorMsg, "error");
         setIsUpdatingRequest(false);
         return;
       }
@@ -409,12 +429,12 @@ useEffect(() => {
         setActiveChannelSid(data.twilioChannelSid);
         setChannelAvailable(true);
       }
-      Alert.alert("Success", "Chat accepted!");
+      showPopup("Chat accepted", "You can start chatting now.", "success");
       setStatus("accepted");
       setShowMatchedBanner(true);
     } catch (error) {
       console.error("Accept Chat Error:", error);
-      Alert.alert("Error", "Something went wrong while accepting the chat.");
+      showPopup("Error", "Something went wrong while accepting the chat.", "error");
     } finally {
       setIsUpdatingRequest(false);
     }
@@ -422,7 +442,7 @@ useEffect(() => {
 
   const handleReject = async () => {
     if (!chatId) {
-      Alert.alert("Error", "Chat missing. Please reopen from chat list.");
+      showPopup("Error", "Chat missing. Please reopen from chat list.", "error");
       return;
     }
     if (isUpdatingRequest) return;
@@ -446,20 +466,79 @@ useEffect(() => {
           const errorData = await response.json();
           errorMsg = errorData.message || errorMsg;
         }
-        Alert.alert("Error", errorMsg);
+        showPopup("Error", errorMsg, "error");
         return;
       }
 
       await response.json().catch(() => ({}));
       setStatus("rejected");
       setChannelAvailable(false);
-      Alert.alert("Chat rejected", "You declined this chat request.");
-      navigation.goBack();
+      showPopup(
+        "Chat rejected",
+        "You declined this chat request.",
+        "info",
+        () => navigation.goBack()
+      );
     } catch (error) {
       console.error("Reject Chat Error:", error);
-      Alert.alert("Error", "Something went wrong while rejecting the chat.");
+      showPopup("Error", "Something went wrong while rejecting the chat.", "error");
     } finally {
       setIsUpdatingRequest(false);
+    }
+  };
+
+  const submitReport = async () => {
+    if (isSubmittingSafety) return;
+    setIsSubmittingSafety(true);
+    try {
+      await chatApi.reportUser({
+        chatId,
+        targetUserId: receiverId,
+        reason: selectedReportReason,
+        notes: reportNotes.trim(),
+      });
+      setShowReportModal(false);
+      setShowSafetyMenu(false);
+      setReportNotes("");
+      setSelectedReportReason("Harassment");
+      showPopup("Report submitted", "Our team can review this report.", "success");
+    } catch (error) {
+      console.error("Report user error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to submit report.";
+      showPopup("Error", errorMessage, "error");
+    } finally {
+      setIsSubmittingSafety(false);
+    }
+  };
+
+  const blockUser = async () => {
+    if (isSubmittingSafety) return;
+    setIsSubmittingSafety(true);
+    try {
+      await chatApi.blockUser({
+        chatId,
+        targetUserId: receiverId,
+      });
+      realtimeRef.current?.disconnect();
+      realtimeRef.current = null;
+      setShowSafetyMenu(false);
+      setShowReportModal(false);
+      setChannelAvailable(false);
+      setStatus("closed");
+      showPopup(
+        "User blocked",
+        "This chat has been closed and the user can no longer interact with you.",
+        "success",
+        () => navigation.goBack()
+      );
+    } catch (error) {
+      console.error("Block user error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to block user.";
+      showPopup("Error", errorMessage, "error");
+    } finally {
+      setIsSubmittingSafety(false);
     }
   };
 
@@ -542,6 +621,9 @@ useEffect(() => {
             <View style={styles.headerCenter}>
               <Text style={styles.headerText}>{receiverUsername || "Chat"}</Text>
             </View>
+            <TouchableOpacity onPress={() => setShowSafetyMenu(true)} style={styles.menuButton}>
+              <Text style={styles.menuButtonText}>•••</Text>
+            </TouchableOpacity>
           </View>
 
           {renderBanner()}
@@ -575,8 +657,8 @@ useEffect(() => {
           </TouchableOpacity>
         )}
 
-        <View style={styles.inputContainer}>
-          <TextInput
+      <View style={styles.inputContainer}>
+        <TextInput
             value={message}
             onChangeText={setMessage}
             placeholder="Type a message..."
@@ -592,6 +674,99 @@ useEffect(() => {
           </TouchableOpacity>
         </View>
       </View>
+      <FusePopup
+        visible={popupState.visible}
+        title={popupState.title}
+        message={popupState.message}
+        tone={popupState.tone}
+        onClose={() => {
+          const onClose = popupState.onClose;
+          setPopupState((prev) => ({ ...prev, visible: false, onClose: undefined }));
+          onClose?.();
+        }}
+      />
+      <Modal visible={showSafetyMenu} transparent animationType="fade">
+        <Pressable style={styles.overlayBackdrop} onPress={() => setShowSafetyMenu(false)}>
+          <Pressable style={styles.safetySheet} onPress={(event) => event.stopPropagation()}>
+            <Text style={styles.safetyTitle}>Safety tools</Text>
+            <Text style={styles.safetySubtitle}>
+              Manage this one-to-one chat without affecting the rest of the app.
+            </Text>
+            <TouchableOpacity
+              style={styles.sheetAction}
+              onPress={() => {
+                setShowSafetyMenu(false);
+                setShowReportModal(true);
+              }}
+            >
+              <Text style={styles.sheetActionText}>Report user</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.sheetAction, styles.sheetActionDanger]}
+              onPress={blockUser}
+              disabled={isSubmittingSafety}
+            >
+              <Text style={styles.sheetActionDangerText}>
+                {isSubmittingSafety ? "Blocking..." : "Block user"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sheetCancel} onPress={() => setShowSafetyMenu(false)}>
+              <Text style={styles.sheetCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+      <Modal visible={showReportModal} transparent animationType="fade">
+        <Pressable style={styles.overlayBackdrop} onPress={() => setShowReportModal(false)}>
+          <Pressable style={styles.reportCard} onPress={(event) => event.stopPropagation()}>
+            <Text style={styles.safetyTitle}>Report user</Text>
+            <Text style={styles.safetySubtitle}>
+              Pick the closest reason. Reports are stored for admin review.
+            </Text>
+            <View style={styles.reasonWrap}>
+              {REPORT_REASONS.map((reason) => {
+                const isSelected = selectedReportReason === reason;
+                return (
+                  <TouchableOpacity
+                    key={reason}
+                    style={[styles.reasonChip, isSelected && styles.reasonChipSelected]}
+                    onPress={() => setSelectedReportReason(reason)}
+                  >
+                    <Text
+                      style={[
+                        styles.reasonChipText,
+                        isSelected && styles.reasonChipTextSelected,
+                      ]}
+                    >
+                      {reason}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <TextInput
+              value={reportNotes}
+              onChangeText={setReportNotes}
+              style={styles.reportInput}
+              placeholder="Add details if needed"
+              multiline
+              textAlignVertical="top"
+            />
+            <TouchableOpacity
+              style={[styles.reportSubmitButton, isSubmittingSafety && { opacity: 0.6 }]}
+              onPress={submitReport}
+              disabled={isSubmittingSafety}
+            >
+              <Text style={styles.reportSubmitText}>
+                {isSubmittingSafety ? "Submitting..." : "Submit report"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sheetCancel} onPress={() => setShowReportModal(false)}>
+              <Text style={styles.sheetCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -606,6 +781,27 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     backgroundColor: "#FAF8F3",
     position: "relative",
+  },
+  menuButton: {
+    marginLeft: "auto",
+    zIndex: 2,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  menuButtonText: {
+    color: "#6B7280",
+    fontSize: 16,
+    fontFamily: "Poppins-Bold",
+    marginTop: -3,
   },
   backButton: {
     zIndex: 2,
@@ -795,4 +991,123 @@ const styles = StyleSheet.create({
     borderColor: "#D1FAE5",
   },
   matchedText: { color: "#059669", fontFamily: "Poppins-Bold", fontSize: 13 },
+  overlayBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(17,24,39,0.45)",
+    justifyContent: "flex-end",
+    padding: 16,
+  },
+  safetySheet: {
+    backgroundColor: "#FFFDF8",
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "#F3EDE3",
+  },
+  reportCard: {
+    backgroundColor: "#FFFDF8",
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "#F3EDE3",
+    marginBottom: 80,
+  },
+  safetyTitle: {
+    fontSize: 20,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+  },
+  safetySubtitle: {
+    marginTop: 6,
+    marginBottom: 14,
+    color: "#6B7280",
+    fontSize: 13,
+    lineHeight: 19,
+    fontFamily: "Poppins",
+  },
+  sheetAction: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    marginTop: 10,
+  },
+  sheetActionText: {
+    color: "#1F2937",
+    fontSize: 14,
+    fontFamily: "Poppins-SemiBold",
+  },
+  sheetActionDanger: {
+    backgroundColor: "#FFF1F2",
+    borderColor: "#FBCFE8",
+  },
+  sheetActionDangerText: {
+    color: "#BE123C",
+    fontSize: 14,
+    fontFamily: "Poppins-Bold",
+  },
+  sheetCancel: {
+    alignItems: "center",
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+  sheetCancelText: {
+    color: "#6B7280",
+    fontSize: 14,
+    fontFamily: "Poppins-SemiBold",
+  },
+  reasonWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 12,
+  },
+  reasonChip: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 18,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  reasonChipSelected: {
+    backgroundColor: "#FF5864",
+    borderColor: "#FF5864",
+  },
+  reasonChipText: {
+    color: "#4B5563",
+    fontSize: 13,
+    fontFamily: "Poppins-SemiBold",
+  },
+  reasonChipTextSelected: {
+    color: "#ffffff",
+  },
+  reportInput: {
+    minHeight: 100,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: "#111827",
+    backgroundColor: "#ffffff",
+    fontFamily: "Poppins",
+  },
+  reportSubmitButton: {
+    backgroundColor: "#1F2937",
+    borderRadius: 18,
+    alignItems: "center",
+    paddingVertical: 14,
+    marginTop: 14,
+  },
+  reportSubmitText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontFamily: "Poppins-Bold",
+  },
 });
+

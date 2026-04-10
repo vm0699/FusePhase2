@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,27 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import FuseFieldShell from "../../components/FuseFieldShell";
 import { setProfileEditDraft } from "../utils/profileEditDraft";
+
+const TEMP_DISCOVERY_INTERESTS_KEY = "temporaryInterests";
+
+const normalizeInterest = (value: unknown) =>
+  typeof value === "string"
+    ? value.replace(/^[^\p{L}\p{N}]+/u, "").trim()
+    : "";
+
+const normalizeInterestList = (values: unknown) => {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      values
+        .map(normalizeInterest)
+        .filter((value) => value.length > 0)
+    )
+  );
+};
 
 type InterestsScreenParams = {
   fromFilter?: boolean;
@@ -40,41 +61,84 @@ export default function InterestsScreen() {
   const mode = route.params?.mode === "onboarding" ? "onboarding" : "edit";
   const fieldKey = route.params?.fieldKey ?? "interests";
 
+  const serializedCurrentValue = JSON.stringify(route.params?.currentValue ?? []);
   const [selected, setSelected] = useState<string[]>(
-    Array.isArray(route.params?.currentValue) ? route.params.currentValue : []
+    normalizeInterestList(route.params?.currentValue)
+  );
+  const selectedRef = useRef<string[]>(
+    normalizeInterestList(route.params?.currentValue)
   );
   const [showPopup, setShowPopup] = useState(fromFilter);
 
+  const syncEditSelection = (nextValue: string[]) => {
+    if (mode === "edit") {
+      setProfileEditDraft(fieldKey, nextValue);
+    }
+  };
+
   useEffect(() => {
     if (Array.isArray(route.params?.currentValue)) {
-      setSelected(route.params.currentValue);
+      const nextSelected = normalizeInterestList(route.params?.currentValue);
+      selectedRef.current = nextSelected;
+      setSelected(nextSelected);
     }
-  }, [route.params?.currentValue]);
+  }, [serializedCurrentValue]);
 
-  const toggleSelect = (item: string) => {
-    setSelected((prev) => {
-      if (prev.includes(item)) {
-        return prev.filter((entry) => entry !== item);
-      }
+  useEffect(() => {
+    if (!fromFilter || Array.isArray(route.params?.currentValue)) return;
 
-      if (prev.length < 5) {
-        return [...prev, item];
-      }
+    (async () => {
+      const stored = await AsyncStorage.getItem(TEMP_DISCOVERY_INTERESTS_KEY);
+      if (!stored) return;
 
-      return prev;
-    });
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const normalized = normalizeInterestList(parsed);
+          selectedRef.current = normalized;
+          setSelected(normalized);
+        }
+      } catch {}
+    })();
+  }, [fromFilter, route.params?.currentValue]);
+
+  const toggleSelect = async (item: string) => {
+    const currentSelection = selectedRef.current;
+    const nextValue = currentSelection.includes(item)
+      ? currentSelection.filter((entry) => entry !== item)
+      : currentSelection.length < 5
+        ? [...currentSelection, item]
+        : currentSelection;
+
+    if (nextValue === currentSelection) {
+      return;
+    }
+
+    selectedRef.current = nextValue;
+    setSelected(nextValue);
+
+    if (fromFilter) {
+      await AsyncStorage.setItem(
+        TEMP_DISCOVERY_INTERESTS_KEY,
+        JSON.stringify(nextValue)
+      );
+      return;
+    }
+
+    syncEditSelection(nextValue);
   };
 
   const handleDone = async () => {
     if (fromFilter) {
-      await AsyncStorage.setItem("temporaryInterests", JSON.stringify(selected));
+      await AsyncStorage.setItem(
+        TEMP_DISCOVERY_INTERESTS_KEY,
+        JSON.stringify(selectedRef.current)
+      );
       navigation.goBack();
       return;
     }
 
-    if (mode === "edit") {
-      setProfileEditDraft(fieldKey, selected);
-    }
+    syncEditSelection(selectedRef.current);
 
     navigation.goBack();
   };
@@ -125,7 +189,7 @@ export default function InterestsScreen() {
 
                   return (
                     <TouchableOpacity
-                      key={item}
+                      key={`${category}-${item}`}
                       onPress={() => toggleSelect(item)}
                       style={[styles.chip, isSelected && styles.selectedChip]}
                       activeOpacity={0.88}

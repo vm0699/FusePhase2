@@ -1,6 +1,7 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ProfileProvider } from "./ProfileContext";
 import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import * as SplashScreen from 'expo-splash-screen';
@@ -105,8 +106,9 @@ export default function AppNavigator() {
 
   return (
     <ProfileProvider>
-      <NavigationContainer onReady={onLayoutRootView}>
-        <Stack.Navigator initialRouteName="AuthGate">
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <NavigationContainer onReady={onLayoutRootView}>
+          <Stack.Navigator initialRouteName="AuthGate">
           <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
           <Stack.Screen name="PhoneVerif" component={PhoneVerif} options={{ headerShown: false }} />
           <Stack.Screen name="CodeVerif" component={CodeVerif} options={{ headerShown: false }} />
@@ -169,8 +171,9 @@ export default function AppNavigator() {
           <Stack.Screen name="AuthGate" component={AuthGate} options={{ headerShown: false }} />
           <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
           <Stack.Screen name="UpdateDeliveryLocation" component={UpdateDeliveryLocation} options={{ headerShown: false }} />
-        </Stack.Navigator>
-      </NavigationContainer>
+          </Stack.Navigator>
+        </NavigationContainer>
+      </GestureHandlerRootView>
     </ProfileProvider>
   );
 }

@@ -2,6 +2,7 @@ import Chat from "../models/ChatModel.js";
 import UserProfile from "../models/UserProfile.js";
 import GiftOrder from "../models/GiftOrder.js";
 import GiftIntent from "../models/GiftIntentModel.js";
+import Block from "../models/Block.js";
 import client from "../config/twilio.js";
 import dotenv from "dotenv";
 import twilio from "twilio";
@@ -10,6 +11,30 @@ dotenv.config();
 
 const normalizePairKey = (a, b) => {
   return [a.toString(), b.toString()].sort().join("|");
+};
+
+const findBlockBetweenUsers = async (userAId, userBId) => {
+  if (!userAId || !userBId) return null;
+  return Block.findOne({
+    $or: [
+      { blockerId: userAId, blockedId: userBId },
+      { blockerId: userBId, blockedId: userAId },
+    ],
+  }).lean();
+};
+
+const getBlockedCounterpartIds = async (userId) => {
+  const blocks = await Block.find({
+    $or: [{ blockerId: userId }, { blockedId: userId }],
+  }).lean();
+
+  return new Set(
+    blocks.map((block) =>
+      block.blockerId?.toString() === userId.toString()
+        ? block.blockedId?.toString()
+        : block.blockerId?.toString()
+    )
+  );
 };
 
 // 🎁 GIFT TIERS
@@ -82,7 +107,21 @@ const ensureTwilioChannel = async (chat, userA, userB) => {
   return chat.twilioChannelSid || chat.twilioChatChannelSid;
 };
 
-const appendComplimentMessage = async ({ chat, senderId, compliment, senderUsername }) => {
+const ensureParticipantIds = (chat, userAId, userBId) => {
+  const existing = Array.isArray(chat.participants) ? chat.participants : [];
+  const merged = [...existing];
+  for (const id of [userAId, userBId]) {
+    const idStr = id?.toString?.();
+    if (!idStr) continue;
+    const exists = merged.some((participant) => participant?.toString?.() === idStr);
+    if (!exists) {
+      merged.push(id);
+    }
+  }
+  chat.participants = merged;
+};
+
+const appendComplimentMessage = async ({ chat, senderId, compliment }) => {
   const trimmed = (compliment || "").trim();
   if (!trimmed) return null;
 
@@ -102,7 +141,7 @@ const appendComplimentMessage = async ({ chat, senderId, compliment, senderUsern
       await client.chat
         .services(process.env.TWILIO_CHAT_SERVICE_SID)
         .channels(chat.twilioChannelSid || chat.twilioChatChannelSid)
-        .messages.create({ from: senderUsername || senderId.toString(), body: trimmed });
+        .messages.create({ from: senderId.toString(), body: trimmed });
     }
     return trimmed;
   }
@@ -118,7 +157,6 @@ export const sendCompliment = async (req, res) => {
   try {
     const { swipedUserId, compliment } = req.body;
     const senderId = req.user.id;
-    const senderUsername = req.user.username;
     const trimmedCompliment = (compliment || "").trim();
 
     console.log("🟣 [PHASE 1] sendCompliment called", {
@@ -133,6 +171,14 @@ export const sendCompliment = async (req, res) => {
 
     if (!trimmedCompliment) {
       return res.status(400).json({ success: false, message: "Compliment cannot be empty" });
+    }
+
+    const existingBlock = await findBlockBetweenUsers(senderId, swipedUserId);
+    if (existingBlock) {
+      return res.status(403).json({
+        success: false,
+        message: "You can no longer interact with this user",
+      });
     }
 
     const pairKey = normalizePairKey(senderId, swipedUserId);
@@ -157,10 +203,12 @@ export const sendCompliment = async (req, res) => {
         pairKey,
         status: "pending",
         messages: [],
+        participants: [senderId, swipedUserId],
       });
     }
 
     chat.pairKey = pairKey;
+    ensureParticipantIds(chat, senderId, swipedUserId);
 
     const channelSid = await ensureTwilioChannel(chat, senderId, swipedUserId);
 
@@ -168,7 +216,6 @@ export const sendCompliment = async (req, res) => {
       chat,
       senderId,
       compliment: trimmedCompliment,
-      senderUsername,
     });
 
     await chat.save();
@@ -200,6 +247,7 @@ export const sendCompliment = async (req, res) => {
 export const getUserChats = async (req, res) => {
   try {
     const userId = req.user.id;
+    const blockedCounterpartIds = await getBlockedCounterpartIds(userId);
 
     const chats = await Chat.find({
       $or: [{ senderId: userId }, { receiverId: userId }],
@@ -211,6 +259,9 @@ export const getUserChats = async (req, res) => {
         const isCurrentUserSender = chat.senderId?._id?.toString() === userId;
         const otherUser = isCurrentUserSender ? chat.receiverId : chat.senderId;
         if (!otherUser) return null;
+        if (blockedCounterpartIds.has(otherUser._id?.toString?.() || otherUser._id?.toString())) {
+          return null;
+        }
 
         const lastMsg = chat.messages?.length ? chat.messages[chat.messages.length - 1] : null;
 
@@ -219,7 +270,7 @@ export const getUserChats = async (req, res) => {
           twilioChatChannelSid: chat.twilioChannelSid || chat.twilioChatChannelSid,
           twilioChannelSid: chat.twilioChannelSid || chat.twilioChatChannelSid,
           user: {
-            id: otherUser._id,
+            id: otherUser._id?.toString?.() || otherUser._id,
             name: otherUser.name || "Unknown User",
             username: otherUser.username || "",
           },
@@ -269,6 +320,14 @@ export const handleChatRequest = async (req, res) => {
     const senderIdStr = chat.senderId?._id?.toString() || chat.senderId?.toString();
     const receiverIdStr = chat.receiverId?._id?.toString() || chat.receiverId?.toString();
 
+    const existingBlock = await findBlockBetweenUsers(senderIdStr, receiverIdStr);
+    if (existingBlock) {
+      return res.status(403).json({
+        success: false,
+        message: "This chat is no longer available",
+      });
+    }
+
     const otherUser =
       senderIdStr === userId?.toString() ? chat.receiverId : chat.senderId;
 
@@ -293,6 +352,11 @@ export const handleChatRequest = async (req, res) => {
 
       if (!alreadyAccepted) {
         chat.status = "accepted";
+        ensureParticipantIds(
+          chat,
+          chat.senderId?._id || chat.senderId,
+          chat.receiverId?._id || chat.receiverId
+        );
         await ensureTwilioChannel(
           chat,
           chat.senderId?._id || chat.senderId,
@@ -361,9 +425,9 @@ export const handleChatRequest = async (req, res) => {
 
 export const getTwilioToken = async (req, res) => {
   try {
-    const { id: userId, username } = req.user;
+    const { id: userId } = req.user;
 
-    if (!userId || !username) {
+    if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized - Missing user info" });
     }
 
@@ -374,7 +438,7 @@ export const getTwilioToken = async (req, res) => {
       process.env.TWILIO_ACCOUNT_SID,
       process.env.TWILIO_API_KEY_SID,
       process.env.TWILIO_API_KEY_SECRET,
-      { identity: username }
+      { identity: userId.toString() }
     );
 
     token.addGrant(
@@ -383,7 +447,7 @@ export const getTwilioToken = async (req, res) => {
       })
     );
 
-    res.status(200).json({ token: token.toJwt() });
+    res.status(200).json({ token: token.toJwt(), identity: userId.toString() });
   } catch (error) {
     console.error("Error generating Twilio token:", error);
     res.status(500).json({ success: false, message: "Failed to generate token" });
@@ -422,6 +486,14 @@ export const closeChat = async (req, res) => {
 
     const senderIdStr = chat.senderId?.toString();
     const receiverIdStr = chat.receiverId?.toString();
+
+    const existingBlock = await findBlockBetweenUsers(senderIdStr, receiverIdStr);
+    if (existingBlock) {
+      return res.status(403).json({
+        success: false,
+        message: "This chat is no longer available",
+      });
+    }
     const participantIds = [senderIdStr, receiverIdStr].filter(Boolean);
 
     if (!participantIds.includes(userId.toString())) {
@@ -505,6 +577,14 @@ export const getChatMessages = async (req, res) => {
 
     const senderIdStr = chat.senderId?.toString();
     const receiverIdStr = chat.receiverId?.toString();
+
+    const existingBlock = await findBlockBetweenUsers(senderIdStr, receiverIdStr);
+    if (existingBlock) {
+      return res.status(403).json({
+        success: false,
+        message: "This chat is no longer available",
+      });
+    }
     const participantIds = [senderIdStr, receiverIdStr].filter(Boolean);
 
     if (!participantIds.includes(userId.toString())) {
@@ -579,6 +659,14 @@ export const saveChatMessage = async (req, res) => {
 
     const senderIdStr = chat.senderId?.toString();
     const receiverIdStr = chat.receiverId?.toString();
+
+    const existingBlock = await findBlockBetweenUsers(senderIdStr, receiverIdStr);
+    if (existingBlock) {
+      return res.status(403).json({
+        success: false,
+        message: "You can no longer send messages in this chat",
+      });
+    }
     const participantIds = [senderIdStr, receiverIdStr].filter(Boolean);
 
     if (!participantIds.includes(userId.toString())) {
@@ -989,4 +1077,3 @@ export const createGiftOrder = async (req, res) => {
     });
   }
 };
-

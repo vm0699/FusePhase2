@@ -1,15 +1,18 @@
 import express from "express";
-import { 
-  sendCompliment, 
-  getUserChats, 
+import authMiddleware from "../middleware/authMiddleware.js";
+import {
+  sendCompliment,
+  getUserChats,
   handleChatRequest,
   getTwilioToken,
   closeChat,
   getChatMessages,
-  saveChatMessage,// 🔹 ADDITION (Phase 2)
+  saveChatMessage,
+  createGiftOrder,
+  createGiftIntent,
+  acceptGiftIntent,
+  rejectGiftIntent,
 } from "../controllers/ChatController.js";
-import authMiddleware from "../middleware/authMiddleware.js";
-import { createGiftOrder,createGiftIntent,acceptGiftIntent,rejectGiftIntent } from "../controllers/ChatController.js";
 import {
   initiateGiftPayment,
   confirmGiftPayment,
@@ -19,63 +22,64 @@ import {
   getReceivedGifts,
   updateGiftOrderStatus,
 } from "../controllers/GiftTrackingController.js";
-
-
+import { blockChatUser, reportChatUser } from "../controllers/ChatSafetyController.js";
+import { createRateLimiter } from "../middleware/rateLimit.js";
 
 const router = express.Router();
 
-// ✅ Send a compliment & initiate chat
-router.post("/send-compliment", authMiddleware, sendCompliment);
+const sendComplimentRateLimit = createRateLimiter({
+  keyPrefix: "chat-send-compliment",
+  windowMs: 5 * 60 * 1000,
+  max: 8,
+  message: "Too many compliment requests. Please slow down.",
+});
 
-// ✅ Handle chat request (accept or decline)
-router.post("/handle-chat-request", authMiddleware, handleChatRequest);
+const handleRequestRateLimit = createRateLimiter({
+  keyPrefix: "chat-handle-request",
+  windowMs: 5 * 60 * 1000,
+  max: 20,
+  message: "Too many chat request actions. Please try again shortly.",
+});
 
-// ✅ Get all user chats
+const messageRateLimit = createRateLimiter({
+  keyPrefix: "chat-message",
+  windowMs: 60 * 1000,
+  max: 40,
+  message: "Too many messages too quickly. Please slow down.",
+});
+
+const blockRateLimit = createRateLimiter({
+  keyPrefix: "chat-block",
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  message: "Too many block actions. Please try again later.",
+});
+
+const reportRateLimit = createRateLimiter({
+  keyPrefix: "chat-report",
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  message: "Too many reports submitted. Please try again later.",
+});
+
+router.post("/send-compliment", authMiddleware, sendComplimentRateLimit, sendCompliment);
+router.post("/handle-chat-request", authMiddleware, handleRequestRateLimit, handleChatRequest);
 router.get("/list", authMiddleware, getUserChats);
-
-// ✅ Get Twilio token
 router.get("/twilio-token", authMiddleware, getTwilioToken);
-
-// 🔹 Phase 1
-// ✅ Close / unmatch an accepted chat
+router.post("/block-user", authMiddleware, blockRateLimit, blockChatUser);
+router.post("/report-user", authMiddleware, reportRateLimit, reportChatUser);
 router.post("/close", authMiddleware, closeChat);
-
-// 🔹 Phase 2
-// ✅ Get chat message history from DB
 router.get("/:chatId/messages", authMiddleware, getChatMessages);
-// ✅ Save realtime message to DB (Phase 3)
-router.post("/:chatId/messages", authMiddleware, saveChatMessage);
+router.post("/:chatId/messages", authMiddleware, messageRateLimit, saveChatMessage);
 
-// 🎁 Create gift order from chat
 router.post("/:chatId/gift", authMiddleware, createGiftOrder);
-
-router.post("/:chatId/gift-intent",authMiddleware,createGiftIntent);
-
+router.post("/:chatId/gift-intent", authMiddleware, createGiftIntent);
 router.post("/gift-intent/:intentId/accept", authMiddleware, acceptGiftIntent);
 router.post("/gift-intent/:intentId/reject", authMiddleware, rejectGiftIntent);
-router.post(
-  "/gift-intent/:intentId/pay", 
-  authMiddleware,
-  initiateGiftPayment
-);
-
-router.post(
-  "/gift-intent/:intentId/pay/confirm",
-  authMiddleware,
-  confirmGiftPayment
-);
-
-// All gifts I have sent (across all chats)
+router.post("/gift-intent/:intentId/pay", authMiddleware, initiateGiftPayment);
+router.post("/gift-intent/:intentId/pay/confirm", authMiddleware, confirmGiftPayment);
 router.get("/gifts/sent", authMiddleware, getSentGifts);
-
-// All gifts I have received
 router.get("/gifts/received", authMiddleware, getReceivedGifts);
-
-// Update order lifecycle status (for now: sender/recipient; later: admin/ops)
-router.patch(
-  "/gifts/order/:orderId/status",
-  authMiddleware,
-  updateGiftOrderStatus
-);
+router.patch("/gifts/order/:orderId/status", authMiddleware, updateGiftOrderStatus);
 
 export default router;

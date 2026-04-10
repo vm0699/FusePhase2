@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StatusBar,
   TextInput,
   ScrollView,
+  Alert,
 } from "react-native";
 import {
   createAgoraRtcEngine,
@@ -18,24 +19,34 @@ import {
 } from "react-native-agora";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Alert } from "react-native";
 import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
 
 const APP_ID = "9f8005ccb3d34d7c9487f0de149a3111";
+const REMOTE_JOIN_TIMEOUT_MS = 25000;
 
 type AgoraCallParams = {
   params: {
     channelName: string;
     token: string;
     uid: number;
+    userId?: string;
+    interests?: string[];
+    matchedUserId?: string;
+    matchedInterest?: string | null;
   };
 };
 
 export default function AgoraCallScreen() {
   const route = useRoute<RouteProp<AgoraCallParams, "params">>();
   const navigation = useNavigation();
-  const { channelName, token, uid } = route.params;
+  const {
+    channelName,
+    token,
+    uid,
+    userId,
+    interests = [],
+    matchedInterest,
+  } = route.params;
 
   const [engine, setEngine] = useState<IRtcEngine | null>(null);
   const [joined, setJoined] = useState(false);
@@ -46,7 +57,55 @@ export default function AgoraCallScreen() {
   const [chatMessages, setChatMessages] = useState<string[]>([]);
   const [message, setMessage] = useState("");
 
+  const cleanupInProgressRef = useRef(false);
+  const navigationInProgressRef = useRef(false);
+  const remoteJoinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const remoteUidRef = useRef<number | null>(null);
+
+  const cleanupEngine = (rtcEngine?: IRtcEngine | null) => {
+    if (cleanupInProgressRef.current) return;
+    cleanupInProgressRef.current = true;
+
+    const target = rtcEngine || engine;
+    try {
+      target?.leaveChannel();
+      target?.release();
+    } catch (error) {
+      console.warn("Agora engine cleanup warning:", error);
+    } finally {
+      cleanupInProgressRef.current = false;
+    }
+  };
+
+  const requeueToWaiting = (reason?: string) => {
+    if (navigationInProgressRef.current) return;
+    navigationInProgressRef.current = true;
+
+    cleanupEngine();
+
+    if (!userId || !Array.isArray(interests) || interests.length === 0) {
+      Alert.alert("Call ended", reason || "Returning to video setup.");
+      navigation.replace("VideoInitiateScreen");
+      return;
+    }
+
+    if (reason) {
+      Alert.alert("Call ended", reason);
+    }
+
+    navigation.replace("WaitingScreen", {
+      userId,
+      interests,
+    });
+  };
+
   useEffect(() => {
+    if (!channelName || !token || !uid) {
+      Alert.alert("Error", "Missing video call details.");
+      navigation.replace("VideoInitiateScreen");
+      return;
+    }
+
     const rtcEngine = createAgoraRtcEngine();
     rtcEngine.initialize({ appId: APP_ID });
     rtcEngine.enableVideo();
@@ -56,26 +115,44 @@ export default function AgoraCallScreen() {
       setJoined(true);
     });
 
-    rtcEngine.addListener("onUserJoined", (_, rUid) => {
-      setRemoteUid(rUid);
+    rtcEngine.addListener("onUserJoined", (_, remoteParticipantUid) => {
+      if (remoteJoinTimeoutRef.current) {
+        clearTimeout(remoteJoinTimeoutRef.current);
+        remoteJoinTimeoutRef.current = null;
+      }
+      remoteUidRef.current = remoteParticipantUid;
+      setRemoteUid(remoteParticipantUid);
     });
 
     rtcEngine.addListener("onUserOffline", () => {
+      remoteUidRef.current = null;
       setRemoteUid(null);
+      requeueToWaiting("The other person left the call. Searching again.");
     });
 
-    rtcEngine.addListener("onUserMuteVideo", (rUid, muted) => {
-      if (remoteUid === rUid) setRemoteVideoOn(!muted);
+    rtcEngine.addListener("onUserMuteVideo", (remoteParticipantUid, isMuted) => {
+      if (remoteUidRef.current === remoteParticipantUid) {
+        setRemoteVideoOn(!isMuted);
+      }
     });
 
     rtcEngine.joinChannel(token, channelName, uid, {
       clientRoleType: ClientRoleType.ClientRoleBroadcaster,
     });
 
+    remoteJoinTimeoutRef.current = setTimeout(() => {
+      if (!remoteUidRef.current) {
+        requeueToWaiting("No one joined the call in time. Searching again.");
+      }
+    }, REMOTE_JOIN_TIMEOUT_MS);
+
     setEngine(rtcEngine);
+
     return () => {
-      rtcEngine.leaveChannel();
-      rtcEngine.release();
+      if (remoteJoinTimeoutRef.current) {
+        clearTimeout(remoteJoinTimeoutRef.current);
+      }
+      cleanupEngine(rtcEngine);
     };
   }, []);
 
@@ -94,53 +171,19 @@ export default function AgoraCallScreen() {
   };
 
   const handleLeave = () => {
-    if (engine) {
-      engine.leaveChannel();
-      engine.release();
-    }
-    navigation.navigate("VideoInitiateScreen");
+    if (navigationInProgressRef.current) return;
+    navigationInProgressRef.current = true;
+    cleanupEngine();
+    navigation.replace("VideoInitiateScreen");
   };
 
-  const skipUser = async () => {
-    if (engine) {
-      engine.leaveChannel();
-      engine.release();
-    }
-
-    try {
-      const token = await AsyncStorage.getItem("jwtToken");
-      if (!token) {
-        Alert.alert("Error", "Login session expired. Please log in again.");
-        navigation.navigate("LoginScreen");
-        return;
-      }
-
-      const payload = token.split(".")[1];
-      const decoded = JSON.parse(atob(payload));
-      const userId = decoded?.id ?? null;
-      const interests = decoded?.interests ?? [];
-
-      if (!userId) {
-        Alert.alert("Error", "Failed to extract user ID.");
-        return;
-      }
-
-      console.log("Skip user -> navigating to WaitingScreen");
-
-      navigation.navigate("WaitingScreen", {
-        userId,
-        interests,
-      });
-    } catch (err) {
-      console.error("skipUser error:", err);
-      Alert.alert("Error", "Failed to process user information. Try again.");
-    }
+  const skipUser = () => {
+    requeueToWaiting("Skipping to the next person.");
   };
 
   const handleSend = () => {
     if (message.trim()) {
-      setChatMessages([...chatMessages, `You: ${message}`]);
-      setChatMessages((prev) => [...prev, `Stranger: ${message}`]);
+      setChatMessages((prev) => [...prev, `You: ${message}`, `Stranger: ${message}`]);
       setMessage("");
     }
   };
@@ -154,7 +197,9 @@ export default function AgoraCallScreen() {
       <View style={styles.topBar}>
         <View style={styles.titleWrap}>
           <Text style={styles.title}>Random Video</Text>
-          <Text style={styles.subtitle}>Connected room</Text>
+          <Text style={styles.subtitle}>
+            {matchedInterest ? `Matched on ${matchedInterest}` : "Connected room"}
+          </Text>
         </View>
         <TouchableOpacity style={styles.leaveButton} onPress={handleLeave}>
           <Ionicons name="exit-outline" size={18} color="#ffffff" />

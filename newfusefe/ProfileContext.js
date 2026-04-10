@@ -1,87 +1,153 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-// Create the ProfileContext
 export const ProfileContext = createContext();
-
-// Custom hook to access the ProfileContext more easily
 export const useProfile = () => useContext(ProfileContext);
 
-// ProfileProvider component to wrap your app or specific parts of it
+const createInitialState = () => ({
+  phoneNumber: '',
+  number: '',
+  name: '',
+  username: '',
+  gender: '',
+  reason: '',
+  dateOfBirth: '',
+  dob: '',
+  height: '',
+  interests: [],
+  values: [],
+  prompts: [],
+  photos: [],
+});
+
+const ensureArray = (value) => (Array.isArray(value) ? value : []);
+
+const normalizeProfileState = (input = {}, previous = createInitialState()) => {
+  const next = {
+    ...previous,
+    ...input,
+  };
+
+  const resolvedPhoneNumber = next.phoneNumber || next.number || previous.phoneNumber || previous.number || '';
+  const resolvedDob = next.dateOfBirth || next.dob || previous.dateOfBirth || previous.dob || '';
+
+  next.phoneNumber = resolvedPhoneNumber;
+  next.number = resolvedPhoneNumber;
+  next.dateOfBirth = resolvedDob;
+  next.dob = resolvedDob;
+  next.interests = ensureArray(next.interests);
+  next.values = ensureArray(next.values);
+  next.prompts = ensureArray(next.prompts);
+  next.photos = ensureArray(next.photos);
+
+  return next;
+};
+
+const mergeLegacyShape = (patch = {}) => {
+  const next = { ...patch };
+
+  if (patch.intro && typeof patch.intro === 'object') {
+    if (typeof patch.intro.name !== 'undefined') next.name = patch.intro.name;
+    if (typeof patch.intro.dob !== 'undefined') {
+      next.dateOfBirth = patch.intro.dob;
+      next.dob = patch.intro.dob;
+    }
+    delete next.intro;
+  }
+
+  if (patch.options && typeof patch.options === 'object') {
+    if (typeof patch.options.username !== 'undefined') next.username = patch.options.username;
+    if (typeof patch.options.gender !== 'undefined') next.gender = patch.options.gender;
+    if (typeof patch.options.reason !== 'undefined') next.reason = patch.options.reason;
+    delete next.options;
+  }
+
+  if (patch.profileDetails && typeof patch.profileDetails === 'object') {
+    if (typeof patch.profileDetails.height !== 'undefined') next.height = patch.profileDetails.height;
+    if (typeof patch.profileDetails.interests !== 'undefined') next.interests = patch.profileDetails.interests;
+    if (typeof patch.profileDetails.values !== 'undefined') next.values = patch.profileDetails.values;
+    delete next.profileDetails;
+  }
+
+  return next;
+};
+
+const createCompatibilityProfile = (state) => ({
+  ...state,
+  number: state.phoneNumber,
+  dob: state.dateOfBirth,
+  intro: {
+    name: state.name || '',
+    dob: state.dateOfBirth || '',
+  },
+  options: {
+    username: state.username || '',
+    gender: state.gender || '',
+    reason: state.reason || '',
+  },
+  profileDetails: {
+    height: state.height || '',
+    interests: ensureArray(state.interests),
+    values: ensureArray(state.values),
+  },
+});
+
 export const ProfileProvider = ({ children }) => {
-  const [profileData, setProfileData] = useState({
-    number: '', // Phone number
-    intro: { name: '', dob: '' }, // User's name and date of birth
-    options: { username: '', gender: '', reason: '' }, // Optional user info
-    profileDetails: { height: '', interests: [], values: [] }, // Detailed profile setup
-    prompts: [], // List of selected prompts
-    photos: [], // List of uploaded photos
-  });
+  const [profileState, setProfileState] = useState(createInitialState);
+  const [hasPendingChats, setHasPendingChats] = useState(false);
 
-  const [hasPendingChats, setHasPendingChats] = useState(false); // ✅ red dot tracker
+  const applyProfilePatch = (patch) => {
+    setProfileState((prevState) => {
+      const mergedPatch = mergeLegacyShape(patch);
+      return normalizeProfileState(mergedPatch, prevState);
+    });
+  };
 
-  // Update a specific key in the profile data
   const updateProfileData = (key, value) => {
     if (typeof key === 'string') {
-      // For single key-value update
-      setProfileData((prevData) => ({
-        ...prevData,
-        [key]: value,
-      }));
-    } else if (typeof key === 'object') {
-      // For batch updates if an object is passed
-      setProfileData((prevData) => ({
-        ...prevData,
-        ...key,
-      }));
+      applyProfilePatch({ [key]: value });
+      return;
+    }
+
+    if (key && typeof key === 'object') {
+      applyProfilePatch(key);
     }
   };
 
-  // Update nested fields (e.g., intro.name)
   const updateNestedProfileData = (parentKey, childKey, value) => {
-    setProfileData((prevData) => ({
-      ...prevData,
-      [parentKey]: {
-        ...prevData[parentKey],
-        [childKey]: value,
-      },
-    }));
+    if (parentKey === 'intro') {
+      if (childKey === 'name') {
+        applyProfilePatch({ name: value });
+      } else if (childKey === 'dob') {
+        applyProfilePatch({ dateOfBirth: value, dob: value });
+      }
+      return;
+    }
+
+    if (parentKey === 'options') {
+      applyProfilePatch({ [childKey]: value });
+      return;
+    }
+
+    if (parentKey === 'profileDetails') {
+      applyProfilePatch({ [childKey]: value });
+      return;
+    }
+
+    applyProfilePatch({ [parentKey]: { [childKey]: value } });
   };
 
-  // ✅ Set full profile from backend response
-  const setFullProfile = (fullProfileObj) => {
-    setProfileData({
-      number: fullProfileObj.phoneNumber || '',
-      intro: {
-        name: fullProfileObj.name || '',
-        dob: fullProfileObj.dateOfBirth || '',
-      },
-      options: {
-        username: fullProfileObj.username || '',
-        gender: fullProfileObj.gender || '',
-        reason: fullProfileObj.reason || '',
-      },
-      profileDetails: {
-        height: fullProfileObj.height || '',
-        interests: fullProfileObj.interests || [],
-        values: fullProfileObj.values || [],
-      },
-      prompts: fullProfileObj.prompts || [],
-      photos: fullProfileObj.photos || [],
-    });
+  const setFullProfile = (fullProfileObj = {}) => {
+    setProfileState((prevState) =>
+      normalizeProfileState(mergeLegacyShape(fullProfileObj), prevState)
+    );
   };
 
-  // Reset the profile to default state
   const resetProfileData = () => {
-    setProfileData({
-      number: '',
-      intro: { name: '', dob: '' },
-      options: { username: '', gender: '', reason: '' },
-      profileDetails: { height: '', interests: [], values: [] },
-      prompts: [],
-      photos: [],
-    });
+    setProfileState(createInitialState());
     setHasPendingChats(false);
   };
+
+  const profileData = createCompatibilityProfile(profileState);
 
   return (
     <ProfileContext.Provider

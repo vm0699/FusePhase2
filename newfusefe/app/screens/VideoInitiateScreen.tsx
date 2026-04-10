@@ -11,7 +11,7 @@ import {
   Keyboard,
   TouchableOpacity,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Camera } from "expo-camera";
 import { PermissionsAndroid } from "react-native";
@@ -21,6 +21,7 @@ import Icon from "react-native-vector-icons/Feather";
 export default function VideoInitiateScreen() {
   const [interests, setInterests] = useState("");
   const [jwtToken, setJwtToken] = useState<string | null>(null);
+  const [startingCall, setStartingCall] = useState(false);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export default function VideoInitiateScreen() {
           setJwtToken(storedToken);
         } else {
           console.warn("⚠️ No JWT found, navigating to login");
-          navigation.navigate("LoginScreen");
+          navigation.navigate("Login");
         }
       } catch (err) {
         console.error("❌ Error fetching token:", err);
@@ -41,6 +42,12 @@ export default function VideoInitiateScreen() {
     };
     fetchUserId();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setStartingCall(false);
+    }, [])
+  );
 
   const requestPermissions = async () => {
     try {
@@ -74,11 +81,14 @@ export default function VideoInitiateScreen() {
 
   const handleStartCall = async () => {
     try {
+      if (startingCall) return;
       const trimmed = interests.trim();
       if (!trimmed || !jwtToken) {
         Alert.alert("Error", "Please enter interests and ensure you're logged in.");
         return;
       }
+
+      setStartingCall(true);
 
       const hasPermissions = await requestPermissions();
       if (!hasPermissions) {
@@ -86,6 +96,7 @@ export default function VideoInitiateScreen() {
           "Permission Denied",
           "Camera and Microphone access are required to start a video call."
         );
+        setStartingCall(false);
         return;
       }
 
@@ -98,6 +109,7 @@ export default function VideoInitiateScreen() {
       const userId = extractUserIdFromJwt(jwtToken);
       if (!userId) {
         Alert.alert("Error", "Failed to extract user ID.");
+        setStartingCall(false);
         return;
       }
 
@@ -109,6 +121,7 @@ export default function VideoInitiateScreen() {
     } catch (err) {
       console.error("❌ handleStartCall error:", err);
       Alert.alert("Unexpected Error", "An unexpected error occurred. Please try again.");
+      setStartingCall(false);
     }
   };
 
@@ -159,8 +172,14 @@ export default function VideoInitiateScreen() {
               </Text>
 
               <View style={styles.buttonWrapper}>
-                <TouchableOpacity style={styles.startButton} onPress={handleStartCall}>
-                  <Text style={styles.startButtonText}>Start Video Call</Text>
+                <TouchableOpacity
+                  style={[styles.startButton, startingCall && { opacity: 0.6 }]}
+                  onPress={handleStartCall}
+                  disabled={startingCall}
+                >
+                  <Text style={styles.startButtonText}>
+                    {startingCall ? "Starting..." : "Start Video Call"}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>

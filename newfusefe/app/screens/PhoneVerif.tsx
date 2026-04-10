@@ -17,8 +17,6 @@ import { ProfileContext } from '../../ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingStepper from '../../components/OnboardingStepper';
 
-const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
-
 export default function PhoneVerificationPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [showVerification, setShowVerification] = useState(false);
@@ -47,11 +45,7 @@ export default function PhoneVerificationPage() {
       console.log('🟣 [PhoneVerif] SUBMIT pressed');
       console.log('🟣 [PhoneVerif] Full phone number:', fullPhoneNumber);
 
-      // 🔹 Save checkpoint ONLY
-      await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'PhoneVerif');
       await AsyncStorage.setItem('fullPhoneNumber', fullPhoneNumber);
-
-      console.log('🟣 [PhoneVerif] Saved checkpoint PhoneVerif');
 
       updateProfileData('number', fullPhoneNumber);
 
@@ -107,10 +101,6 @@ export default function PhoneVerificationPage() {
       } else {
         console.log('🟢 [PhoneVerif] Existing user detected');
       }
-
-      // 🔹 Advance checkpoint → OTP screen
-      await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'CodeVerif');
-      console.log('🟢 [PhoneVerif] Checkpoint moved → CodeVerif');
 
       navigation.navigate('CodeVerif', {
         phoneNumber: fullPhoneNumber,

@@ -65,7 +65,7 @@ export const chatApi = {
     }));
   },
 
-  async getTwilioToken(): Promise<string> {
+  async getTwilioToken(): Promise<{ token: string; identity: string | null }> {
     const headers = await authHeaders();
     const res = await fetch(`${BASE_URL}/api/chat/twilio-token`, { method: "GET", headers });
 
@@ -73,7 +73,10 @@ export const chatApi = {
     if (!res.ok || !data?.token) {
       throw new Error(data?.message || "Failed to fetch Twilio token");
     }
-    return data.token;
+    return {
+      token: data.token,
+      identity: data.identity ?? null,
+    };
   },
 
   async acceptChat(chatId: string): Promise<{
@@ -139,6 +142,39 @@ export const chatApi = {
     if (!res.ok) {
       const data = await safeJson(res);
       throw new Error(data?.message || "Failed to persist message");
+    }
+  },
+
+  async blockUser(payload: { chatId?: string; targetUserId?: string }): Promise<void> {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${BASE_URL}/api/chat/block-user`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    const data = await safeJson(res);
+    if (!res.ok) {
+      throw new Error(data?.message || "Failed to block user");
+    }
+  },
+
+  async reportUser(payload: {
+    chatId?: string;
+    targetUserId?: string;
+    reason: string;
+    notes?: string;
+  }): Promise<void> {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${BASE_URL}/api/chat/report-user`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    const data = await safeJson(res);
+    if (!res.ok) {
+      throw new Error(data?.message || "Failed to submit report");
     }
   },
 };

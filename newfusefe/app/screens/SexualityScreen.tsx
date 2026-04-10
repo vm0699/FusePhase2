@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import SexualityPicker from "../../components/SexualityPicker";
 import FuseFieldShell from "../../components/FuseFieldShell";
@@ -14,10 +14,29 @@ export default function SexualityScreen() {
   const initialValue = route.params?.currentValue ?? "";
   const [value, setValue] = useState<string>(initialValue);
 
+  useEffect(() => {
+    setValue(route.params?.currentValue ?? "");
+  }, [route.params?.currentValue]);
+
+  const commitValue = (nextValue: string) => {
+    const onChange = route.params?.onChange;
+    const onSelect = route.params?.onSelect;
+
+    if (typeof onChange === "function") {
+      onChange(nextValue);
+    }
+
+    if (typeof onSelect === "function") {
+      onSelect(nextValue);
+    }
+  };
+
   const handleDone = () => {
     if (mode === "edit") {
       setProfileEditDraft(fieldKey, value);
     }
+
+    commitValue(value);
     navigation.goBack();
   };
 

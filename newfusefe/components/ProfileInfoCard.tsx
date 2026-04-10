@@ -384,6 +384,7 @@ const ICON_BG = "#EFEFEF";
 
 const styles = StyleSheet.create({
     card: {
+        backgroundColor: "#ffffff",
         borderRadius: 22,
         borderWidth: 1.5,
         borderColor: "#E8E8E8",

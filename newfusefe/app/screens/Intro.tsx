@@ -18,7 +18,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingStepper from '../../components/OnboardingStepper';
 
 const BASE_URL = 'http://172.20.10.4:5000';
-const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1 local resume key
 
 const IntroPage = () => {
   const { updateNestedProfileData } = useContext(ProfileContext);
@@ -28,11 +27,6 @@ const IntroPage = () => {
   const [showWarningModal, setShowWarningModal] = useState(true);
 
   const navigation = useNavigation();
-
-  // 🔹 2.1 — Persist local onboarding step (device-level)
-  useEffect(() => {
-    AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'Intro');
-  }, []);
 
   const validateDate = () => {
     const { day, month, year } = birthday;
@@ -100,9 +94,6 @@ const IntroPage = () => {
       }),
     });
     // =====================================================
-
-    // 🔹 2.1 — Advance local resume pointer
-    await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'ProfileSetup');
 
     navigation.navigate('ProfileSetup');
   };
@@ -237,7 +228,7 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     color: '#1a1a1a',
     marginBottom: 8,
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Poppins',
     lineHeight: 56,
   },
   subtitle: {

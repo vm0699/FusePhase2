@@ -2,26 +2,158 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Twilio Video Call</title>
   <script src="https://sdk.twilio.com/js/video/releases/2.21.0/twilio-video.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; background-color: #121212; color: white; margin: 0; padding: 0; }
-    #video-container { display: flex; flex-direction: column; align-items: center; margin-top: 10px; }
-    video { width: 90%; max-width: 600px; border: 2px solid white; border-radius: 10px; margin-bottom: 10px; }
-    #remote-media video { width: 90%; max-width: 600px; border: 2px solid white; border-radius: 10px; margin-top: 10px; }
-    #controls { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
-    button { padding: 12px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; transition: 0.3s ease; }
-    .btn-red { background: red; color: white; }
-    .btn-green { background: green; color: white; }
-    .btn-blue { background: blue; color: white; }
-    .btn-gray { background: gray; color: white; }
-    #chat-box { width: 90%; max-width: 500px; height: 250px; border: 1px solid white; overflow-y: auto; margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; }
-    input { width: 70%; padding: 8px; margin-top: 5px; border-radius: 5px; border: none; }
-    #send-btn { width: 25%; padding: 8px; margin-top: 5px; }
-    .message { text-align: left; padding: 8px; border-radius: 5px; margin-bottom: 5px; }
-    .message.you { background: rgba(0, 200, 0, 0.3); text-align: right; }
-    .message.other { background: rgba(0, 0, 200, 0.3); }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(180deg, #1f1220 0%, #120f14 100%);
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    #video-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+    video {
+      width: 90%;
+      max-width: 600px;
+      border: 2px solid white;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    #remote-media video {
+      width: 90%;
+      max-width: 600px;
+      border: 2px solid white;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    button {
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+    .btn-red {
+      background: red;
+      color: white;
+    }
+    .btn-green {
+      background: green;
+      color: white;
+    }
+    .btn-blue {
+      background: blue;
+      color: white;
+    }
+    .btn-gray {
+      background: gray;
+      color: white;
+    }
+    #chat-box {
+      width: 90%;
+      max-width: 500px;
+      height: 250px;
+      border: 1px solid white;
+      overflow-y: auto;
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+    }
+    input {
+      width: 70%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+    #send-btn {
+      width: 25%;
+      padding: 8px;
+      margin-top: 5px;
+    }
+    .message {
+      text-align: left;
+      padding: 8px;
+      border-radius: 5px;
+      margin-bottom: 5px;
+    }
+    .message.you {
+      background: rgba(0, 200, 0, 0.3);
+      text-align: right;
+    }
+    .message.other {
+      background: rgba(0, 0, 200, 0.3);
+    }
+    #fuse-popup-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(17, 24, 39, 0.5);
+      z-index: 999;
+    }
+    #fuse-popup-backdrop.visible {
+      display: flex;
+    }
+    #fuse-popup-card {
+      width: 100%;
+      max-width: 360px;
+      background: #ffffff;
+      color: #1a1a1a;
+      border-radius: 24px;
+      padding: 20px 22px;
+      text-align: left;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+    }
+    #fuse-popup-badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #ffe4e7;
+      color: #ff5864;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+    }
+    #fuse-popup-title {
+      font-size: 22px;
+      line-height: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    #fuse-popup-message {
+      font-size: 14px;
+      line-height: 21px;
+      color: #6b7280;
+    }
+    #fuse-popup-button {
+      margin-top: 18px;
+      width: 100%;
+      height: 50px;
+      border-radius: 25px;
+      background: #ff5864;
+      color: #ffffff;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -42,6 +174,15 @@
   <input type="text" id="chat-input" placeholder="Type a message..." />
   <button id="send-btn" onclick="sendMessage()">Send</button>
 
+  <div id="fuse-popup-backdrop">
+    <div id="fuse-popup-card">
+      <div id="fuse-popup-badge">FUSE</div>
+      <div id="fuse-popup-title"></div>
+      <div id="fuse-popup-message"></div>
+      <button id="fuse-popup-button" type="button">Got it</button>
+    </div>
+  </div>
+
   <script>
     let room;
     let localTracks = [];
@@ -51,12 +192,36 @@
     let isVideoOn = true;
     let isSharingScreen = false;
 
-    // ✅ First check and request permissions with error alert
+    const popupBackdrop = document.getElementById("fuse-popup-backdrop");
+    const popupTitle = document.getElementById("fuse-popup-title");
+    const popupMessage = document.getElementById("fuse-popup-message");
+    const popupButton = document.getElementById("fuse-popup-button");
+    let popupCloseHandler = null;
+
+    function showAppPopup(title, message, onClose) {
+      popupTitle.textContent = title;
+      popupMessage.textContent = message || "";
+      popupCloseHandler = onClose || null;
+      popupBackdrop.classList.add("visible");
+    }
+
+    function closeAppPopup() {
+      popupBackdrop.classList.remove("visible");
+      const handler = popupCloseHandler;
+      popupCloseHandler = null;
+      if (handler) handler();
+    }
+
+    popupBackdrop.addEventListener("click", (event) => {
+      if (event.target === popupBackdrop) closeAppPopup();
+    });
+    popupButton.addEventListener("click", closeAppPopup);
+
     navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(() => {
-      console.log("✅ Permissions granted.");
+      console.log("Permissions granted.");
     }).catch((err) => {
-      console.error("❌ Permission error:", err);
-      alert("❌ Permission denied: " + err.message);
+      console.error("Permission error:", err);
+      showAppPopup("Permission denied", err.message);
     });
 
     async function startVideoCall() {
@@ -65,7 +230,7 @@
       const roomName = urlParams.get("room");
 
       if (!token || !roomName) {
-        alert("❌ Missing token or room name in URL.");
+        showAppPopup("Missing call details", "Missing token or room name in URL.");
         return;
       }
 
@@ -80,7 +245,7 @@
         await videoElement.play();
 
         videoElement.addEventListener("error", (e) => {
-          console.error("⚠️ Video element error:", e);
+          console.error("Video element error:", e);
         });
 
         localTracks = await Twilio.Video.createLocalTracks({
@@ -94,7 +259,7 @@
             tracks: localTracks,
           });
 
-          console.log(`✅ Connected to room: ${room.name}`);
+          console.log(`Connected to room: ${room.name}`);
 
           room.participants.forEach(setupParticipantListeners);
 
@@ -106,10 +271,9 @@
           dataTrack = new Twilio.Video.LocalDataTrack();
           room.localParticipant.publishTrack(dataTrack);
         }, 400);
-
       } catch (error) {
-        console.error("❌ Error in startVideoCall:", error);
-        alert("❌ Failed to start the video call. Check camera/mic permissions.");
+        console.error("Error in startVideoCall:", error);
+        showAppPopup("Unable to start call", "Check camera and microphone permissions.");
       }
     }
 
@@ -147,13 +311,13 @@
 
     document.getElementById("toggle-mic").onclick = () => {
       isMicOn = !isMicOn;
-      localTracks.find(t => t.kind === "audio").enable(isMicOn);
+      localTracks.find((t) => t.kind === "audio").enable(isMicOn);
       document.getElementById("toggle-mic").textContent = isMicOn ? "Mute Mic" : "Unmute Mic";
     };
 
     document.getElementById("toggle-video").onclick = () => {
       isVideoOn = !isVideoOn;
-      localTracks.find(t => t.kind === "video").enable(isVideoOn);
+      localTracks.find((t) => t.kind === "video").enable(isVideoOn);
       document.getElementById("toggle-video").textContent = isVideoOn ? "Turn Off Video" : "Turn On Video";
     };
 
@@ -161,7 +325,7 @@
       if (!isSharingScreen) {
         try {
           screenTrack = await Twilio.Video.createLocalVideoTrack({
-            video: { frameRate: 15, width: 1280, height: 720 }
+            video: { frameRate: 15, width: 1280, height: 720 },
           });
           room.localParticipant.publishTrack(screenTrack);
           isSharingScreen = true;
@@ -180,12 +344,13 @@
     document.getElementById("leave-room").onclick = () => {
       if (room) {
         room.disconnect();
-        alert("You have left the call.");
-        if (window.ReactNativeWebView) {
-          window.ReactNativeWebView.postMessage("LEAVE_CALL");
-        } else {
-          window.location.href = "/";
-        }
+        showAppPopup("Call ended", "You have left the call.", () => {
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage("LEAVE_CALL");
+          } else {
+            window.location.href = "/";
+          }
+        });
       }
     };
 

@@ -5,7 +5,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProfileContext } from '../../ProfileContext';
 
 const BASE_URL = "http://172.20.10.4:5000";
-const ONBOARDING_STEP_KEY = "@onboarding_step"; // 🔹 2.1
 
 export default function GuidelinesPage() {
   const navigation = useNavigation();
@@ -73,9 +72,6 @@ export default function GuidelinesPage() {
         }),
       });
       // =====================================================
-
-      // 🔹 2.1 — CLEAR LOCAL ONBOARDING RESUME STATE
-      await AsyncStorage.removeItem(ONBOARDING_STEP_KEY);
 
       navigation.reset({
         index: 0,

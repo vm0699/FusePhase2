@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Alert,
   Modal,
   Platform,
 } from "react-native";
@@ -14,6 +13,7 @@ import Icon from "react-native-vector-icons/Feather";
 import { useNavigation } from "@react-navigation/native";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FusePopup } from "../../components/FusePopup";
 
 const BASE_URL = "http://172.20.10.4:5000";
 
@@ -23,14 +23,31 @@ export default function SettingsScreen() {
   const [userLocation, setUserLocation] = useState(null);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [popupState, setPopupState] = useState<{
+    visible: boolean;
+    title: string;
+    message?: string;
+    tone?: "default" | "success" | "error" | "info";
+    onClose?: () => void;
+  }>({ visible: false, title: "" });
+
+  const showPopup = (
+    title: string,
+    message?: string,
+    tone: "default" | "success" | "error" | "info" = "default",
+    onClose?: () => void
+  ) => {
+    setPopupState({ visible: true, title, message, tone, onClose });
+  };
 
   // Request Location Permission
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
+      showPopup(
         "Permission Denied",
-        "Enable location in settings to use this feature."
+        "Enable location in settings to use this feature.",
+        "error"
       );
       return;
     }
@@ -59,7 +76,7 @@ export default function SettingsScreen() {
         body: JSON.stringify({ latitude, longitude }),
       });
     } catch (error) {
-      Alert.alert("Error", "Failed to get location.");
+      showPopup("Error", "Failed to get location.", "error");
       console.error("Location error:", error);
     }
   };
@@ -82,11 +99,14 @@ export default function SettingsScreen() {
       if (keys && keys.length) {
         await AsyncStorage.multiRemove(keys);
       }
-      Alert.alert("Account Deleted", "Account deleted successfully.");
-
-      navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+      showPopup(
+        "Account deleted",
+        "Account deleted successfully.",
+        "success",
+        () => navigation.reset({ index: 0, routes: [{ name: "Login" }] })
+      );
     } catch (err) {
-      Alert.alert("Error", "Could not delete your account. Please try again.");
+      showPopup("Error", "Could not delete your account. Please try again.", "error");
     } finally {
       setDeleting(false);
       setShowDeletePopup(false);
@@ -112,7 +132,7 @@ export default function SettingsScreen() {
 
         <TouchableOpacity
           style={styles.headerPill}
-          onPress={() => Alert.alert("Settings saved!")}
+          onPress={() => showPopup("Settings saved", "Your preferences were updated.", "success")}
         >
           <Text style={styles.headerDone}>Done</Text>
         </TouchableOpacity>
@@ -197,6 +217,17 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
+      <FusePopup
+        visible={popupState.visible}
+        title={popupState.title}
+        message={popupState.message}
+        tone={popupState.tone}
+        onClose={() => {
+          const onClose = popupState.onClose;
+          setPopupState((prev) => ({ ...prev, visible: false, onClose: undefined }));
+          onClose?.();
+        }}
+      />
     </View>
   );
 }

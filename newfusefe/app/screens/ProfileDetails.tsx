@@ -14,7 +14,6 @@ import { useProfile } from '../../ProfileContext';
 import OnboardingStepper from '../../components/OnboardingStepper';
 
 const BASE_URL = 'http://172.20.10.4:5000';
-const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
 
 const HEIGHTS = Array.from({ length: 101 }, (_, i) => 120 + i);
 
@@ -45,18 +44,30 @@ const VALUES = [
   'Sarcasm', 'Emotional intelligence',
 ];
 
+const normalizeInterest = (value: unknown) =>
+  typeof value === 'string'
+    ? value.replace(/^[^\p{L}\p{N}]+/u, '').trim()
+    : '';
+
+const normalizeInterestList = (values: unknown) => {
+  if (!Array.isArray(values)) return [];
+
+  return Array.from(
+    new Set(
+      values
+        .map(normalizeInterest)
+        .filter((value) => value.length > 0)
+    )
+  );
+};
+
 export default function ProfileDetailsPage({ navigation }) {
   const { profileData, updateNestedProfileData } = useProfile();
   const { profileDetails } = profileData;
 
-  // 🔹 2.1 — Persist onboarding step locally
-  useEffect(() => {
-    AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'ProfileDetails');
-  }, []);
-
   const [height, setHeight] = useState(profileDetails.height || 168);
   const [selectedInterests, setSelectedInterests] = useState(
-    profileDetails.interests || []
+    normalizeInterestList(profileDetails.interests || [])
   );
   const [selectedValues, setSelectedValues] = useState(
     profileDetails.values || []
@@ -121,9 +132,6 @@ export default function ProfileDetailsPage({ navigation }) {
       }),
     });
     // =====================================================
-
-    // 🔹 2.1 — Advance local resume pointer
-    await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'PromptSelection');
 
     navigation.navigate('PromptSelection');
   };
@@ -233,15 +241,14 @@ export default function ProfileDetailsPage({ navigation }) {
           >
             <View style={styles.tagContainer}>
               {filteredInterests.map((interest) => {
-                const full = `${interest.emoji} ${interest.label}`;
                 return (
                   <SelectableTag
-                    key={full}
-                    selected={selectedInterests.includes(full)}
+                    key={interest.label}
+                    selected={selectedInterests.includes(interest.label)}
                     onPress={() => toggleInterest(interest.label)}
-                    disabled={selectedInterests.length >= 5 && !selectedInterests.includes(full)}
+                    disabled={selectedInterests.length >= 5 && !selectedInterests.includes(interest.label)}
                   >
-                    {interest.emoji} {interest.label}
+                    {interest.label}
                   </SelectableTag>
                 );
               })}

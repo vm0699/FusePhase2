@@ -16,10 +16,9 @@ import twilio from 'twilio';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import AgoraTokenPkg from 'agora-access-token';
 import agoraRoutes from "./api/routes/agoraRoutes.js";
-
-const { RtcTokenBuilder, RtcRole } = AgoraTokenPkg;
+import mongoose from 'mongoose';
+import VideoQueueEntry from './api/models/VideoQueueEntry.js';
 
 dotenv.config();
 
@@ -62,46 +61,10 @@ app.use('/api/video', videoRoutes);
 app.use('/api/likes', likeRoutes); 
 app.use("/api/agora", agoraRoutes);
 
-
-app.post('/api/video/token', async (req, res) => {
-  try {
-    const { identity, room } = req.body;
-    if (!identity || !room) return res.status(400).json({ success: false, message: "Missing identity or room" });
-
-    const AccessToken = twilio.jwt.AccessToken;
-    const VideoGrant = AccessToken.VideoGrant;
-    const token = new AccessToken(TWILIO_ACCOUNT_SID, TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET, { ttl: 3600 });
-    token.identity = identity;
-    token.addGrant(new VideoGrant({ room }));
-
-    res.json({ success: true, token: token.toJwt(), room });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to generate Twilio token" });
-  }
-});
-
 app.get('/room/:roomId', (req, res) => {
   const videoPath = path.join(__dirname, 'public', 'video.html');
   if (!fs.existsSync(videoPath)) return res.status(404).send("Video Call Page Not Found");
   res.sendFile(videoPath);
-});
-
-app.get('/api/agora/token', (req, res) => {
-  const { channelName, uid } = req.query;
-  const AGORA_APP_ID = process.env.AGORA_APP_ID;
-  const AGORA_APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE;
-  if (!AGORA_APP_ID || !AGORA_APP_CERTIFICATE) return res.status(500).json({ error: 'Agora credentials are missing in .env' });
-  if (!channelName || !uid) return res.status(400).json({ error: 'channelName and uid are required' });
-
-  const token = RtcTokenBuilder.buildTokenWithUid(
-    AGORA_APP_ID,
-    AGORA_APP_CERTIFICATE,
-    channelName,
-    parseInt(uid),
-    RtcRole.PUBLISHER,
-    Math.floor(Date.now() / 1000) + 3600
-  );
-  return res.json({ token });
 });
 
 app.get('/', (req, res) => res.send('Server running \u2705'));
@@ -109,68 +72,353 @@ app.get('/', (req, res) => res.send('Server running \u2705'));
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
 
-const interestQueues = new Map();
-const userToInterest = new Map();
+const VIDEO_QUEUE_STALE_MS = 90 * 1000;
+const VIDEO_QUEUE_CLEANUP_INTERVAL_MS = 30 * 1000;
+const VIDEO_QUEUE_JOIN_WINDOW_MS = 2 * 60 * 1000;
+const VIDEO_QUEUE_JOIN_MAX = 12;
+const videoQueueJoinBuckets = new Map();
 
-io.on("connection", (socket) => {
-  socket.on("join_video_queue", ({ userId, interests }) => {
-    const normInterests = interests.map(i => i.toLowerCase());
-    const joinedAt = Date.now();
+const normalizeInterests = (interests = []) =>
+  Array.from(
+    new Set(
+      (Array.isArray(interests) ? interests : [])
+        .map((interest) => String(interest || "").trim().toLowerCase())
+        .filter(Boolean)
+    )
+  );
 
-    for (let interest of normInterests) {
-      const queue = interestQueues.get(interest);
-      if (queue && queue.length > 0) {
-        const matchUser = queue.shift();
-        userToInterest.delete(matchUser.userId);
-        const room = `room_${Date.now()}`;
-        io.to(matchUser.socketId).emit("match_found", { matchedUserId: userId, room, matchedInterest: interest });
-        io.to(socket.id).emit("match_found", { matchedUserId: matchUser.userId, room, matchedInterest: interest });
-        return;
-      }
+const createVideoRoomId = () =>
+  `video_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+const findSharedInterest = (first = [], second = []) => {
+  const secondSet = new Set(second);
+  for (const interest of first) {
+    if (secondSet.has(interest)) {
+      return interest;
     }
+  }
+  return null;
+};
 
-    for (let [interest, queue] of interestQueues.entries()) {
-      for (let i = 0; i < queue.length; i++) {
-        const other = queue[i];
-        for (let iWord of normInterests) {
-          for (let oWord of other.interests) {
-            const loose = iWord.split('').some(c => oWord.includes(c));
-            if (loose) {
-              queue.splice(i, 1);
-              userToInterest.delete(other.userId);
-              const room = `room_${Date.now()}`;
-              io.to(other.socketId).emit("match_found", { matchedUserId: userId, room, matchedInterest: oWord });
-              io.to(socket.id).emit("match_found", { matchedUserId: other.userId, room, matchedInterest: oWord });
-              return;
-            }
+const cleanupStaleVideoQueueEntries = async () => {
+  const cutoff = new Date(Date.now() - VIDEO_QUEUE_STALE_MS);
+  await VideoQueueEntry.updateMany(
+    {
+      status: "waiting",
+      updatedAt: { $lt: cutoff },
+    },
+    {
+      $set: {
+        status: "left",
+        disconnectedAt: new Date(),
+        leftReason: "stale_timeout",
+      },
+    }
+  );
+};
+
+const cleanupExpiredVideoJoinBuckets = () => {
+  const now = Date.now();
+  for (const [key, value] of videoQueueJoinBuckets.entries()) {
+    if (value.resetAt <= now) {
+      videoQueueJoinBuckets.delete(key);
+    }
+  }
+};
+
+const resetWaitingQueueOnBoot = async () => {
+  try {
+    await VideoQueueEntry.updateMany(
+      { status: "waiting" },
+      {
+        $set: {
+          status: "left",
+          disconnectedAt: new Date(),
+          leftReason: "server_restart",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Failed to reset waiting queue on boot:", error.message);
+  }
+};
+
+const leaveVideoQueue = async ({ userId, socketId, reason = "left" }) => {
+  const filter = userId ? { userId } : socketId ? { socketId } : null;
+  if (!filter) return null;
+
+  const queueEntry = await VideoQueueEntry.findOne(filter);
+  if (!queueEntry) return null;
+
+  if (queueEntry.status === "waiting") {
+    queueEntry.status = "left";
+    queueEntry.disconnectedAt = new Date();
+    queueEntry.leftReason = reason;
+    queueEntry.socketId = "";
+    await queueEntry.save();
+  }
+
+  return queueEntry;
+};
+
+const joinVideoQueue = async ({ userId, socketId, interests }) => {
+  const normalizedInterests = normalizeInterests(interests);
+  const interestsForQueue = normalizedInterests.length ? normalizedInterests : ["any"];
+
+  await cleanupStaleVideoQueueEntries();
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const session = await mongoose.startSession();
+    let result = { type: "queued" };
+
+    try {
+      await session.withTransaction(async () => {
+        let currentEntry = await VideoQueueEntry.findOne({ userId }).session(session);
+
+        currentEntry = await VideoQueueEntry.findOneAndUpdate(
+          { userId },
+          {
+            $set: {
+              socketId,
+              interests: interestsForQueue,
+              status: "waiting",
+              matchedUserId: null,
+              roomId: null,
+              matchedInterest: null,
+              matchedAt: null,
+              disconnectedAt: null,
+              leftReason: null,
+            },
+            $setOnInsert: {
+              joinedAt: new Date(),
+            },
+          },
+          {
+            upsert: true,
+            new: true,
+            setDefaultsOnInsert: true,
+            session,
+          }
+        );
+
+        const candidates = await VideoQueueEntry.find({
+          userId: { $ne: userId },
+          status: "waiting",
+        })
+          .sort({ joinedAt: 1, _id: 1 })
+          .session(session);
+
+        let selectedCandidate = null;
+        let matchedInterest = null;
+
+        for (const candidate of candidates) {
+          const sharedInterest = findSharedInterest(
+            interestsForQueue,
+            candidate.interests || []
+          );
+          if (sharedInterest) {
+            selectedCandidate = candidate;
+            matchedInterest = sharedInterest;
+            break;
           }
         }
-      }
-    }
 
-    for (let [_, queue] of interestQueues.entries()) {
-      if (queue.length > 0) {
-        const fallback = queue.shift();
-        userToInterest.delete(fallback.userId);
-        const room = `room_${Date.now()}`;
-        io.to(fallback.socketId).emit("match_found", { matchedUserId: userId, room, matchedInterest: null });
-        io.to(socket.id).emit("match_found", { matchedUserId: fallback.userId, room, matchedInterest: null });
+        if (!selectedCandidate && candidates.length > 0) {
+          selectedCandidate = candidates[0];
+        }
+
+        if (!selectedCandidate) {
+          result = { type: "queued" };
+          return;
+        }
+
+        const roomId = createVideoRoomId();
+        const matchedAt = new Date();
+
+        const claimedCandidate = await VideoQueueEntry.findOneAndUpdate(
+          {
+            _id: selectedCandidate._id,
+            status: "waiting",
+          },
+          {
+            $set: {
+              status: "matched",
+              matchedUserId: userId,
+              roomId,
+              matchedInterest,
+              matchedAt,
+            },
+          },
+          { new: true, session }
+        );
+
+        if (!claimedCandidate) {
+          result = { type: "retry" };
+          return;
+        }
+
+        const matchedCurrentEntry = await VideoQueueEntry.findOneAndUpdate(
+          {
+            _id: currentEntry._id,
+            status: "waiting",
+          },
+          {
+            $set: {
+              status: "matched",
+              matchedUserId: claimedCandidate.userId,
+              roomId,
+              matchedInterest,
+              matchedAt,
+            },
+          },
+          { new: true, session }
+        );
+
+        if (!matchedCurrentEntry) {
+          await VideoQueueEntry.updateOne(
+            {
+              _id: claimedCandidate._id,
+              status: "matched",
+              roomId,
+            },
+            {
+              $set: {
+                status: "waiting",
+                matchedUserId: null,
+                roomId: null,
+                matchedInterest: null,
+                matchedAt: null,
+              },
+            },
+            { session }
+          );
+          result = { type: "retry" };
+          return;
+        }
+
+        result = {
+          type: "matched",
+          room: roomId,
+          matchedInterest,
+          matchedUserId: claimedCandidate.userId,
+          otherSocketId: claimedCandidate.socketId || "",
+        };
+      });
+
+      if (result.type !== "retry") {
+        return result;
+      }
+    } catch (error) {
+      if (attempt === 2) {
+        throw error;
+      }
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  return { type: "queued" };
+};
+
+void resetWaitingQueueOnBoot();
+setInterval(() => {
+  void cleanupStaleVideoQueueEntries().catch((error) => {
+    console.error("Video queue cleanup failed:", error.message);
+  });
+}, VIDEO_QUEUE_CLEANUP_INTERVAL_MS);
+setInterval(cleanupExpiredVideoJoinBuckets, 60 * 1000).unref();
+
+io.on("connection", (socket) => {
+  socket.on("join_video_queue", async ({ userId, interests }) => {
+    try {
+      if (!userId) {
+        socket.emit("queue_error", { message: "Missing userId" });
         return;
       }
-    }
 
-    const topInterest = normInterests[0] || "any";
-    if (!interestQueues.has(topInterest)) interestQueues.set(topInterest, []);
-    interestQueues.get(topInterest).push({ userId, socketId: socket.id, interests: normInterests, joinedAt });
-    userToInterest.set(userId, topInterest);
+      const rateLimitKey = `video-join:${String(userId)}`;
+      const now = Date.now();
+      const currentBucket = videoQueueJoinBuckets.get(rateLimitKey);
+
+      if (!currentBucket || currentBucket.resetAt <= now) {
+        videoQueueJoinBuckets.set(rateLimitKey, {
+          count: 1,
+          resetAt: now + VIDEO_QUEUE_JOIN_WINDOW_MS,
+        });
+      } else {
+        if (currentBucket.count >= VIDEO_QUEUE_JOIN_MAX) {
+          socket.emit("queue_error", {
+            message: "Too many queue join attempts. Please wait a moment and try again.",
+          });
+          return;
+        }
+
+        currentBucket.count += 1;
+        videoQueueJoinBuckets.set(rateLimitKey, currentBucket);
+      }
+
+      socket.data.videoUserId = String(userId);
+      socket.join(`video-user:${socket.data.videoUserId}`);
+
+      const result = await joinVideoQueue({
+        userId: String(userId),
+        socketId: socket.id,
+        interests,
+      });
+
+      if (result.type === "matched") {
+        const payload = {
+          matchedUserId: result.matchedUserId,
+          room: result.room,
+          matchedInterest: result.matchedInterest || null,
+        };
+
+        io.to(`video-user:${socket.data.videoUserId}`).emit("match_found", payload);
+        if (result.matchedUserId) {
+          io.to(`video-user:${result.matchedUserId}`).emit("match_found", {
+            matchedUserId: socket.data.videoUserId,
+            room: result.room,
+            matchedInterest: result.matchedInterest || null,
+          });
+        }
+        return;
+      }
+
+      socket.emit("queue_joined", {
+        status: "waiting",
+        interests: normalizeInterests(interests),
+      });
+    } catch (error) {
+      console.error("join_video_queue error:", error);
+      socket.emit("queue_error", { message: "Failed to join video queue" });
+    }
   });
 
-  socket.on("disconnect", () => {
-    for (let [interest, queue] of interestQueues.entries()) {
-      interestQueues.set(interest, queue.filter(u => u.socketId !== socket.id));
+  socket.on("leave_video_queue", async ({ userId, reason }) => {
+    try {
+      const resolvedUserId = String(userId || socket.data.videoUserId || "");
+      if (!resolvedUserId) return;
+      await leaveVideoQueue({
+        userId: resolvedUserId,
+        socketId: socket.id,
+        reason: reason || "left",
+      });
+      socket.leave(`video-user:${resolvedUserId}`);
+      socket.emit("queue_left", { status: "left" });
+    } catch (error) {
+      console.error("leave_video_queue error:", error);
     }
-    for (let [userId, interest] of userToInterest.entries()) {
-      userToInterest.delete(userId);
+  });
+
+  socket.on("disconnect", async () => {
+    try {
+      await leaveVideoQueue({
+        userId: socket.data.videoUserId,
+        socketId: socket.id,
+        reason: "disconnect",
+      });
+    } catch (error) {
+      console.error("disconnect cleanup error:", error);
     }
   });
 });

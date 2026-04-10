@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
@@ -216,7 +217,10 @@ const styles = StyleSheet.create({
     bottom: 120,
     right: -40,
   },
-  content: { flex: 1 },
+  content: {
+    flex: 1,
+    paddingTop: Platform.OS === "ios" ? 16 : 12,
+  },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",

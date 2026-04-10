@@ -3,11 +3,12 @@ import {
   View,
   Text,
   TouchableOpacity,
-  FlatList,
   TextInput,
   ScrollView,
   Modal,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +16,6 @@ import { useProfile } from '../../ProfileContext';
 import OnboardingStepper from '../../components/OnboardingStepper';
 
 const BASE_URL = 'http://172.20.10.4:5000';
-const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
 
 const PROMPT_CATEGORIES = {
   'Looking for': [
@@ -42,11 +42,6 @@ const PROMPT_CATEGORIES = {
 
 export default function PromptSelectionPage({ navigation }) {
   const { profileData, updateProfileData } = useProfile();
-
-  // 🔹 2.1 — persist current onboarding step (LOCAL resume)
-  useEffect(() => {
-    AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'PromptSelection');
-  }, []);
 
   const [activeCategory, setActiveCategory] = useState('Looking for');
   const [currentPrompt, setCurrentPrompt] = useState<string | null>(null);
@@ -106,102 +101,102 @@ export default function PromptSelectionPage({ navigation }) {
     });
     // =====================================================
 
-    // 🔹 2.1 — advance local resume pointer
-    await AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'PhotoUpload');
-
     navigation.navigate('PhotoUpload');
   };
 
   return (
     <View style={styles.container}>
       <OnboardingStepper currentStep={7} totalSteps={26} />
-      {/* Header */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.header}>Tell your{'\n'}story</Text>
-        <Text style={styles.subHeader}>
-          Answer 3 prompts to show on your profile.
-        </Text>
-      </View>
-
-      {/* Categories */}
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoryContainer}
-        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 4 }}
+        style={styles.mainScroll}
+        contentContainerStyle={styles.mainContent}
+        showsVerticalScrollIndicator={false}
       >
-        {Object.keys(PROMPT_CATEGORIES).map((category) => (
-          <TouchableOpacity
-            key={category}
-            onPress={() => setActiveCategory(category)}
-            style={[
-              styles.categoryButton,
-              activeCategory === category && styles.activeCategoryButton,
-            ]}
-          >
-            <Text
+        {/* Header */}
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>Tell your{'\n'}story</Text>
+          <Text style={styles.subHeader}>
+            Answer 3 prompts to show on your profile.
+          </Text>
+        </View>
+
+        {/* Categories */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryContainer}
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 4 }}
+        >
+          {Object.keys(PROMPT_CATEGORIES).map((category) => (
+            <TouchableOpacity
+              key={category}
+              onPress={() => setActiveCategory(category)}
               style={[
-                styles.categoryText,
-                activeCategory === category && styles.activeCategoryText,
+                styles.categoryButton,
+                activeCategory === category && styles.activeCategoryButton,
               ]}
             >
-              {category}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Prompts */}
-      <FlatList
-        data={PROMPT_CATEGORIES[activeCategory as keyof typeof PROMPT_CATEGORIES]}
-        keyExtractor={(item) => item}
-        style={styles.promptList}
-        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => handlePromptSelect(item)}
-            disabled={
-              selectedPrompts.length >= 3 &&
-              !selectedPrompts.some((p) => p.question === item)
-            }
-            style={[
-              styles.promptButton,
-              selectedPrompts.some((p) => p.question === item)
-                ? styles.selectedPrompt
-                : styles.unselectedPrompt,
-            ]}
-          >
-            <Text style={[
-              styles.promptText,
-              selectedPrompts.some((p) => p.question === item) && styles.promptTextSelected,
-            ]}>{item}</Text>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={selectedPrompts.some((p) => p.question === item) ? '#ff5864' : '#D1D5DB'}
-            />
-          </TouchableOpacity>
-        )}
-      />
-
-      {/* Selected Prompts */}
-      {selectedPrompts.length > 0 && (
-        <View style={styles.selectedPromptsContainer}>
-          <View style={styles.selectedHeader}>
-            <Text style={styles.selectedHeaderText}>Your prompts</Text>
-            <TouchableOpacity onPress={handleClearAll}>
-              <Text style={styles.clearButton}>Clear all</Text>
+              <Text
+                style={[
+                  styles.categoryText,
+                  activeCategory === category && styles.activeCategoryText,
+                ]}
+              >
+                {category}
+              </Text>
             </TouchableOpacity>
-          </View>
-          {selectedPrompts.map((prompt, index) => (
-            <View key={index} style={styles.selectedPromptCard}>
-              <Text style={styles.selectedPromptQuestion}>{prompt.question}</Text>
-              <Text style={styles.selectedPromptAnswer}>{prompt.answer}</Text>
-            </View>
           ))}
-          <Text style={styles.countText}>{selectedPrompts.length}/3 added</Text>
+        </ScrollView>
+
+        {/* Prompts */}
+        <View style={styles.promptList}>
+          {PROMPT_CATEGORIES[activeCategory as keyof typeof PROMPT_CATEGORIES].map((item) => (
+            <TouchableOpacity
+              key={item}
+              onPress={() => handlePromptSelect(item)}
+              disabled={
+                selectedPrompts.length >= 3 &&
+                !selectedPrompts.some((p) => p.question === item)
+              }
+              style={[
+                styles.promptButton,
+                selectedPrompts.some((p) => p.question === item)
+                  ? styles.selectedPrompt
+                  : styles.unselectedPrompt,
+              ]}
+            >
+              <Text style={[
+                styles.promptText,
+                selectedPrompts.some((p) => p.question === item) && styles.promptTextSelected,
+              ]}>{item}</Text>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={selectedPrompts.some((p) => p.question === item) ? '#ff5864' : '#D1D5DB'}
+              />
+            </TouchableOpacity>
+          ))}
         </View>
-      )}
+
+        {/* Selected Prompts */}
+        {selectedPrompts.length > 0 && (
+          <View style={styles.selectedPromptsContainer}>
+            <View style={styles.selectedHeader}>
+              <Text style={styles.selectedHeaderText}>Your prompts</Text>
+              <TouchableOpacity onPress={handleClearAll}>
+                <Text style={styles.clearButton}>Clear all</Text>
+              </TouchableOpacity>
+            </View>
+            {selectedPrompts.map((prompt, index) => (
+              <View key={index} style={styles.selectedPromptCard}>
+                <Text style={styles.selectedPromptQuestion}>{prompt.question}</Text>
+                <Text style={styles.selectedPromptAnswer}>{prompt.answer}</Text>
+              </View>
+            ))}
+            <Text style={styles.countText}>{selectedPrompts.length}/3 added</Text>
+          </View>
+        )}
+      </ScrollView>
 
       {/* Next */}
       <TouchableOpacity
@@ -214,7 +209,10 @@ export default function PromptSelectionPage({ navigation }) {
 
       {/* Modal */}
       <Modal transparent visible={!!currentPrompt} animationType="fade">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{currentPrompt}</Text>
             <TextInput
@@ -242,7 +240,7 @@ export default function PromptSelectionPage({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -250,6 +248,8 @@ export default function PromptSelectionPage({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAF8F3', paddingTop: 60 },
+  mainScroll: { flex: 1 },
+  mainContent: { paddingBottom: 120 },
   headerContainer: { marginTop: 8, marginBottom: 20, paddingHorizontal: 24 },
   header: {
     fontSize: 44,
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins',
   },
 
-  categoryContainer: { marginBottom: 16, flexGrow: 0 },
+  categoryContainer: { marginBottom: 16 },
   categoryButton: {
     height: 40,
     paddingHorizontal: 18,
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   categoryText: { fontSize: 14, color: '#6B7280', fontFamily: 'Poppins' },
   activeCategoryText: { color: '#fff', fontFamily: 'Poppins-SemiBold' },
 
-  promptList: { flexGrow: 0, maxHeight: 220 },
+  promptList: { paddingHorizontal: 24, paddingTop: 8 },
   promptButton: {
     flexDirection: 'row',
     alignItems: 'center',

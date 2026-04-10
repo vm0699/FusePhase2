@@ -3,6 +3,7 @@ import Like from '../models/Like.js';
 import Chat from '../models/ChatModel.js';
 import client from "../config/twilio.js";
 import fs from 'fs';
+import path from 'path';
 import jwt from 'jsonwebtoken';
 
 // Save or Update User Profile
@@ -308,181 +309,534 @@ export const getProfileByPhoneNumber = async (req, res) => {
 //   }
 // };
 
-export const getFilteredProfiles = async (req, res) => {
-  try {
-    console.log("📥 [FilteredProfiles] Incoming request");
-    console.log("➡️ Method:", req.method);
+const DEFAULT_DISCOVERY_LIMIT = 8;
+const MAX_DISCOVERY_LIMIT = 20;
+const EARTH_RADIUS_KM = 6371;
+const DEG_TO_RAD = Math.PI / 180;
 
-    if (!req.user) {
-      console.log("⛔ No req.user – unauthorized");
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
+function parseDiscoveryNumber(value, fallback) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
-    const { id, gender, interests: profileInterests } = req.user;
-    const filters = req.body?.filters || null;
+function normalizeDiscoveryFilters(rawFilters, fallbackInterests = []) {
+  const safeFilters =
+    rawFilters && typeof rawFilters === "object" ? rawFilters : {};
+  const parsedDistance = Number(safeFilters.distanceKm);
+  const normalizedInterests = Array.isArray(safeFilters.interests)
+    ? safeFilters.interests.filter(
+        (value) => typeof value === "string" && value.trim()
+      )
+    : fallbackInterests;
 
-    console.log("👤 User:", { id, gender });
-    console.log("🎛️ Filters received:", filters);
+  return {
+    ageRange:
+      safeFilters.ageRange?.min && safeFilters.ageRange?.max
+        ? {
+            min: Math.max(Number(safeFilters.ageRange.min), 18),
+            max: Math.max(
+              Number(safeFilters.ageRange.max),
+              Number(safeFilters.ageRange.min)
+            ),
+          }
+        : null,
+    ageFlex: Boolean(safeFilters.ageFlex),
+    distanceKm:
+      Number.isFinite(parsedDistance) && parsedDistance > 0
+        ? parsedDistance
+        : null,
+    distanceFlex: Boolean(safeFilters.distanceFlex),
+    interests: normalizedInterests,
+  };
+}
 
-    const requester = await UserProfile.findById(id).lean();
-    if (!requester) {
-      console.log("⛔ Requester not found in DB");
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
+function getPreferredGender(gender) {
+  if (gender === "Man") return "Woman";
+  if (gender === "Woman") return "Man";
+  return null;
+}
 
-    const swipedUserIds =
-      requester.swipedUserIds?.map((v) => v.toString()) || [];
+function buildDobRange(ageRange) {
+  if (!ageRange?.min || !ageRange?.max) return null;
 
-    console.log("🚫 Swiped users count:", swipedUserIds.length);
+  const today = new Date();
+  const minDOB = new Date(
+    today.getFullYear() - ageRange.max,
+    today.getMonth(),
+    today.getDate()
+  );
+  const maxDOB = new Date(
+    today.getFullYear() - ageRange.min,
+    today.getMonth(),
+    today.getDate()
+  );
 
-    /* ---------------- BASE QUERY (ALWAYS) ---------------- */
+  return {
+    $gte: minDOB.toISOString().slice(0, 10),
+    $lte: maxDOB.toISOString().slice(0, 10),
+  };
+}
 
-    const preferredGender = gender === "Man" ? "Woman" : "Man";
+function buildBaseDiscoveryMatch({
+  requesterId,
+  preferredGender,
+  swipedUserIds,
+  excludeSwiped,
+  dobRange,
+  extraExcludedIds = [],
+}) {
+  const excludedIds = [
+    ...(excludeSwiped ? swipedUserIds : []),
+    ...extraExcludedIds,
+  ];
 
-    let baseQuery = {
-      _id: { $ne: id, $nin: swipedUserIds },
-      gender: preferredGender,
-    };
+  const idMatch = { $ne: requesterId };
+  if (excludedIds.length) {
+    idMatch.$nin = excludedIds;
+  }
 
-    console.log("🧱 Base query initialized:", baseQuery);
+  const match = {
+    _id: idMatch,
+    $or: [
+      { onboardingStage: "COMPLETE" },
+      { onboardingStage: { $exists: false } },
+      { onboardingStage: null },
+      { onboardingStage: "" },
+    ],
+  };
 
-    /* ---------------- DEFAULT MODE (GET, NO FILTERS) ---------------- */
+  if (preferredGender) {
+    match.gender = preferredGender;
+  }
 
-    if (!filters) {
-      console.log("🟢 DEFAULT MODE (no filters)");
+  if (dobRange) {
+    match.dateOfBirth = dobRange;
+  }
 
-      if (Array.isArray(profileInterests) && profileInterests.length > 0) {
-        baseQuery.interests = { $in: profileInterests };
-        console.log("🎯 Applying profile interests:", profileInterests);
-      }
+  return match;
+}
 
-      let users = await UserProfile.find(baseQuery).lean();
-      console.log("📊 Users found (default):", users.length);
+function buildDistanceKmExpression(latitude, longitude) {
+  const requesterLatRad = latitude * DEG_TO_RAD;
+  const requesterLngRad = longitude * DEG_TO_RAD;
+  const candidateLatRad = {
+    $multiply: [{ $ifNull: ["$location.latitude", 0] }, DEG_TO_RAD],
+  };
+  const candidateLngRad = {
+    $multiply: [{ $ifNull: ["$location.longitude", 0] }, DEG_TO_RAD],
+  };
 
-      if (!users.length) {
-        console.log("🔁 Default fallback triggered (no swipe exclusion)");
-        users = await UserProfile.find({
-          _id: { $ne: id },
-          gender: preferredGender,
-        }).lean();
-        console.log("📊 Users found after fallback:", users.length);
-      }
+  const acosInput = {
+    $add: [
+      {
+        $multiply: [Math.sin(requesterLatRad), { $sin: candidateLatRad }],
+      },
+      {
+        $multiply: [
+          Math.cos(requesterLatRad),
+          { $cos: candidateLatRad },
+          { $cos: { $subtract: [candidateLngRad, requesterLngRad] } },
+        ],
+      },
+    ],
+  };
 
-      return res.status(200).json({
-        success: true,
-        profiles: mapProfiles(users),
+  return {
+    $cond: [
+      {
+        $and: [
+          { $ne: ["$location.latitude", null] },
+          { $ne: ["$location.longitude", null] },
+        ],
+      },
+      {
+        $multiply: [
+          EARTH_RADIUS_KM,
+          {
+            $acos: {
+              $min: [1, { $max: [-1, acosInput] }],
+            },
+          },
+        ],
+      },
+      null,
+    ],
+  };
+}
+
+async function executeDiscoveryQuery({
+  requester,
+  preferredGender,
+  filters,
+  page,
+  limit,
+  excludeSwiped,
+}) {
+  const swipedUserIds =
+    requester.swipedUserIds?.map((value) => value.toString()) || [];
+  const requesterLatitude = requester.location?.latitude;
+  const requesterLongitude = requester.location?.longitude;
+  const hasRequesterLocation =
+    typeof requesterLatitude === "number" &&
+    typeof requesterLongitude === "number";
+  const discoveryInterests = Array.isArray(filters.interests)
+    ? filters.interests
+    : [];
+  const expandedAgeRange =
+    filters.ageRange && filters.ageFlex
+      ? {
+          min: Math.max(18, filters.ageRange.min - 2),
+          max: filters.ageRange.max + 2,
+        }
+      : null;
+  const targetCount = page * limit;
+
+  const runDiscoveryVariant = async ({
+    ageRange,
+    requireSharedInterests,
+    enforceDistanceBoundary,
+    extraExcludedIds,
+    fetchLimit,
+  }) => {
+    const baseMatch = buildBaseDiscoveryMatch({
+      requesterId: requester._id,
+      preferredGender,
+      swipedUserIds,
+      excludeSwiped,
+      dobRange: buildDobRange(ageRange),
+      extraExcludedIds,
+    });
+
+    const pipeline = [
+      { $match: baseMatch },
+      {
+        $addFields: {
+          sharedInterestCount: {
+            $size: {
+              $setIntersection: [
+                { $ifNull: ["$interests", []] },
+                discoveryInterests,
+              ],
+            },
+          },
+          hasLocation: {
+            $and: [
+              { $ne: ["$location.latitude", null] },
+              { $ne: ["$location.longitude", null] },
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          hasSharedInterests: { $gt: ["$sharedInterestCount", 0] },
+          distanceKm: hasRequesterLocation
+            ? buildDistanceKmExpression(requesterLatitude, requesterLongitude)
+            : null,
+        },
+      },
+    ];
+
+    if (requireSharedInterests) {
+      pipeline.push({
+        $match: { hasSharedInterests: true },
       });
     }
 
-    /* ---------------- FILTER MODE (POST) ---------------- */
-
-    console.log("🟣 FILTER MODE (POST)");
-
-    const {
-      ageRange,
-      ageFlex,
-      distanceKm,
-      distanceFlex,
-      interests,
-    } = filters;
-
-    // 🎯 AGE FILTER
-    if (ageRange?.min && ageRange?.max) {
-      const today = new Date();
-      const minDOB = new Date(
-        today.getFullYear() - ageRange.max,
-        today.getMonth(),
-        today.getDate()
-      );
-      const maxDOB = new Date(
-        today.getFullYear() - ageRange.min,
-        today.getMonth(),
-        today.getDate()
-      );
-
-      baseQuery.dateOfBirth = {
-        $gte: minDOB.toISOString().slice(0, 10),
-        $lte: maxDOB.toISOString().slice(0, 10),
-      };
-
-      console.log("🎂 Age filter applied:", ageRange);
+    if (enforceDistanceBoundary) {
+      pipeline.push({
+        $match: {
+          distanceKm: { $ne: null, $lte: filters.distanceKm },
+        },
+      });
     }
 
-    // 🎯 INTEREST FILTER
-    if (Array.isArray(interests) && interests.length > 0) {
-      baseQuery.interests = { $in: interests };
-      console.log("❤️ Discovery interests applied:", interests);
+    pipeline.push(
+      {
+        $addFields: {
+          withinDistance:
+            hasRequesterLocation && filters.distanceKm
+              ? {
+                  $and: [
+                    { $ne: ["$distanceKm", null] },
+                    { $lte: ["$distanceKm", filters.distanceKm] },
+                  ],
+                }
+              : false,
+        },
+      },
+      {
+        $addFields: {
+          discoveryBucket: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $and: [
+                      "$hasSharedInterests",
+                      {
+                        $cond: [
+                          hasRequesterLocation && Boolean(filters.distanceKm),
+                          "$withinDistance",
+                          true,
+                        ],
+                      },
+                    ],
+                  },
+                  then: 0,
+                },
+                {
+                  case: "$hasSharedInterests",
+                  then: 1,
+                },
+                {
+                  case:
+                    hasRequesterLocation && Boolean(filters.distanceKm)
+                      ? "$withinDistance"
+                      : false,
+                  then: 2,
+                },
+              ],
+              default: 3,
+            },
+          },
+          discoveryScore: {
+            $add: [
+              { $cond: ["$hasSharedInterests", 1000, 0] },
+              { $cond: ["$withinDistance", 100, 0] },
+              { $min: ["$sharedInterestCount", 25] },
+              { $cond: ["$hasLocation", 10, 0] },
+            ],
+          },
+        },
+      },
+      {
+        $sort: {
+          discoveryBucket: 1,
+          discoveryScore: -1,
+          sharedInterestCount: -1,
+          withinDistance: -1,
+          updatedAt: -1,
+          _id: -1,
+        },
+      },
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [{ $limit: fetchLimit }],
+        },
+      },
+    );
+
+    const [result] = await UserProfile.aggregate(pipeline);
+    const total = result?.metadata?.[0]?.total || 0;
+    const profiles = result?.data || [];
+
+    return {
+      profiles,
+      total,
+    };
+  };
+
+  const variants = [];
+
+  if (filters.ageRange && discoveryInterests.length) {
+    variants.push({
+      ageRange: filters.ageRange,
+      requireSharedInterests: true,
+      enforceDistanceBoundary: Boolean(filters.distanceKm) && hasRequesterLocation,
+    });
+  }
+
+  if (filters.ageRange) {
+    variants.push({
+      ageRange: filters.ageRange,
+      requireSharedInterests: false,
+      enforceDistanceBoundary: Boolean(filters.distanceKm) && hasRequesterLocation,
+    });
+
+    variants.push({
+      ageRange: filters.ageRange,
+      requireSharedInterests: false,
+      enforceDistanceBoundary: false,
+    });
+  }
+
+  if (expandedAgeRange && discoveryInterests.length) {
+    variants.push({
+      ageRange: expandedAgeRange,
+      requireSharedInterests: true,
+      enforceDistanceBoundary: Boolean(filters.distanceKm) && hasRequesterLocation,
+    });
+  }
+
+  if (expandedAgeRange) {
+    variants.push({
+      ageRange: expandedAgeRange,
+      requireSharedInterests: false,
+      enforceDistanceBoundary: Boolean(filters.distanceKm) && hasRequesterLocation,
+    });
+
+    variants.push({
+      ageRange: expandedAgeRange,
+      requireSharedInterests: false,
+      enforceDistanceBoundary: false,
+    });
+  }
+
+  if (discoveryInterests.length) {
+    variants.push({
+      ageRange: null,
+      requireSharedInterests: true,
+      enforceDistanceBoundary: Boolean(filters.distanceKm) && hasRequesterLocation,
+    });
+
+    variants.push({
+      ageRange: null,
+      requireSharedInterests: true,
+      enforceDistanceBoundary: false,
+    });
+  }
+
+  if (Boolean(filters.distanceKm) && hasRequesterLocation) {
+    variants.push({
+      ageRange: null,
+      requireSharedInterests: false,
+      enforceDistanceBoundary: true,
+    });
+  }
+
+  variants.push({
+    ageRange: null,
+    requireSharedInterests: false,
+    enforceDistanceBoundary: false,
+  });
+
+  const combinedProfiles = [];
+  const addedIds = new Set();
+  let totalAvailable = 0;
+  const tried = new Set();
+
+  for (const variant of variants) {
+    const variantKey = JSON.stringify(variant);
+    if (tried.has(variantKey)) continue;
+    tried.add(variantKey);
+
+    const result = await runDiscoveryVariant({
+      ...variant,
+      extraExcludedIds: Array.from(addedIds),
+      fetchLimit: targetCount,
+    });
+
+    totalAvailable += result.total;
+
+    for (const profile of result.profiles) {
+      const profileId = profile?._id?.toString();
+      if (!profileId || addedIds.has(profileId)) continue;
+      addedIds.add(profileId);
+      combinedProfiles.push(profile);
     }
 
-    // 🎯 DISTANCE FILTER (placeholder logic)
-    if (
-      distanceKm &&
-      requester.location?.latitude &&
-      requester.location?.longitude
-    ) {
-      baseQuery["location.latitude"] = { $ne: null };
-      baseQuery["location.longitude"] = { $ne: null };
+    if (combinedProfiles.length >= targetCount) {
+      break;
+    }
+  }
 
-      console.log(
-        "📍 Distance filter placeholder applied:",
-        distanceKm,
-        "km"
-      );
+  const skip = (page - 1) * limit;
+  const pagedProfiles = combinedProfiles.slice(skip, skip + limit);
+
+  return {
+    profiles: pagedProfiles,
+    total: totalAvailable,
+    page,
+    limit,
+    hasMore: totalAvailable > skip + pagedProfiles.length,
+  };
+}
+
+export const getFilteredProfiles = async (req, res) => {
+  try {
+    console.log("[FilteredProfiles] Incoming request");
+    console.log("Method:", req.method);
+
+    if (!req.user) {
+      console.log("No req.user - unauthorized");
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    console.log("🔍 Final query before execution:", baseQuery);
-
-    let users = await UserProfile.find(baseQuery).lean();
-    console.log("📊 Users found (filtered):", users.length);
-
-    /* ---------------- FLEX FALLBACKS ---------------- */
-
-    if (!users.length && ageFlex && ageRange) {
-      console.log("↔️ Age flex fallback triggered");
-
-      const expandedMin = Math.max(18, ageRange.min - 2);
-      const expandedMax = ageRange.max + 2;
-
-      const today = new Date();
-      baseQuery.dateOfBirth = {
-        $gte: new Date(today.getFullYear() - expandedMax)
-          .toISOString()
-          .slice(0, 10),
-        $lte: new Date(today.getFullYear() - expandedMin)
-          .toISOString()
-          .slice(0, 10),
-      };
-
-      users = await UserProfile.find(baseQuery).lean();
-      console.log("📊 Users after age flex:", users.length);
+    const requester = await UserProfile.findById(req.user.id).lean();
+    if (!requester) {
+      console.log("Requester not found in DB");
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    if (!users.length && distanceFlex) {
-      console.log("🌍 Distance flex fallback triggered");
+    const filters = normalizeDiscoveryFilters(
+      req.body?.filters,
+      requester.interests || []
+    );
+    const page = parseDiscoveryNumber(req.body?.page || req.query?.page, 1);
+    const limit = Math.min(
+      parseDiscoveryNumber(
+        req.body?.limit || req.query?.limit,
+        DEFAULT_DISCOVERY_LIMIT
+      ),
+      MAX_DISCOVERY_LIMIT
+    );
+    const preferredGender = getPreferredGender(requester.gender);
 
-      delete baseQuery["location.latitude"];
-      delete baseQuery["location.longitude"];
+    console.log("User:", {
+      id: requester._id.toString(),
+      gender: requester.gender,
+      preferredGender,
+    });
+    console.log("Filters received:", filters);
+    console.log("Discovery page:", page, "limit:", limit);
 
-      users = await UserProfile.find(baseQuery).lean();
-      console.log("📊 Users after distance flex:", users.length);
+    let discoveryResult = await executeDiscoveryQuery({
+      requester,
+      preferredGender,
+      filters,
+      page,
+      limit,
+      excludeSwiped: true,
+    });
+
+    let recycled = false;
+
+    if (!discoveryResult.total) {
+      recycled = true;
+      console.log("Discovery exhausted; recycling swiped profiles");
+      discoveryResult = await executeDiscoveryQuery({
+        requester,
+        preferredGender,
+        filters,
+        page,
+        limit,
+        excludeSwiped: false,
+      });
     }
 
-    console.log("✅ Returning profiles:", users.length);
+    console.log("Returning profiles:", discoveryResult.profiles.length);
 
     return res.status(200).json({
       success: true,
-      profiles: mapProfiles(users),
+      profiles: mapProfiles(discoveryResult.profiles),
+      pagination: {
+        page: discoveryResult.page,
+        limit: discoveryResult.limit,
+        total: discoveryResult.total,
+        hasMore: discoveryResult.hasMore,
+        recycled,
+      },
     });
   } catch (error) {
-    console.error("🔥 FilteredProfiles error:", error);
+    console.error("FilteredProfiles error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch filtered profiles",
     });
   }
 };
-
-/* ---------------- PROFILE MAPPER (unchanged) ---------------- */
 
 function mapProfiles(users) {
   return users.map((user) => ({
@@ -519,9 +873,14 @@ function mapProfiles(users) {
     smoking: user.smoking || "",
     marijuana: user.marijuana || "",
     drugs: user.drugs || "",
+    sharedInterestCount: user.sharedInterestCount || 0,
+    withinDistance: Boolean(user.withinDistance),
+    distanceKm:
+      typeof user.distanceKm === "number"
+        ? Number(user.distanceKm.toFixed(1))
+        : null,
   }));
 }
-
 
 
 
@@ -722,7 +1081,13 @@ export const uploadPhotos = async (req, res) => {
 
     const userId = req.user?.id;
     const phoneFromToken = req.user?.phoneNumber;
-    const replaceIndex = req.body.replaceIndex;
+    const replaceIndex =
+      req.body.replaceIndex !== undefined && req.body.replaceIndex !== null
+        ? Number(req.body.replaceIndex)
+        : null;
+    const replaceAll =
+      req.body.replaceAll === true || req.body.replaceAll === "true";
+    const requestedOnboardingStage = req.body.onboardingStage;
 
     // 🔒 Auth check (JWT is the source of truth)
     if (!userId || !phoneFromToken) {
@@ -739,9 +1104,36 @@ export const uploadPhotos = async (req, res) => {
       });
     }
 
-    // ✅ Extract S3 URLs
-    const fileUrls = req.files.map(file => file.location);
+    const toPublicFileUrl = (file) => {
+      if (file.location) {
+        return file.location;
+      }
+
+      const filename = file.filename || path.basename(file.path || "");
+      return `${req.protocol}://${req.get("host")}/uploads/${filename}`;
+    };
+
+    const fileUrls = req.files.map(toPublicFileUrl);
     console.log('📸 [uploadPhotos] File URLs:', fileUrls);
+
+    const deleteLocalUploadIfPresent = (fileUrl) => {
+      if (typeof fileUrl !== "string" || !fileUrl.includes("/uploads/")) {
+        return;
+      }
+
+      const filename = fileUrl.split("/uploads/")[1];
+      if (!filename) {
+        return;
+      }
+
+      const decodedFilename = decodeURIComponent(filename.split("?")[0]);
+      const filePath = path.resolve("uploads", decodedFilename);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log("🗑 [uploadPhotos] Deleted local upload:", filePath);
+      }
+    };
 
     // ✅ Fetch user by ID (NOT phone number)
     const user = await UserProfile.findById(userId);
@@ -753,23 +1145,58 @@ export const uploadPhotos = async (req, res) => {
       });
     }
 
-    // 🔁 Replace OR append
-    if (replaceIndex !== undefined && replaceIndex !== null) {
+    const allowedOnboardingStages = [
+      "PHONE_VERIFIED",
+      "INTRO_DONE",
+      "PROFILE_SETUP_DONE",
+      "LOCATION_DONE",
+      "DETAILS_DONE",
+      "PROMPTS_DONE",
+      "PHOTOS_DONE",
+      "COMPLETE",
+    ];
+
+    const pendingFileDeletes = [];
+
+    if (replaceAll) {
+      console.log("♻️ [uploadPhotos] Replacing entire photo set");
+      for (const existingPhoto of user.photos || []) {
+        pendingFileDeletes.push(existingPhoto);
+      }
+      user.photos = fileUrls;
+    } else if (replaceIndex !== null && Number.isInteger(replaceIndex) && replaceIndex >= 0) {
       console.log(`🔁 [uploadPhotos] Replacing photo at index ${replaceIndex}`);
+      const existingPhoto = user.photos?.[replaceIndex];
+      if (existingPhoto && existingPhoto !== fileUrls[0]) {
+        pendingFileDeletes.push(existingPhoto);
+      }
       user.photos[replaceIndex] = fileUrls[0];
     } else {
       console.log('➕ [uploadPhotos] Appending photos');
       user.photos.push(...fileUrls);
     }
 
+    if (
+      typeof requestedOnboardingStage === "string" &&
+      allowedOnboardingStages.includes(requestedOnboardingStage)
+    ) {
+      user.onboardingStage = requestedOnboardingStage;
+    }
+
     await user.save();
     console.log('✅ [uploadPhotos] Photos saved successfully');
+
+    for (const fileUrl of pendingFileDeletes) {
+      deleteLocalUploadIfPresent(fileUrl);
+    }
 
     return res.status(200).json({
       success: true,
       message: 'Photos uploaded successfully!',
       data: {
         photos: user.photos,
+        uploadedUrls: fileUrls,
+        onboardingStage: user.onboardingStage,
       },
     });
   } catch (error) {
@@ -949,6 +1376,26 @@ export const updateUserProfile = async (req, res) => {
     ];
 
     let anyFieldUpdated = false;
+    const pendingFileDeletes = [];
+
+    const deleteLocalUploadIfPresent = (fileUrl) => {
+      if (typeof fileUrl !== "string" || !fileUrl.includes("/uploads/")) {
+        return;
+      }
+
+      const filename = fileUrl.split("/uploads/")[1];
+      if (!filename) {
+        return;
+      }
+
+      const decodedFilename = decodeURIComponent(filename.split("?")[0]);
+      const filePath = path.resolve("uploads", decodedFilename);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log("🗑 [updateUserProfile] Deleted local upload:", filePath);
+      }
+    };
 
     for (const key of Object.keys(updates)) {
       if (!allowedFields.includes(key)) {
@@ -990,6 +1437,21 @@ export const updateUserProfile = async (req, res) => {
         console.log(`✏️ [updateUserProfile] Setting ${key} =`, value);
       }
 
+      if (key === "photos" && Array.isArray(value)) {
+        const nextPhotos = value.filter(
+          (photo) => typeof photo === "string" && photo.trim().length > 0
+        );
+        const removedPhotos = (user.photos || []).filter(
+          (photo) => !nextPhotos.includes(photo)
+        );
+
+        for (const removedPhoto of removedPhotos) {
+          pendingFileDeletes.push(removedPhoto);
+        }
+
+        value = nextPhotos;
+      }
+
       user[key] = value;
       if (key === "deliveryAddress") {
       console.log(
@@ -1012,6 +1474,10 @@ export const updateUserProfile = async (req, res) => {
     console.log("💾 [updateUserProfile] Saving user…");
     await user.save();
     console.log("✅ [updateUserProfile] User saved.");
+
+    for (const fileUrl of pendingFileDeletes) {
+      deleteLocalUploadIfPresent(fileUrl);
+    }
 
     const profileCompleteness = calculateProfileCompleteness(user);
     console.log(
@@ -1282,12 +1748,25 @@ export const deletePhoto = async (req, res) => {
       });
     }
 
-    console.log("🗑 [deletePhoto] Removing photo at index:", index, "URL:", photos[index]);
+    const removedPhoto = photos[index];
+    console.log("🗑 [deletePhoto] Removing photo at index:", index, "URL:", removedPhoto);
     photos.splice(index, 1); // remove one item at the index
     user.photos = photos;
 
     await user.save();
     console.log("✅ [deletePhoto] Photo removed & user saved.");
+
+    if (typeof removedPhoto === "string" && removedPhoto.includes("/uploads/")) {
+      const filename = removedPhoto.split("/uploads/")[1];
+      if (filename) {
+        const decodedFilename = decodeURIComponent(filename.split("?")[0]);
+        const filePath = path.resolve("uploads", decodedFilename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          console.log("🗑 [deletePhoto] Deleted local upload:", filePath);
+        }
+      }
+    }
 
     const profileCompleteness = calculateProfileCompleteness(user);
     const fixedPhotos = (user.photos || []).map((p) => p);

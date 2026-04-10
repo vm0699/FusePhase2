@@ -17,9 +17,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authStore } from '../auth/authStore';
 import OnboardingStepper from '../../components/OnboardingStepper';
 
-
-const ONBOARDING_STEP_KEY = '@onboarding_step'; // 🔹 2.1
-
 export default function VerifyCodePage() {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(30);
@@ -32,10 +29,8 @@ export default function VerifyCodePage() {
     .fill(1)
     .map((_, i) => inputRefs.current[i] ?? React.createRef());
 
-  // 🔹 Persist checkpoint ONLY for crash recovery
   useEffect(() => {
     console.log('🟣 [VerifyCode] mounted');
-    AsyncStorage.setItem(ONBOARDING_STEP_KEY, 'CodeVerif');
   }, []);
 
   const handleCodeChange = (index, value) => {
@@ -179,7 +174,7 @@ export default function VerifyCodePage() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
       >
         <OnboardingStepper currentStep={2} totalSteps={26} />
