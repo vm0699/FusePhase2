@@ -1,4 +1,5 @@
 import twilio from "twilio";
+import notificationService from "../services/notificationService.js";
 
 const AccessToken = twilio.jwt.AccessToken;
 const VideoGrant = AccessToken.VideoGrant;
@@ -49,4 +50,42 @@ export const generateVideoToken = async (req, res) => {
       message: "Failed to generate Twilio token",
     });
   }
+};
+
+// Integration point for future direct-call flows.
+// Invoke this when a user explicitly invites another user into a call room.
+export const sendVideoCallInviteNotification = async ({
+  recipientUserId,
+  callerUserId,
+  room,
+  channelName,
+}) => {
+  if (!recipientUserId) return;
+
+  await notificationService.sendVideoCallInvite(recipientUserId, {
+    type: "VIDEO_CALL_INVITE",
+    callerUserId: callerUserId ? String(callerUserId) : null,
+    room: room || null,
+    channelName: channelName || room || null,
+    screen: "VideoInitiateScreen",
+  });
+};
+
+// Integration point for future direct-call flows.
+// Invoke this when an invite expires or a callee never answers.
+export const sendMissedVideoCallNotification = async ({
+  recipientUserId,
+  callerUserId,
+  room,
+  channelName,
+}) => {
+  if (!recipientUserId) return;
+
+  await notificationService.sendMissedVideoCall(recipientUserId, {
+    type: "VIDEO_CALL_MISSED",
+    callerUserId: callerUserId ? String(callerUserId) : null,
+    room: room || null,
+    channelName: channelName || room || null,
+    screen: "VideoInitiateScreen",
+  });
 };

@@ -10,6 +10,20 @@ export type StoredTokens = {
   accessExpMs: number | null;
 };
 
+type AuthListener = () => void;
+
+const listeners = new Set<AuthListener>();
+
+function emitAuthChange() {
+  for (const listener of listeners) {
+    try {
+      listener();
+    } catch (error) {
+      console.warn("authStore listener failed", error);
+    }
+  }
+}
+
 function safeParseNumber(v: string | null): number | null {
   if (!v) return null;
   const n = Number(v);
@@ -49,6 +63,7 @@ export const authStore = {
     }
 
     await Promise.all(ops);
+    emitAuthChange();
   },
 
   async clearAll() {
@@ -57,5 +72,11 @@ export const authStore = {
       AsyncStorage.removeItem(REFRESH_KEY),
       AsyncStorage.removeItem(ACCESS_EXP_KEY),
     ]);
+    emitAuthChange();
+  },
+
+  subscribe(listener: AuthListener) {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
   },
 };

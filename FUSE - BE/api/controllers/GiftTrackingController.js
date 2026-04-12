@@ -1,4 +1,6 @@
 import GiftOrder from "../models/GiftOrder.js";
+import notificationService from "../services/notificationService.js";
+import { NOTIFICATION_TYPES } from "../services/notifications/notificationTypes.js";
 
 // Small helper so we never expose full address
 const buildDeliveryPublicView = (deliverySnapshot = {}) => ({
@@ -53,6 +55,49 @@ const mapOrderForList = (order, perspective = "SENDER") => {
           : null,
     },
   };
+};
+
+export const getGiftOrderDetails = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user.id;
+
+    const order = await GiftOrder.findById(orderId)
+      .populate("senderId", "name username photos")
+      .populate("recipientId", "name username photos");
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Gift order not found",
+      });
+    }
+
+    const userIdStr = userId.toString();
+    const senderStr = order.senderId?._id?.toString?.() || order.senderId?.toString?.();
+    const recipientStr =
+      order.recipientId?._id?.toString?.() || order.recipientId?.toString?.();
+
+    if (![senderStr, recipientStr].includes(userIdStr)) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to view this order",
+      });
+    }
+
+    const perspective = senderStr === userIdStr ? "SENDER" : "RECIPIENT";
+
+    return res.status(200).json({
+      success: true,
+      order: mapOrderForList(order, perspective),
+    });
+  } catch (err) {
+    console.error("🔥 [GIFT] getGiftOrderDetails error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch gift order",
+    });
+  }
 };
 
 // GET /api/chat/gifts/sent
@@ -204,6 +249,40 @@ export const updateGiftOrderStatus = async (req, res) => {
     }
 
     await order.save();
+
+    const notificationTypeByStatus = {
+      DISPATCHED: NOTIFICATION_TYPES.GIFT_ORDER_DISPATCHED,
+      DELIVERED: NOTIFICATION_TYPES.GIFT_ORDER_DELIVERED,
+    };
+
+    const notificationType = notificationTypeByStatus[status];
+    if (notificationType) {
+      const userIdsToNotify = Array.from(
+        new Set([
+          order.senderId?.toString?.() || order.senderId,
+          order.recipientId?.toString?.() || order.recipientId,
+        ].filter(Boolean))
+      );
+
+      await notificationService.sendToUsers(
+        userIdsToNotify,
+        notificationService.buildNotificationPayload({
+          type: notificationType,
+          data: {
+            orderId: order._id.toString(),
+            intentId: order.intentId?.toString?.() || order.intentId || null,
+            chatId: order.chatId?.toString?.() || order.chatId,
+            senderId: order.senderId?.toString?.() || order.senderId,
+            recipientId: order.recipientId?.toString?.() || order.recipientId,
+            screen: "GiftOrderTrackingScreen",
+            extra: {
+              trackingUrl: order.trackingUrl || null,
+              status: order.status,
+            },
+          },
+        })
+      );
+    }
 
     console.log("📦 [GIFT] Order status updated", {
       orderId: order._id.toString(),

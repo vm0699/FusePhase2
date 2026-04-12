@@ -12,6 +12,7 @@ import userRoutes from './api/routes/User.js';
 import chatRoutes from './api/routes/ChatRoutes.js';
 import videoRoutes from './api/routes/VideoRoutes.js';
 import likeRoutes from './api/routes/likeRoutes.js';
+import notificationRoutes from './api/routes/NotificationRoutes.js';
 import twilio from 'twilio';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -59,6 +60,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/video', videoRoutes);
 app.use('/api/likes', likeRoutes); 
+app.use('/api/notifications', notificationRoutes);
 app.use("/api/agora", agoraRoutes);
 
 app.get('/room/:roomId', (req, res) => {

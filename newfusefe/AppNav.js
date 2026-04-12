@@ -1,10 +1,13 @@
 import React from "react";
+import { Platform } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ProfileProvider } from "./ProfileContext";
 import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import * as SplashScreen from 'expo-splash-screen';
+import * as SystemUI from "expo-system-ui";
+import { StatusBar } from "expo-status-bar";
 
 // Auth + Onboarding
 import Login from "./app/screens/Login";
@@ -74,6 +77,10 @@ import MainTabs from "./app/navigation/MainTabs";
 import OnboardingOptionalWrapper from "./app/screens/onboarding/OnboardingOptionalWrapper";
 import LocationSetupScreen from "./app/screens/LocationSetupScreen";
 import UpdateDeliveryLocation from "./app/screens/UpdateDeliveryLocation";
+import GiftIntentDetailsScreen from "./app/screens/GiftIntentDetailsScreen";
+import GiftOrderTrackingScreen from "./app/screens/GiftOrderTrackingScreen";
+import { navigationRef } from "./app/navigation/navigationRef";
+import { pushManager } from "./app/notifications/pushManager";
 
 const Stack = createStackNavigator();
 
@@ -88,6 +95,21 @@ export default function AppNavigator() {
   });
 
   React.useEffect(() => {
+    if (
+      Platform.OS === "android" &&
+      typeof SystemUI.setLayoutModeAsync === "function"
+    ) {
+      void SystemUI.setLayoutModeAsync("immersive");
+    }
+
+    pushManager.start();
+
+    return () => {
+      pushManager.stop();
+    };
+  }, []);
+
+  React.useEffect(() => {
     async function prepare() {
       await SplashScreen.preventAutoHideAsync();
     }
@@ -98,6 +120,7 @@ export default function AppNavigator() {
     if (fontsLoaded) {
       await SplashScreen.hideAsync();
     }
+    pushManager.onNavigationStateChange(navigationRef.getCurrentRoute()?.name);
   }, [fontsLoaded]);
 
   if (!fontsLoaded) {
@@ -107,7 +130,16 @@ export default function AppNavigator() {
   return (
     <ProfileProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <NavigationContainer onReady={onLayoutRootView}>
+        <StatusBar style="light" hidden />
+        <NavigationContainer
+          ref={navigationRef}
+          onReady={onLayoutRootView}
+          onStateChange={() =>
+            pushManager.onNavigationStateChange(
+              navigationRef.getCurrentRoute()?.name
+            )
+          }
+        >
           <Stack.Navigator initialRouteName="AuthGate">
           <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
           <Stack.Screen name="PhoneVerif" component={PhoneVerif} options={{ headerShown: false }} />
@@ -171,6 +203,8 @@ export default function AppNavigator() {
           <Stack.Screen name="AuthGate" component={AuthGate} options={{ headerShown: false }} />
           <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
           <Stack.Screen name="UpdateDeliveryLocation" component={UpdateDeliveryLocation} options={{ headerShown: false }} />
+          <Stack.Screen name="GiftIntentDetailsScreen" component={GiftIntentDetailsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="GiftOrderTrackingScreen" component={GiftOrderTrackingScreen} options={{ headerShown: false }} />
           </Stack.Navigator>
         </NavigationContainer>
       </GestureHandlerRootView>

@@ -14,6 +14,8 @@ import { useNavigation } from "@react-navigation/native";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FusePopup } from "../../components/FusePopup";
+import { authClient } from "../auth/authClient";
+import { pushManager } from "../notifications/pushManager";
 
 const BASE_URL = "http://172.20.10.4:5000";
 
@@ -85,6 +87,7 @@ export default function SettingsScreen() {
     try {
       setDeleting(true);
       const token = await AsyncStorage.getItem("jwtToken");
+      await pushManager.unregisterCurrentDevice();
       const res = await fetch(`${BASE_URL}/api/user/delete-account`, {
         method: "DELETE",
         headers: {
@@ -94,6 +97,8 @@ export default function SettingsScreen() {
       });
 
       if (!res.ok) throw new Error("Failed to delete account");
+
+      await authClient.logoutLocal();
 
       const keys = await AsyncStorage.getAllKeys();
       if (keys && keys.length) {

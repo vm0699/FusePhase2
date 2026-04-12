@@ -1,6 +1,8 @@
 import GiftIntent from "../models/GiftIntentModel.js";
 import GiftOrder from "../models/GiftOrder.js";
 import GiftPayment from "../models/GiftPaymentModel.js";
+import notificationService from "../services/notificationService.js";
+import { NOTIFICATION_TYPES } from "../services/notifications/notificationTypes.js";
 
 // 🧮 Helper: single-payer model → sender pays 100%
 const computePaymentShares = (intent) => {
@@ -138,13 +140,19 @@ export const confirmGiftPayment = async (req, res) => {
   try {
     const { intentId } = req.params;
     const userId = req.user.id;
-    const { paymentId, providerPaymentId } = req.body;
+    const {
+      paymentId,
+      providerPaymentId,
+      status: requestedStatus,
+      failureReason,
+    } = req.body;
 
     console.log("💳 [PAY] confirmGiftPayment", {
       intentId,
       userId,
       paymentId,
       providerPaymentId,
+      requestedStatus,
     });
 
     const payment = await GiftPayment.findById(paymentId);
@@ -176,12 +184,6 @@ export const confirmGiftPayment = async (req, res) => {
       });
     }
 
-    // ✅ Mark payment as PAID (we trust Razorpay callback / frontend for now)
-    payment.status = "PAID";
-    payment.providerPaymentId = providerPaymentId || null;
-    await payment.save();
-
-    // 🔄 Update intent payment fields
     const intent = await GiftIntent.findById(intentId);
 
     if (!intent) {
@@ -190,6 +192,49 @@ export const confirmGiftPayment = async (req, res) => {
         .json({ success: false, message: "Gift intent not found" });
     }
 
+    const normalizedStatus = String(requestedStatus || "PAID").toUpperCase();
+
+    if (normalizedStatus === "FAILED") {
+      payment.status = "FAILED";
+      payment.providerPaymentId = providerPaymentId || null;
+      payment.failureReason = failureReason || "payment_failed";
+      await payment.save();
+
+      await notificationService.sendToUser(
+        payment.userId,
+        notificationService.buildNotificationPayload({
+          type: NOTIFICATION_TYPES.GIFT_PAYMENT_FAILED,
+          title: "Gift payment failed",
+          body: "Your gift payment could not be completed.",
+          data: {
+            intentId: intent._id.toString(),
+            chatId: intent.chatId?.toString?.() || intent.chatId,
+            senderId: intent.senderId?.toString?.() || intent.senderId,
+            recipientId: intent.recipientId?.toString?.() || intent.recipientId,
+            paymentId: payment._id.toString(),
+            screen: "GiftIntentDetailsScreen",
+            extra: {
+              failureReason: payment.failureReason,
+            },
+          },
+        })
+      );
+
+      return res.status(200).json({
+        success: true,
+        paymentStatus: payment.status,
+        intentStatus: intent.status,
+        fullyPaid: false,
+        orderId: null,
+      });
+    }
+
+    // ✅ Mark payment as PAID (we trust Razorpay callback / frontend for now)
+    payment.status = "PAID";
+    payment.providerPaymentId = providerPaymentId || null;
+    await payment.save();
+
+    // 🔄 Update intent payment fields
     if (payment.role === "SENDER") {
       intent.senderPaidAmount = payment.amount;
       intent.senderPaidAt = new Date();
@@ -246,6 +291,36 @@ export const confirmGiftPayment = async (req, res) => {
           intentId: intent._id.toString(),
         });
       }
+    }
+
+    const successPayload = {
+      type: NOTIFICATION_TYPES.GIFT_PAYMENT_SUCCESS,
+      title: "Gift payment successful",
+      body: "Your gift payment was completed successfully.",
+      data: {
+        intentId: intent._id.toString(),
+        orderId: order?._id?.toString?.() || null,
+        chatId: intent.chatId?.toString?.() || intent.chatId,
+        senderId: intent.senderId?.toString?.() || intent.senderId,
+        recipientId: intent.recipientId?.toString?.() || intent.recipientId,
+        paymentId: payment._id.toString(),
+        screen: order ? "GiftOrderTrackingScreen" : "GiftIntentDetailsScreen",
+      },
+    };
+
+    await notificationService.sendToUser(
+      payment.userId,
+      notificationService.buildNotificationPayload(successPayload)
+    );
+
+    if (fullyPaid && intent.recipientId?.toString() !== payment.userId.toString()) {
+      await notificationService.sendToUser(
+        intent.recipientId,
+        notificationService.buildNotificationPayload({
+          ...successPayload,
+          body: "A gift for you has been paid and is being processed.",
+        })
+      );
     }
 
     return res.status(200).json({

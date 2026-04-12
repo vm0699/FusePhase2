@@ -18,6 +18,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import { BottomNav } from "../../components/BottomNav";
 import { ElevatedProfileCard } from "../../components/ElevatedProfileCard";
 import { SegmentedControl } from "../../components/SegmentedControl";
+import { authClient } from "../auth/authClient";
+import { pushManager } from "../notifications/pushManager";
 
 const BASE_URL = "http://172.20.10.4:5000";
 const TABS = [
@@ -101,9 +103,10 @@ const ProfilePage = ({ navigation }) => {
   const handleLogout = async () => {
     try {
       const uid = await AsyncStorage.getItem("userId");
+      await pushManager.unregisterCurrentDevice();
+      await authClient.logoutLocal();
 
       const keysToRemove = [
-        "jwtToken",
         "userId",
         "username",
         "fullPhoneNumber",

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProfileContext } from '../../ProfileContext';
+import { authStore } from '../auth/authStore';
 
 const BASE_URL = "http://172.20.10.4:5000";
 
@@ -49,11 +50,10 @@ export default function GuidelinesPage() {
       setFullProfile(profile);
 
       if (accessToken) {
-        await AsyncStorage.setItem("jwtToken", accessToken);
-      }
-
-      if (refreshToken) {
-        await AsyncStorage.setItem("refreshToken", refreshToken);
+        await authStore.setTokens({
+          accessToken,
+          refreshToken: refreshToken || null,
+        });
       }
 
       // =====================================================

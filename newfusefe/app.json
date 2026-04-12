@@ -22,7 +22,8 @@
         "backgroundColor": "#e91e63"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.swayvick.newfusefe"
+      "package": "com.swayvick.newfusefe",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,7 +34,8 @@
       }
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-notifications"
     ],
     "assetBundlePatterns": [
       "**/*"

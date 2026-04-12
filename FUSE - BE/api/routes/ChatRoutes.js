@@ -12,6 +12,7 @@ import {
   createGiftIntent,
   acceptGiftIntent,
   rejectGiftIntent,
+  getGiftIntentDetails,
 } from "../controllers/ChatController.js";
 import {
   initiateGiftPayment,
@@ -21,6 +22,7 @@ import {
   getSentGifts,
   getReceivedGifts,
   updateGiftOrderStatus,
+  getGiftOrderDetails,
 } from "../controllers/GiftTrackingController.js";
 import { blockChatUser, reportChatUser } from "../controllers/ChatSafetyController.js";
 import { createRateLimiter } from "../middleware/rateLimit.js";
@@ -74,12 +76,14 @@ router.post("/:chatId/messages", authMiddleware, messageRateLimit, saveChatMessa
 
 router.post("/:chatId/gift", authMiddleware, createGiftOrder);
 router.post("/:chatId/gift-intent", authMiddleware, createGiftIntent);
+router.get("/gift-intent/:intentId", authMiddleware, getGiftIntentDetails);
 router.post("/gift-intent/:intentId/accept", authMiddleware, acceptGiftIntent);
 router.post("/gift-intent/:intentId/reject", authMiddleware, rejectGiftIntent);
 router.post("/gift-intent/:intentId/pay", authMiddleware, initiateGiftPayment);
 router.post("/gift-intent/:intentId/pay/confirm", authMiddleware, confirmGiftPayment);
 router.get("/gifts/sent", authMiddleware, getSentGifts);
 router.get("/gifts/received", authMiddleware, getReceivedGifts);
+router.get("/gifts/order/:orderId", authMiddleware, getGiftOrderDetails);
 router.patch("/gifts/order/:orderId/status", authMiddleware, updateGiftOrderStatus);
 
 export default router;

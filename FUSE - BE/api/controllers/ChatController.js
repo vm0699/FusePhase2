@@ -6,6 +6,8 @@ import Block from "../models/Block.js";
 import client from "../config/twilio.js";
 import dotenv from "dotenv";
 import twilio from "twilio";
+import notificationService from "../services/notificationService.js";
+import { NOTIFICATION_TYPES } from "../services/notifications/notificationTypes.js";
 
 dotenv.config();
 
@@ -63,6 +65,70 @@ const buildGiftRules = (tier) => {
     requiresRecipientConsent: true,
     requiresRecipientPayment: true,
     experienceOnly: true,
+  };
+};
+
+const getDisplayName = (user) =>
+  user?.name || user?.username || "Someone";
+
+const getTwilioChannelSid = (chat) =>
+  chat?.twilioChannelSid || chat?.twilioChatChannelSid || null;
+
+const buildChatNotificationData = ({
+  chat,
+  senderId,
+  recipientId,
+  counterpartId,
+  counterpartName,
+  messageId,
+}) => ({
+  chatId: chat?._id?.toString?.() || chat?._id || null,
+  senderId: senderId ? String(senderId) : null,
+  recipientId: recipientId ? String(recipientId) : null,
+  counterpartId: counterpartId ? String(counterpartId) : null,
+  messageId: messageId ? String(messageId) : null,
+  chatStatus: chat?.status || null,
+  screen: "ChatScreen",
+  extra: {
+    counterpartName: counterpartName || "",
+    twilioChannelSid: getTwilioChannelSid(chat),
+  },
+});
+
+const mapGiftIntentForResponse = async (intent, currentUserId) => {
+  const populatedIntent = await GiftIntent.findById(intent._id)
+    .populate("senderId", "name username photos")
+    .populate("recipientId", "name username photos")
+    .lean();
+
+  if (!populatedIntent) return null;
+
+  const isSender =
+    populatedIntent.senderId?._id?.toString?.() === currentUserId?.toString?.();
+  const counterpart = isSender
+    ? populatedIntent.recipientId
+    : populatedIntent.senderId;
+
+  return {
+    intentId: populatedIntent._id,
+    chatId: populatedIntent.chatId,
+    tier: populatedIntent.tier,
+    status: populatedIntent.status,
+    totalAmount: populatedIntent.totalAmount,
+    items: populatedIntent.items || [],
+    senderId: populatedIntent.senderId?._id || populatedIntent.senderId,
+    recipientId: populatedIntent.recipientId?._id || populatedIntent.recipientId,
+    createdAt: populatedIntent.createdAt,
+    updatedAt: populatedIntent.updatedAt,
+    counterpart: {
+      id: counterpart?._id || null,
+      name: counterpart?.name || "",
+      username: counterpart?.username || "",
+      photo:
+        Array.isArray(counterpart?.photos) && counterpart.photos.length > 0
+          ? counterpart.photos[0]
+          : null,
+    },
   };
 };
 
@@ -220,6 +286,22 @@ export const sendCompliment = async (req, res) => {
 
     await chat.save();
 
+    await notificationService.sendToUser(
+      swipedUserId,
+      notificationService.buildNotificationPayload({
+        type: NOTIFICATION_TYPES.COMPLIMENT_RECEIVED,
+        title: "New compliment",
+        body: `${getDisplayName(req.user)} sent you a compliment.`,
+        data: buildChatNotificationData({
+          chat,
+          senderId,
+          recipientId: swipedUserId,
+          counterpartId: senderId,
+          counterpartName: getDisplayName(req.user),
+        }),
+      })
+    );
+
     console.log("🟣 [PHASE 1] Chat saved", {
       chatId: chat._id.toString(),
       status: chat.status,
@@ -365,6 +447,24 @@ export const handleChatRequest = async (req, res) => {
         await chat.save();
       }
 
+      if (senderIdStr && senderIdStr !== userId.toString()) {
+        await notificationService.sendToUser(
+          senderIdStr,
+          notificationService.buildNotificationPayload({
+            type: NOTIFICATION_TYPES.COMPLIMENT_ACCEPTED,
+            title: "Compliment accepted",
+            body: `${getDisplayName(chat.receiverId)} accepted your compliment.`,
+            data: buildChatNotificationData({
+              chat,
+              senderId: receiverIdStr,
+              recipientId: senderIdStr,
+              counterpartId: receiverIdStr,
+              counterpartName: getDisplayName(chat.receiverId),
+            }),
+          })
+        );
+      }
+
       console.log("🟣 [PHASE 1] Chat accepted", {
         chatId: chat._id.toString(),
         alreadyAccepted,
@@ -393,6 +493,24 @@ export const handleChatRequest = async (req, res) => {
       if (!alreadyRejected) {
         chat.status = "rejected";
         await chat.save();
+      }
+
+      if (senderIdStr && senderIdStr !== userId.toString()) {
+        await notificationService.sendToUser(
+          senderIdStr,
+          notificationService.buildNotificationPayload({
+            type: NOTIFICATION_TYPES.COMPLIMENT_REJECTED,
+            title: "Compliment declined",
+            body: `${getDisplayName(chat.receiverId)} declined your compliment request.`,
+            data: buildChatNotificationData({
+              chat,
+              senderId: receiverIdStr,
+              recipientId: senderIdStr,
+              counterpartId: receiverIdStr,
+              counterpartName: getDisplayName(chat.receiverId),
+            }),
+          })
+        );
       }
 
       console.log("🟣 [PHASE 1] Chat rejected", {
@@ -711,6 +829,49 @@ export const saveChatMessage = async (req, res) => {
       totalMessages: chat.messages.length,
     });
 
+    const lastMessage = chat.messages?.[chat.messages.length - 1];
+    const recipientId =
+      senderIdStr === userId.toString() ? receiverIdStr : senderIdStr;
+
+    if (recipientId && recipientId !== userId.toString()) {
+      console.log("[notifications] chat message trigger", {
+        chatId: chat._id.toString(),
+        senderId: String(userId),
+        recipientId: String(recipientId),
+        messageId: lastMessage?._id?.toString?.() || lastMessage?._id || null,
+      });
+
+      const notificationResult = await notificationService.sendToUser(
+        recipientId,
+        notificationService.buildNotificationPayload({
+          type: NOTIFICATION_TYPES.CHAT_MESSAGE,
+          title: "New message",
+          body: `${getDisplayName(req.user)} sent you a message.`,
+          data: buildChatNotificationData({
+            chat,
+            senderId: userId,
+            recipientId,
+            counterpartId: userId,
+            counterpartName: getDisplayName(req.user),
+            messageId: lastMessage?._id,
+          }),
+        })
+      );
+
+      console.log("[notifications] chat message send result", {
+        chatId: chat._id.toString(),
+        recipientId: String(recipientId),
+        sentCount: notificationResult?.sentCount || 0,
+        invalidated: notificationResult?.invalidated || 0,
+      });
+    } else {
+      console.log("[notifications] chat message notification skipped", {
+        chatId: chat._id.toString(),
+        senderId: String(userId),
+        recipientId: recipientId ? String(recipientId) : null,
+      });
+    }
+
     return res.status(200).json({ success: true });
   } catch (error) {
     console.error("🔴 [PHASE 3] Error saving chat message:", error);
@@ -804,6 +965,26 @@ export const createGiftIntent = async (req, res) => {
           : new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
+    await notificationService.sendToUser(
+      recipientId,
+      notificationService.buildNotificationPayload({
+        type: NOTIFICATION_TYPES.GIFT_INTENT_RECEIVED,
+        title: "Gift request received",
+        body: `${getDisplayName(req.user)} sent you a gift intent.`,
+        data: {
+          intentId: giftIntent._id.toString(),
+          chatId: String(chatId),
+          senderId: String(senderId),
+          recipientId: String(recipientId),
+          screen: "GiftIntentDetailsScreen",
+          extra: {
+            counterpartName: getDisplayName(req.user),
+            tier,
+          },
+        },
+      })
+    );
+
     return res.status(201).json({
       success: true,
       giftIntentId: giftIntent._id,
@@ -881,6 +1062,22 @@ export const acceptGiftIntent = async (req, res) => {
     intent.status = "ACCEPTED";
     await intent.save();
 
+    await notificationService.sendToUser(
+      intent.senderId,
+      notificationService.buildNotificationPayload({
+        type: NOTIFICATION_TYPES.GIFT_INTENT_ACCEPTED,
+        title: "Gift accepted",
+        body: "Your gift intent was accepted.",
+        data: {
+          intentId: intent._id.toString(),
+          chatId: intent.chatId?.toString?.() || intent.chatId,
+          senderId: intent.senderId?.toString?.() || intent.senderId,
+          recipientId: intent.recipientId?.toString?.() || intent.recipientId,
+          screen: "GiftIntentDetailsScreen",
+        },
+      })
+    );
+
     console.log("✅ [GIFT] Gift intent accepted", {
       intentId: intent._id.toString(),
       tier: intent.tier,
@@ -940,6 +1137,22 @@ export const rejectGiftIntent = async (req, res) => {
     intent.status = "CANCELLED";
     await intent.save();
 
+    await notificationService.sendToUser(
+      intent.senderId,
+      notificationService.buildNotificationPayload({
+        type: NOTIFICATION_TYPES.GIFT_INTENT_REJECTED,
+        title: "Gift declined",
+        body: "Your gift intent was declined.",
+        data: {
+          intentId: intent._id.toString(),
+          chatId: intent.chatId?.toString?.() || intent.chatId,
+          senderId: intent.senderId?.toString?.() || intent.senderId,
+          recipientId: intent.recipientId?.toString?.() || intent.recipientId,
+          screen: "GiftIntentDetailsScreen",
+        },
+      })
+    );
+
     console.log("❌ [GIFT] Gift intent rejected", {
       intentId: intent._id.toString(),
       tier: intent.tier,
@@ -955,6 +1168,46 @@ export const rejectGiftIntent = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to reject gift",
+    });
+  }
+};
+
+export const getGiftIntentDetails = async (req, res) => {
+  try {
+    const { intentId } = req.params;
+    const userId = req.user.id;
+
+    const intent = await GiftIntent.findById(intentId).lean();
+    if (!intent) {
+      return res.status(404).json({
+        success: false,
+        message: "Gift intent not found",
+      });
+    }
+
+    const participantIds = [
+      intent.senderId?.toString?.(),
+      intent.recipientId?.toString?.(),
+    ].filter(Boolean);
+
+    if (!participantIds.includes(userId.toString())) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to view this gift intent",
+      });
+    }
+
+    const mappedIntent = await mapGiftIntentForResponse(intent, userId);
+
+    return res.status(200).json({
+      success: true,
+      intent: mappedIntent,
+    });
+  } catch (error) {
+    console.error("🔥 [GIFT] getGiftIntentDetails error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch gift intent",
     });
   }
 };
