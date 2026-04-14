@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Camera } from "expo-camera";
 import { PermissionsAndroid } from "react-native";
@@ -23,6 +24,7 @@ export default function VideoInitiateScreen() {
   const [jwtToken, setJwtToken] = useState<string | null>(null);
   const [startingCall, setStartingCall] = useState(false);
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -131,11 +133,21 @@ export default function VideoInitiateScreen() {
       style={{ flex: 1 }}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
+        <View
+          style={[
+            styles.container,
+            { paddingTop: Math.max(insets.top, 12) },
+          ]}
+        >
           <View style={styles.bgOrbOne} />
           <View style={styles.bgOrbTwo} />
 
-          <View style={styles.centerWrap}>
+          <View
+            style={[
+              styles.centerWrap,
+              { paddingBottom: 72 + Math.max(insets.bottom, 12) },
+            ]}
+          >
             <View style={styles.visualRow}>
               <View style={styles.visualDot}>
                 <Icon name="video" size={16} color="#ff5864" />
@@ -204,7 +216,6 @@ const styles = StyleSheet.create({
   centerWrap: {
     flex: 1,
     justifyContent: "center",
-    paddingBottom: 66,
   },
   bgOrbOne: {
     position: "absolute",

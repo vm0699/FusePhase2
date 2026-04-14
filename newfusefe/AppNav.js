@@ -1,12 +1,11 @@
 import React from "react";
-import { Platform } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ProfileProvider } from "./ProfileContext";
 import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import * as SplashScreen from 'expo-splash-screen';
-import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
 
 // Auth + Onboarding
@@ -95,13 +94,6 @@ export default function AppNavigator() {
   });
 
   React.useEffect(() => {
-    if (
-      Platform.OS === "android" &&
-      typeof SystemUI.setLayoutModeAsync === "function"
-    ) {
-      void SystemUI.setLayoutModeAsync("immersive");
-    }
-
     pushManager.start();
 
     return () => {
@@ -128,19 +120,20 @@ export default function AppNavigator() {
   }
 
   return (
-    <ProfileProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <StatusBar style="light" hidden />
-        <NavigationContainer
-          ref={navigationRef}
-          onReady={onLayoutRootView}
-          onStateChange={() =>
-            pushManager.onNavigationStateChange(
-              navigationRef.getCurrentRoute()?.name
-            )
-          }
-        >
-          <Stack.Navigator initialRouteName="AuthGate">
+    <SafeAreaProvider>
+      <ProfileProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <StatusBar style="auto" />
+          <NavigationContainer
+            ref={navigationRef}
+            onReady={onLayoutRootView}
+            onStateChange={() =>
+              pushManager.onNavigationStateChange(
+                navigationRef.getCurrentRoute()?.name
+              )
+            }
+          >
+            <Stack.Navigator initialRouteName="AuthGate">
           <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
           <Stack.Screen name="PhoneVerif" component={PhoneVerif} options={{ headerShown: false }} />
           <Stack.Screen name="CodeVerif" component={CodeVerif} options={{ headerShown: false }} />
@@ -205,9 +198,10 @@ export default function AppNavigator() {
           <Stack.Screen name="UpdateDeliveryLocation" component={UpdateDeliveryLocation} options={{ headerShown: false }} />
           <Stack.Screen name="GiftIntentDetailsScreen" component={GiftIntentDetailsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="GiftOrderTrackingScreen" component={GiftOrderTrackingScreen} options={{ headerShown: false }} />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </GestureHandlerRootView>
-    </ProfileProvider>
+            </Stack.Navigator>
+          </NavigationContainer>
+        </GestureHandlerRootView>
+      </ProfileProvider>
+    </SafeAreaProvider>
   );
 }

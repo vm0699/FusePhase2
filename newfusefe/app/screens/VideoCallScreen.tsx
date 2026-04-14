@@ -11,6 +11,8 @@ import {
 import { WebView } from "react-native-webview";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import * as Linking from "expo-linking";
+import { StatusBar } from "expo-status-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 type VideoCallScreenRouteParams = {
@@ -22,6 +24,7 @@ const SERVER_URL = "http://172.20.10.4:5000";
 
 export default function VideoCallScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const route = useRoute<
     RouteProp<Record<string, VideoCallScreenRouteParams>, string>
   >();
@@ -57,7 +60,16 @@ export default function VideoCallScreen() {
   }, [navigation]);
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: Math.max(insets.top, 12),
+          paddingBottom: Math.max(insets.bottom, 14),
+        },
+      ]}
+    >
+      <StatusBar style="dark" />
       <View style={styles.bgOrbOne} />
       <View style={styles.bgOrbTwo} />
 
@@ -123,9 +135,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FAF8F3",
-    paddingTop: Platform.OS === "ios" ? 52 : 24,
     paddingHorizontal: 14,
-    paddingBottom: 14,
     overflow: "hidden",
   },
   bgOrbOne: {

@@ -1,6 +1,7 @@
 import React from "react";
-import { View, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { User, Users, Heart, Video, MessageCircle } from "lucide-react-native";
 import { useProfile } from "../ProfileContext";
 
@@ -17,9 +18,10 @@ export function BottomNav(props?: any) {
   const route = useRoute();
   const tabState = props?.state;
   const { hasPendingChats } = useProfile();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.outerWrap}>
+    <View style={[styles.outerWrap, { bottom: Math.max(insets.bottom, 10) }]}>
       <View style={styles.container}>
         {navItems.map(({ icon: Icon, label, route: routeName }) => {
           const isActive =
@@ -53,7 +55,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 12,
     right: 12,
-    bottom: Platform.OS === "ios" ? 16 : 10,
     alignItems: "center",
   },
   container: {
@@ -66,7 +67,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     paddingHorizontal: 8,
     paddingTop: 4,
-    paddingBottom: Platform.OS === "ios" ? 10 : 8,
+    paddingBottom: 8,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.6)",
     backgroundColor: "rgba(255,255,255,0.64)",

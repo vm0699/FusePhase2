@@ -4,8 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
   TextInput,
   ScrollView,
   Alert,
@@ -18,6 +16,8 @@ import {
   VideoSourceType,
 } from "react-native-agora";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
+import { StatusBar } from "expo-status-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
 
@@ -39,6 +39,7 @@ type AgoraCallParams = {
 export default function AgoraCallScreen() {
   const route = useRoute<RouteProp<AgoraCallParams, "params">>();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const {
     channelName,
     token,
@@ -189,8 +190,16 @@ export default function AgoraCallScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#FAF8F3" barStyle="dark-content" />
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: 8 + insets.top,
+          paddingBottom: 10 + Math.max(insets.bottom, 0),
+        },
+      ]}
+    >
+      <StatusBar style="dark" />
       <View style={styles.bgOrbOne} />
       <View style={styles.bgOrbTwo} />
 
@@ -297,7 +306,7 @@ export default function AgoraCallScreen() {
           <Ionicons name="play-skip-forward" size={21} color="#ffffff" />
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -306,7 +315,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FAF8F3",
     paddingHorizontal: 12,
-    paddingTop: 8,
     overflow: "hidden",
   },
   bgOrbOne: {
