@@ -14,8 +14,9 @@ import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import OnboardingStepper from "../../components/OnboardingStepper";
+import { API_BASE_URL } from "../config/env";
 
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 
 export default function LocationSetupScreen() {
   const navigation = useNavigation<any>();

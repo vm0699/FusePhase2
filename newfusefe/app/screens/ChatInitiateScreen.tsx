@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-nativ
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { FusePopup } from "../../components/FusePopup";
+import { API_BASE_URL } from "../config/env";
 
 export default function ChatInitiateScreen({ route }) {
   const navigation = useNavigation();
@@ -61,7 +62,7 @@ export default function ChatInitiateScreen({ route }) {
 
       console.log("Sending message...");
 
-      const response = await fetch("http://172.20.10.4:5000/api/chat/send", {
+      const response = await fetch(`${API_BASE_URL}/api/chat/send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

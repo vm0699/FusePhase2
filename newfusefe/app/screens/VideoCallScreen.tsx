@@ -14,13 +14,14 @@ import * as Linking from "expo-linking";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { API_BASE_URL } from "../config/env";
 
 type VideoCallScreenRouteParams = {
   room: string;
   twilioToken: string;
 };
 
-const SERVER_URL = "http://172.20.10.4:5000";
+const SERVER_URL = API_BASE_URL;
 
 export default function VideoCallScreen() {
   const navigation = useNavigation();

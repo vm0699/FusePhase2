@@ -16,6 +16,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authStore } from '../auth/authStore';
 import OnboardingStepper from '../../components/OnboardingStepper';
+import { API_BASE_URL } from '../config/env';
 
 export default function VerifyCodePage() {
   const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -86,7 +87,7 @@ export default function VerifyCodePage() {
       console.log('🟣 [VerifyCode] Sending verifyCode for:', fullPhoneNumber);
 
       const response = await fetch(
-        'http://172.20.10.4:5000/api/auth/verifyCode',
+        `${API_BASE_URL}/api/auth/verifyCode`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useIsFocused } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { API_BASE_URL } from "../config/env";
 
 type RootStackParamList = {
   Interests: { fromFilter?: boolean; currentValue?: string[] };
@@ -29,7 +30,7 @@ type DiscoveryFilters = {
   interests: string[];
 };
 
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 const TEMP_DISCOVERY_INTERESTS_KEY = "temporaryInterests";
 const FILTERS_APPLIED_NOTICE_KEY = "filtersAppliedNoticePending";
 

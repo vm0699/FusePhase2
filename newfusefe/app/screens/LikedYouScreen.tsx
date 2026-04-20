@@ -18,8 +18,9 @@ import { ArrowLeft, Heart, MessageCircle, X } from "lucide-react-native";
 import { BottomNav } from "../../components/BottomNav";
 import { ProfileInfoCard } from "../../components/ProfileInfoCard";
 import { FusePopup } from "../../components/FusePopup";
+import { API_BASE_URL } from "../config/env";
 
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 const SCREEN_BG = "#FFF1F2";
 
 type LikedUser = {

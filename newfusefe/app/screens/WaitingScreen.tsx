@@ -10,8 +10,9 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import io from "socket.io-client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "../config/env";
 
-const SERVER_URL = "http://172.20.10.4:5000";
+const SERVER_URL = API_BASE_URL;
 
 export default function WaitingScreen() {
   const navigation = useNavigation();

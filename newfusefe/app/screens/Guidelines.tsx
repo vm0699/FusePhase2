@@ -4,8 +4,9 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProfileContext } from '../../ProfileContext';
 import { authStore } from '../auth/authStore';
+import { API_BASE_URL } from '../config/env';
 
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 
 export default function GuidelinesPage() {
   const navigation = useNavigation();

@@ -28,9 +28,10 @@ import ZodiacPicker from "../../../components/ZodiacPicker";
 import DrinkingPicker from "../../../components/DrinkingPicker";
 import SmokingPicker from "../../../components/SmokingPicker";
 import MarijuanaPicker from "../../../components/MarijuanaPicker";
+import { API_BASE_URL } from "../../config/env";
 import DrugsPicker from "../../../components/DrugsPicker";
 
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 
 const OPTIONAL_ONBOARDING_STEPS = [
   { key: "pronouns", Component: PronounsPicker },

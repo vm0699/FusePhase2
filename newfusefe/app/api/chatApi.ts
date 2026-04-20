@@ -1,7 +1,8 @@
 // newfusefe/app/api/chatApi.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "../config/env";
 
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 
 type ChatListItem = {
   _id?: string;

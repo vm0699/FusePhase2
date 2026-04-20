@@ -16,6 +16,7 @@ import RNPickerSelect from 'react-native-picker-select';
 import { ProfileContext } from '../../ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingStepper from '../../components/OnboardingStepper';
+import { API_BASE_URL } from '../config/env';
 
 export default function PhoneVerificationPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -69,7 +70,7 @@ export default function PhoneVerificationPage() {
       console.log('🟣 [PhoneVerif] SEND OTP clicked for:', fullPhoneNumber);
 
       const response = await fetch(
-        'http://172.20.10.4:5000/api/auth/verifyPhoneNumber',
+        `${API_BASE_URL}/api/auth/verifyPhoneNumber`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

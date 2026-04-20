@@ -19,9 +19,10 @@ import { useNavigation } from "@react-navigation/native";
 import { chatApi } from "../api/chatApi";
 import { createChatRealtime } from "../realtime/chatRealtime";
 import { FusePopup } from "../../components/FusePopup";
+import { API_BASE_URL } from "../config/env";
 
 
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 
 const datingTips = [
   "💡 Compliment something specific, not generic.",
@@ -1110,4 +1111,3 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Bold",
   },
 });
-

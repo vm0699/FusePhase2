@@ -1,8 +1,9 @@
 import { authStore } from "./authStore";
+import { API_BASE_URL } from "../config/env";
 
 // ✅ Use the SAME BASE_URL you use in screens.
 // If you already have a constants file, move BASE_URL there later.
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 
 function decodeJwtPayload(token: string): any | null {
   try {

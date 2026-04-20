@@ -15,8 +15,9 @@ import { useNavigation } from '@react-navigation/native';
 import { ProfileContext } from '../../ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingStepper from '../../components/OnboardingStepper';
+import { API_BASE_URL } from '../config/env';
 
-const BASE_URL = 'http://172.20.10.4:5000';
+const BASE_URL = API_BASE_URL;
 
 export default function ProfileSetupPage() {
   const navigation = useNavigation<any>();

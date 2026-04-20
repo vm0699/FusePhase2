@@ -13,8 +13,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BottomNav } from "../../components/BottomNav";
 import { useProfile } from "../../ProfileContext";
 import { useFocusEffect } from "@react-navigation/native";
+import { API_BASE_URL } from "../config/env";
 
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 
 export default function ChatListScreen({ navigation }) {
   const [chats, setChats] = useState([]);

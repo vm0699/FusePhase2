@@ -22,8 +22,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import { consumeProfileEditDraft } from "../utils/profileEditDraft";
+import { API_BASE_URL } from "../config/env";
+import * as ImageManipulator from "expo-image-manipulator";
 
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 const PHOTO_SLOT_COUNT = 6;
 
 const hasOwn = (obj: Record<string, any>, key: string) =>
@@ -265,15 +267,49 @@ export default function EditProfilePage() {
           uri,
         });
 
+        const compressAndCalculateSize = async (
+          sourceUri: string,
+          fallback = false
+        ) => {
+          const compressed = await ImageManipulator.manipulateAsync(
+            sourceUri,
+            [{ resize: { width: fallback ? 600 : 800 } }],
+            {
+              compress: fallback ? 0.2 : 0.4,
+              format: ImageManipulator.SaveFormat.JPEG,
+            }
+          );
+
+          const localResponse = await fetch(compressed.uri);
+          const blob = await localResponse.blob();
+
+          return {
+            size: blob.size,
+            photo: {
+              uri: compressed.uri,
+              name: compressed.uri.split("/").pop() || `photo-${index}.jpg`,
+              type: "image/jpeg",
+            },
+          };
+        };
+
+        let { size, photo } = await compressAndCalculateSize(uri);
+
+        if (size > 1024 * 1024) {
+          const fallbackResult = await compressAndCalculateSize(uri, true);
+          size = fallbackResult.size;
+          photo = fallbackResult.photo;
+        }
+
+        if (size > 1024 * 1024) {
+          throw new Error("Image size exceeds 1MB after compression.");
+        }
+
         const formData = new FormData();
         formData.append("phoneNumber", phoneNumber);
         formData.append("replaceIndex", String(index));
         // @ts-ignore
-        formData.append("photos", {
-          uri,
-          name: `photo-${index}.jpg`,
-          type: "image/jpeg",
-        });
+        formData.append("photos", photo);
 
         const response = await fetch(
           `${BASE_URL}/api/profile/upload-photos`,

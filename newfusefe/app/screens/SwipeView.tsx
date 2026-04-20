@@ -20,8 +20,9 @@ import { BottomNav } from "../../components/BottomNav";
 import { ProfileInfoCard } from "../../components/ProfileInfoCard";
 import { FusePopup } from "../../components/FusePopup";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { API_BASE_URL } from "../config/env";
 
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 const DISCOVERY_PAGE_SIZE = 8;
 const PREFETCH_THRESHOLD = 3;
 const DISCOVERY_SESSION_STORAGE_PREFIX = "swipeDiscoverySession:";

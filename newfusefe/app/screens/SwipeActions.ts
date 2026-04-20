@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "../config/env";
 
 export const sendSwipeAction = async (swipedUserId: string, action: "like" | "dislike") => {
   try {
@@ -8,7 +9,7 @@ export const sendSwipeAction = async (swipedUserId: string, action: "like" | "di
       return;
     }
 
-    const response = await fetch("http://172.20.10.4:5000/api/profile/swipe", {
+    const response = await fetch(`${API_BASE_URL}/api/profile/swipe`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

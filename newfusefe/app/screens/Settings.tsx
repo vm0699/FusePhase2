@@ -16,8 +16,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FusePopup } from "../../components/FusePopup";
 import { authClient } from "../auth/authClient";
 import { pushManager } from "../notifications/pushManager";
+import { API_BASE_URL } from "../config/env";
 
-const BASE_URL = "http://172.20.10.4:5000";
+const BASE_URL = API_BASE_URL;
 
 export default function SettingsScreen() {
   const navigation = useNavigation();

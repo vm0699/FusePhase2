@@ -12,8 +12,9 @@ import { SelectableTag } from '../../components/SelectableTag';
 import { CircularNextButton } from '../../components/CircularNextButton';
 import { useProfile } from '../../ProfileContext';
 import OnboardingStepper from '../../components/OnboardingStepper';
+import { API_BASE_URL } from '../config/env';
 
-const BASE_URL = 'http://172.20.10.4:5000';
+const BASE_URL = API_BASE_URL;
 
 const HEIGHTS = Array.from({ length: 101 }, (_, i) => 120 + i);
 

@@ -8,8 +8,9 @@ import {
 } from 'react-native';
 import { authClient } from '../auth/authClient';
 import { authedFetch } from '../auth/apiClient';
+import { API_BASE_URL } from '../config/env';
 
-const BASE_URL = 'http://172.20.10.4:5000';
+const BASE_URL = API_BASE_URL;
 
 export default function AuthGate({ navigation }) {
   const [transientError, setTransientError] = useState(null);
