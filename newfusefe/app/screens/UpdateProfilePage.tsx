@@ -33,6 +33,12 @@ const isLocalAssetUri = (uri: string | null) =>
   typeof uri === "string" &&
   (uri.startsWith("file://") || uri.startsWith("content://") || uri.startsWith("ph://"));
 
+const normalizePhotoSlots = (input: Array<string | null | undefined> = []) => {
+  const next = input.slice(0, PHOTO_SLOT_COUNT).map((value) => value ?? null);
+  while (next.length < PHOTO_SLOT_COUNT) next.push(null);
+  return next;
+};
+
 export default function EditProfilePage() {
   const navigation = useNavigation();
   const { profileData, updateProfileData } = useContext(ProfileContext);
@@ -115,10 +121,9 @@ export default function EditProfilePage() {
           setAge(age || "");
           setGender(gender || "");
 
-          let photoSlots: (string | null)[] = Array.isArray(photos)
-            ? [...photos]
-            : [];
-          while (photoSlots.length < PHOTO_SLOT_COUNT) photoSlots.push(null);
+          const photoSlots = normalizePhotoSlots(
+            Array.isArray(photos) ? photos : []
+          );
           setPhotos(photoSlots);
 
           setPrompts(prompts || []);
@@ -175,15 +180,35 @@ export default function EditProfilePage() {
 
   const handlePickPhoto = async (index: number) => {
     try {
+      console.log("[UpdateProfilePage] handlePickPhoto:start", {
+        index,
+        currentPhotos: photos,
+      });
+
       const result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
         quality: 1,
       });
+
+      console.log("[UpdateProfilePage] handlePickPhoto:pickerResult", {
+        index,
+        canceled: result.canceled,
+        assetCount: result.assets?.length || 0,
+        firstAssetUri: result.assets?.[0]?.uri || null,
+      });
+
       if (!result.canceled && result.assets?.length > 0) {
         const uri = result.assets[0].uri;
         const updated = [...photos];
         updated[index] = uri;
-        setPhotos(updated);
+        const normalized = normalizePhotoSlots(updated);
+        console.log("[UpdateProfilePage] handlePickPhoto:setPhotos", {
+          index,
+          replacementUri: uri,
+          normalized,
+        });
+        setPhotos(normalized);
+        updateProfileData("photos", normalized.filter((photo): photo is string => !!photo));
         setIsPhotoChanged(true);
       }
     } catch (error) {
@@ -194,11 +219,22 @@ export default function EditProfilePage() {
   const handleDeletePhoto = (index: number) => {
     const updated = [...photos];
     updated[index] = null;
-    setPhotos(updated);
+    const normalized = normalizePhotoSlots(updated);
+    console.log("[UpdateProfilePage] handleDeletePhoto", {
+      index,
+      normalized,
+    });
+    setPhotos(normalized);
+    updateProfileData("photos", normalized.filter((photo): photo is string => !!photo));
     setIsPhotoChanged(true);
   };
 
   const handleDone = async () => {
+    console.log("[UpdateProfilePage] handleDone:start", {
+      photos,
+      isPhotoChanged,
+      tempFields,
+    });
     setUpdating(true);
     const token = await AsyncStorage.getItem("jwtToken");
     const phoneNumber = profileData?.phoneNumber;
@@ -217,8 +253,17 @@ export default function EditProfilePage() {
         const uri = uploadedPhotoSlots[index];
 
         if (!isLocalAssetUri(uri)) {
+          console.log("[UpdateProfilePage] handleDone:skipUploadExistingRemote", {
+            index,
+            uri,
+          });
           continue;
         }
+
+        console.log("[UpdateProfilePage] handleDone:uploadSlot", {
+          index,
+          uri,
+        });
 
         const formData = new FormData();
         formData.append("phoneNumber", phoneNumber);
@@ -248,6 +293,11 @@ export default function EditProfilePage() {
         }
 
         const data = await response.json();
+        console.log("[UpdateProfilePage] handleDone:uploadResponse", {
+          index,
+          ok: response.ok,
+          data,
+        });
 
         if (!data.success) {
           throw new Error(data.message || "Upload failed");
@@ -267,10 +317,18 @@ export default function EditProfilePage() {
         uploadedPhotoSlots[index] = latestUploadedPhoto;
       }
 
-      setPhotos(uploadedPhotoSlots);
+      const normalizedUploadedSlots = normalizePhotoSlots(uploadedPhotoSlots);
+      console.log("[UpdateProfilePage] handleDone:normalizedUploadedSlots", {
+        normalizedUploadedSlots,
+      });
+      setPhotos(normalizedUploadedSlots);
+      updateProfileData(
+        "photos",
+        normalizedUploadedSlots.filter((photo): photo is string => !!photo)
+      );
 
       // 2️⃣ Build updates payload (tempFields + reordered photos)
-      const cleanPhotos = uploadedPhotoSlots.filter(
+      const cleanPhotos = normalizedUploadedSlots.filter(
         (p): p is string => !!p
       ); // remove nulls, keep order
 
@@ -281,6 +339,8 @@ export default function EditProfilePage() {
       if (isPhotoChanged) {
         updatesPayload.photos = cleanPhotos;
       }
+
+      console.log("[UpdateProfilePage] handleDone:updatesPayload", updatesPayload);
 
       if (Object.keys(updatesPayload).length > 0) {
         try {
@@ -309,6 +369,16 @@ export default function EditProfilePage() {
           }
 
           if (result.data?.profile) {
+            const savedPhotoSlots = normalizePhotoSlots(
+              Array.isArray(result.data.profile.photos)
+                ? result.data.profile.photos
+                : []
+            );
+            console.log("[UpdateProfilePage] handleDone:applySavedProfile", {
+              savedPhotoSlots,
+              profilePhotos: result.data.profile.photos,
+            });
+            setPhotos(savedPhotoSlots);
             updateProfileData(result.data.profile);
           }
 
@@ -417,10 +487,22 @@ export default function EditProfilePage() {
 
   const renderPhotoItem = ({
     item,
-    index,
+    getIndex,
     drag,
     isActive,
   }: any) => {
+    const index = typeof getIndex === "function" ? getIndex() : -1;
+
+    console.log("[UpdateProfilePage] renderPhotoItem", {
+      index,
+      item,
+      isActive,
+    });
+
+    if (index < 0) {
+      return null;
+    }
+
     return (
       <View style={styles.photoWrapper}>
         <Pressable
@@ -440,9 +522,13 @@ export default function EditProfilePage() {
           }}
         >
           {item ? (
-            <Image source={{ uri: item }} style={styles.photo} />
+            <Image
+              key={`photo-${index}-${item}`}
+              source={{ uri: item }}
+              style={styles.photo}
+            />
           ) : (
-            <View style={styles.placeholderBox}>
+            <View key={`photo-${index}-empty`} style={styles.placeholderBox}>
               <Ionicons name="add" size={24} color="#aaa" />
             </View>
           )}
@@ -510,6 +596,7 @@ export default function EditProfilePage() {
           <View style={styles.draggableContainer}>
             <DraggableFlatList
               data={photos}
+              extraData={photos}
               numColumns={3}
               keyExtractor={(_, index) => index.toString()}
               renderItem={renderPhotoItem}

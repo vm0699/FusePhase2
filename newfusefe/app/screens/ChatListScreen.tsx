@@ -105,9 +105,10 @@ export default function ChatListScreen({ navigation }) {
                 return null;
               }
 
-              const profilePic = item.user.photos?.[0]
-                ? `${BASE_URL}/uploads/${item.user.photos[0]}`
-                : null;
+              const profilePic =
+                typeof item.user.photos?.[0] === "string"
+                  ? item.user.photos[0]
+                  : null;
               const isPending = item.status === "pending";
 
               return (

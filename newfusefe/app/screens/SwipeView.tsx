@@ -1197,7 +1197,7 @@ const styles = StyleSheet.create({
   // DISLIKE BUTTON
   crossBtn: {
     position: "absolute",
-    bottom: 90,
+    bottom: 110,
     left: 22,
     width: 50,
     height: 50,
