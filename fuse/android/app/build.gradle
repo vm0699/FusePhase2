@@ -129,6 +129,7 @@ android {
     }
     packagingOptions {
         pickFirst "**/libaosl.so"
+        pickFirst '**/libworklets.so'
         jniLibs {
             def enableLegacyPackaging = findProperty('expo.useLegacyPackaging') ?: 'false'
             useLegacyPackaging enableLegacyPackaging.toBoolean()
