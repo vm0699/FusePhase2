@@ -27,8 +27,15 @@ export default function WaitingScreen() {
   useEffect(() => {
     let isMounted = true;
 
+    console.log("[video-client] waiting_screen_opened", {
+      userId,
+      interests,
+      serverUrl: SERVER_URL,
+    });
+
     const leaveQueueAndDisconnect = (reason = "left") => {
       if (socket.current) {
+        console.log("[video-client] leaving_queue", { userId, reason });
         socket.current.emit("leave_video_queue", { userId, reason });
         socket.current.disconnect();
         socket.current = null;
@@ -112,6 +119,12 @@ export default function WaitingScreen() {
         return navigation.goBack();
       }
 
+      if (!SERVER_URL) {
+        console.error("[video-client] missing_server_url");
+        Alert.alert("Error", "API base URL is missing.");
+        return navigation.goBack();
+      }
+
       socket.current = io(SERVER_URL, {
         path: "/socket.io",
         transports: ["websocket", "polling"],
@@ -124,6 +137,11 @@ export default function WaitingScreen() {
 
       socket.current.on("connect", () => {
         const normalizedInterests = interests.map((i) => i.toLowerCase());
+        console.log("[video-client] socket_connected", {
+          socketId: socket.current?.id,
+          userId,
+          interests: normalizedInterests,
+        });
         socket.current.emit("join_video_queue", {
           userId,
           interests: normalizedInterests,
@@ -131,11 +149,15 @@ export default function WaitingScreen() {
       });
 
       socket.current.on("queue_joined", () => {
+        console.log("[video-client] queue_joined", { userId });
         waitingRef.current = true;
         setWaiting(true);
       });
 
-      socket.current.on("match_found", handleMatchFound);
+      socket.current.on("match_found", (payload) => {
+        console.log("[video-client] match_found", payload);
+        handleMatchFound(payload);
+      });
 
       socket.current.on("queue_error", (err) => {
         console.error("Queue error:", err);
@@ -143,11 +165,17 @@ export default function WaitingScreen() {
       });
 
       socket.current.on("disconnect", () => {
-        console.log("Socket disconnected");
+        console.log("[video-client] socket_disconnected", { userId });
       });
 
       socket.current.on("connect_error", (err) => {
-        console.error("Socket error:", err);
+        console.error("[video-client] socket_connect_error", {
+          userId,
+          serverUrl: SERVER_URL,
+          message: err?.message || null,
+          description: err?.description || null,
+          type: err?.type || null,
+        });
       });
 
       timeoutRef.current = setTimeout(() => {
