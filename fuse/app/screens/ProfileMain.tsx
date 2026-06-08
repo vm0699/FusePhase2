@@ -336,6 +336,21 @@ const ProfilePage = ({ navigation }) => {
           <Text style={styles.editProfileText}>Edit Profile</Text>
         </TouchableOpacity>
 
+        {/* My Gifts */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("MyGiftsScreen")}
+          style={styles.myGiftsButton}
+        >
+          <Icon name="gift" size={16} color="#ff5864" style={{ marginRight: 8 }} />
+          <Text style={styles.myGiftsText}>My gifts</Text>
+          <Icon
+            name="chevron-right"
+            size={18}
+            color="#9CA3AF"
+            style={{ marginLeft: "auto" }}
+          />
+        </TouchableOpacity>
+
         {/* Logout */}
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
           <Icon name="log-out" size={15} color="#6B7280" style={{ marginRight: 8 }} />
@@ -538,6 +553,24 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 16,
     fontFamily: "Poppins-Bold",
+  },
+  myGiftsButton: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    flexDirection: "row",
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
+  },
+  myGiftsText: {
+    color: "#1a1a1a",
+    fontWeight: "600",
+    fontSize: 15,
+    fontFamily: "Poppins-SemiBold",
   },
   logoutButton: {
     marginHorizontal: 16,

@@ -1,0 +1,75 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Git / tool output
+.git/
+graphify-out/
+**/graphify-out/
+
+# Expo / React Native / native generated folders
+.expo/
+**/.expo/
+fuse/android/
+fuse/ios/
+**/android/.gradle/
+**/android/build/
+**/android/app/build/
+**/ios/Pods/
+
+# Build/cache/output
+build/
+dist/
+coverage/
+.cache/
+tmp/
+temp/
+
+# Secrets / logs / keys
+.env
+.env.*
+**/.env
+**/.env.*
+*.log
+*.jks
+*.keystore
+**/*.jks
+**/*.keystore
+
+# Media/images/assets that trigger semantic extraction
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.svg
+*.ico
+*.mp4
+*.mov
+*.avi
+*.mp3
+*.wav
+*.ttf
+*.otf
+
+# Heavy docs that trigger semantic extraction
+*.pdf
+*.doc
+*.docx
+*.ppt
+*.pptx
+*.xlsx
+*.csv
+
+# Markdown/docs are read directly by Claude, not needed in Graphify code graph
+*.md
+docs/
+
+# Old/unrelated folder if not needed for Fuse gift implementation
+g/
+
+# Markdown/docs are read directly by Claude, not needed in Graphify code graph
+CLAUDE.md
+docs/
+*.md
+**/*.md

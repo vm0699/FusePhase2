@@ -10,6 +10,10 @@ export const NOTIFICATION_TYPES = {
   GIFT_PAYMENT_FAILED: "GIFT_PAYMENT_FAILED",
   GIFT_ORDER_DISPATCHED: "GIFT_ORDER_DISPATCHED",
   GIFT_ORDER_DELIVERED: "GIFT_ORDER_DELIVERED",
+  GIFT_ORDER_STATUS: "GIFT_ORDER_STATUS",
+  GIFT_ORDER_DECLINED: "GIFT_ORDER_DECLINED",
+  GIFT_REFUND_UPDATE: "GIFT_REFUND_UPDATE",
+  GIFT_ADMIN_NEW_ORDER: "GIFT_ADMIN_NEW_ORDER",
   VIDEO_CALL_INVITE: "VIDEO_CALL_INVITE",
   VIDEO_CALL_MISSED: "VIDEO_CALL_MISSED",
   ACCOUNT_ALERT: "ACCOUNT_ALERT",
@@ -69,6 +73,26 @@ export const NOTIFICATION_DEFAULTS = {
   [NOTIFICATION_TYPES.GIFT_ORDER_DELIVERED]: {
     title: "Gift delivered",
     body: "Your gift order was delivered.",
+    screen: "GiftOrderTrackingScreen",
+  },
+  [NOTIFICATION_TYPES.GIFT_ORDER_STATUS]: {
+    title: "Gift update",
+    body: "There's an update on your gift order.",
+    screen: "GiftOrderTrackingScreen",
+  },
+  [NOTIFICATION_TYPES.GIFT_ORDER_DECLINED]: {
+    title: "Gift declined",
+    body: "Your gift could not be delivered.",
+    screen: "GiftOrderTrackingScreen",
+  },
+  [NOTIFICATION_TYPES.GIFT_REFUND_UPDATE]: {
+    title: "Refund update",
+    body: "There's an update on your gift refund.",
+    screen: "GiftOrderTrackingScreen",
+  },
+  [NOTIFICATION_TYPES.GIFT_ADMIN_NEW_ORDER]: {
+    title: "New gift order",
+    body: "A new gift order needs review.",
     screen: "GiftOrderTrackingScreen",
   },
   [NOTIFICATION_TYPES.VIDEO_CALL_INVITE]: {

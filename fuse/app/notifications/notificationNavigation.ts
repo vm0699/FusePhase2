@@ -54,6 +54,10 @@ export function resolveNotificationRoute(
     case NOTIFICATION_TYPES.GIFT_PAYMENT_SUCCESS:
     case NOTIFICATION_TYPES.GIFT_ORDER_DISPATCHED:
     case NOTIFICATION_TYPES.GIFT_ORDER_DELIVERED:
+    case NOTIFICATION_TYPES.GIFT_ORDER_STATUS:
+    case NOTIFICATION_TYPES.GIFT_ORDER_DECLINED:
+    case NOTIFICATION_TYPES.GIFT_REFUND_UPDATE:
+    case NOTIFICATION_TYPES.GIFT_ADMIN_NEW_ORDER:
       if (!data.orderId && data.intentId) {
         return {
           name: "GiftIntentDetailsScreen",

@@ -78,6 +78,9 @@ import LocationSetupScreen from "./app/screens/LocationSetupScreen";
 import UpdateDeliveryLocation from "./app/screens/UpdateDeliveryLocation";
 import GiftIntentDetailsScreen from "./app/screens/GiftIntentDetailsScreen";
 import GiftOrderTrackingScreen from "./app/screens/GiftOrderTrackingScreen";
+import GiftCatalogScreen from "./app/screens/GiftCatalogScreen";
+import GiftItemDetailScreen from "./app/screens/GiftItemDetailScreen";
+import MyGiftsScreen from "./app/screens/MyGiftsScreen";
 import { navigationRef } from "./app/navigation/navigationRef";
 import { pushManager } from "./app/notifications/pushManager";
 
@@ -198,6 +201,9 @@ export default function AppNavigator() {
           <Stack.Screen name="UpdateDeliveryLocation" component={UpdateDeliveryLocation} options={{ headerShown: false }} />
           <Stack.Screen name="GiftIntentDetailsScreen" component={GiftIntentDetailsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="GiftOrderTrackingScreen" component={GiftOrderTrackingScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="GiftCatalog" component={GiftCatalogScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="GiftItemDetail" component={GiftItemDetailScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="MyGiftsScreen" component={MyGiftsScreen} options={{ headerShown: false }} />
             </Stack.Navigator>
           </NavigationContainer>
         </GestureHandlerRootView>

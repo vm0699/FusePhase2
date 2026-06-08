@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 
 import { chatApi } from "../api/chatApi";
+import { giftApi } from "../api/giftApi";
 import { createChatRealtime } from "../realtime/chatRealtime";
 import { FusePopup } from "../../components/FusePopup";
 import { API_BASE_URL } from "../config/env";
@@ -95,6 +96,9 @@ export default function ChatScreen({ route }) {
   // if both sides have sent at least one message, allow chatting even if not 'accepted'
   const [bothChatted, setBothChatted] = useState(false);
 
+  // 🎁 Gift eligibility for this chat (loaded after chat is accepted)
+  const [giftEligibility, setGiftEligibility] = useState<any>(null);
+
   const initialChannelSid = channelSid || twilioChatChannelSid;
   const [activeChannelSid, setActiveChannelSid] = useState(initialChannelSid);
 
@@ -114,6 +118,60 @@ export default function ChatScreen({ route }) {
       showPopup("Chat channel unavailable", "Please reopen the chat.", "error");
     }
   }, [activeChannelSid]);
+
+  // 🎁 Load gift eligibility once the chat is accepted (and after messages flow).
+  useEffect(() => {
+    let active = true;
+    const loadEligibility = async () => {
+      if (!chatId || status !== "accepted") {
+        if (active) setGiftEligibility(null);
+        return;
+      }
+      try {
+        const elig = await giftApi.getEligibility(chatId);
+        if (active) setGiftEligibility(elig);
+      } catch {
+        if (active) setGiftEligibility(null);
+      }
+    };
+    loadEligibility();
+    return () => {
+      active = false;
+    };
+  }, [chatId, status, bothChatted]);
+
+  const giftReasonMessage = (reason?: string | null) => {
+    switch (reason) {
+      case "BOTH_USERS_MUST_CHAT_FIRST":
+        return "Chat a little first to unlock gifting.";
+      case "ACTIVE_ORDER_EXISTS":
+        return "There's already an active gift in this chat.";
+      case "LOW_LIMIT_REACHED":
+      case "MID_LIMIT_REACHED":
+        return "You've reached your gifting limit for now. Try again later.";
+      default:
+        return "Gifting isn't available right now.";
+    }
+  };
+
+  const onPressGift = () => {
+    if (!giftEligibility) return;
+    if (giftEligibility.eligible) {
+      (navigation as any).navigate("GiftCatalog", {
+        chatId,
+        recipientId: actualReceiverId || receiverId,
+        recipientName: receiverUsername,
+      });
+    } else {
+      showPopup("Gifting locked", giftReasonMessage(giftEligibility.reason), "info");
+    }
+  };
+
+  // Hide the gift button entirely for blocked/safety-held chats.
+  const showGiftButton =
+    status === "accepted" &&
+    giftEligibility &&
+    !["BLOCKED_CHAT", "SAFETY_HOLD"].includes(giftEligibility.reason || "");
 
   useEffect(() => {
   const init = async () => {
@@ -659,6 +717,22 @@ useEffect(() => {
         )}
 
       <View style={styles.inputContainer}>
+        {showGiftButton && (
+          <TouchableOpacity
+            onPress={onPressGift}
+            style={styles.giftButton}
+            accessibilityLabel="Send a gift"
+          >
+            <Text
+              style={[
+                styles.giftButtonText,
+                !giftEligibility?.eligible && styles.giftButtonLocked,
+              ]}
+            >
+              🎁
+            </Text>
+          </TouchableOpacity>
+        )}
         <TextInput
             value={message}
             onChangeText={setMessage}
@@ -916,6 +990,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     color: "#1a1a1a",
     fontFamily: "Poppins",
+  },
+  giftButton: {
+    marginRight: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+    borderWidth: 1.2,
+    borderColor: "#ff5864",
+  },
+  giftButtonText: {
+    fontSize: 20,
+  },
+  giftButtonLocked: {
+    opacity: 0.45,
   },
   sendButton: {
     marginLeft: 10,

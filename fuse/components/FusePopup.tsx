@@ -17,6 +17,9 @@ type FusePopupProps = {
   tone?: FusePopupTone;
   actionLabel?: string;
   onClose: () => void;
+  /** If provided, the main button becomes this action and a Cancel button is shown below */
+  primaryAction?: { label: string; onPress: () => void };
+  secondaryAction?: { label: string; onPress: () => void };
 };
 
 const toneStyles: Record<FusePopupTone, { pillBg: string; pillText: string }> = {
@@ -33,6 +36,8 @@ export function FusePopup({
   tone = "default",
   actionLabel = "Got it",
   onClose,
+  primaryAction,
+  secondaryAction,
 }: FusePopupProps) {
   const theme = toneStyles[tone];
 
@@ -52,9 +57,25 @@ export function FusePopup({
           </View>
           <Text style={styles.title}>{title}</Text>
           {!!message && <Text style={styles.message}>{message}</Text>}
-          <TouchableOpacity style={styles.button} onPress={onClose}>
-            <Text style={styles.buttonText}>{actionLabel}</Text>
-          </TouchableOpacity>
+          {primaryAction ? (
+            <>
+              <TouchableOpacity style={styles.button} onPress={primaryAction.onPress}>
+                <Text style={styles.buttonText}>{primaryAction.label}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={secondaryAction ? secondaryAction.onPress : onClose}
+              >
+                <Text style={styles.secondaryButtonText}>
+                  {secondaryAction ? secondaryAction.label : "Cancel"}
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={onClose}>
+              <Text style={styles.buttonText}>{actionLabel}</Text>
+            </TouchableOpacity>
+          )}
         </Pressable>
       </Pressable>
     </Modal>
@@ -119,5 +140,17 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 15,
     fontFamily: "Poppins-Bold",
+  },
+  secondaryButton: {
+    marginTop: 10,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  secondaryButtonText: {
+    color: "#6B7280",
+    fontSize: 14,
+    fontFamily: "Poppins-SemiBold",
   },
 });
