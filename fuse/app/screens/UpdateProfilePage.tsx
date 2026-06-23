@@ -24,6 +24,7 @@ import DraggableFlatList from "react-native-draggable-flatlist";
 import { consumeProfileEditDraft } from "../utils/profileEditDraft";
 import { API_BASE_URL } from "../config/env";
 import * as ImageManipulator from "expo-image-manipulator";
+import { theme } from "../theme";
 
 const BASE_URL = API_BASE_URL;
 const PHOTO_SLOT_COUNT = 6;
@@ -609,9 +610,9 @@ export default function EditProfilePage() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.headerPill} onPress={handleDone}>
+        <TouchableOpacity style={styles.headerPill} onPress={handleDone} disabled={updating}>
           {updating ? (
-            <ActivityIndicator color="#ff5864" />
+            <ActivityIndicator color={theme.colors.brand} size="small" />
           ) : (
             <Text style={styles.done}>Done</Text>
           )}
@@ -756,7 +757,7 @@ export default function EditProfilePage() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FAF8F3" },
+  container: { flex: 1, backgroundColor: theme.colors.bg },
   contentContainer: {
     paddingBottom: 40,
   },
@@ -772,7 +773,7 @@ const styles = StyleSheet.create({
     minWidth: 72,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#ffffff",
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 14,
@@ -789,40 +790,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   cancel: {
-    color: "#6B7280",
-    fontWeight: "600",
+    color: theme.colors.textSecondary,
     fontFamily: "Poppins-SemiBold",
     fontSize: 14,
   },
   done: {
-    color: "#ff5864",
-    fontWeight: "700",
+    color: theme.colors.brand,
     fontFamily: "Poppins-Bold",
     fontSize: 14,
   },
   name: {
     fontSize: 24,
-    color: "#1a1a1a",
+    color: theme.colors.textPrimary,
     fontFamily: "Poppins-Bold",
     textAlign: "center",
   },
   completionPill: {
     marginTop: 4,
-    backgroundColor: "#FFF5F5",
+    backgroundColor: theme.colors.brandSofter,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 5,
   },
   completion: {
     fontSize: 12,
-    color: "#ff5864",
+    color: theme.colors.brand,
     textAlign: "center",
     fontFamily: "Poppins-SemiBold",
   },
   heroCard: {
     marginHorizontal: 16,
     marginBottom: 18,
-    backgroundColor: "#ffffff",
+    backgroundColor: theme.colors.surface,
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingVertical: 22,
@@ -834,7 +833,7 @@ const styles = StyleSheet.create({
   },
   heroEyebrow: {
     fontSize: 12,
-    color: "#9CA3AF",
+    color: theme.colors.textTertiary,
     textTransform: "uppercase",
     letterSpacing: 0.8,
     fontFamily: "Poppins-SemiBold",
@@ -842,13 +841,13 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontSize: 22,
-    color: "#1a1a1a",
+    color: theme.colors.textPrimary,
     fontFamily: "Poppins-Bold",
     marginBottom: 8,
   },
   heroBody: {
     fontSize: 14,
-    color: "#6B7280",
+    color: theme.colors.textSecondary,
     lineHeight: 22,
     fontFamily: "Poppins",
   },
@@ -858,15 +857,15 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   sectionEyebrow: {
-    fontSize: 13,
-    color: "#9CA3AF",
+    fontSize: 11,
+    color: theme.colors.textTertiary,
     textTransform: "uppercase",
-    letterSpacing: 0.8,
+    letterSpacing: 0.9,
     fontFamily: "Poppins-SemiBold",
     marginBottom: 10,
   },
   sectionCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     paddingHorizontal: 18,
     shadowColor: "#000",
@@ -876,7 +875,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   photoSectionCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     paddingTop: 14,
     paddingBottom: 18,
@@ -905,15 +904,15 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: "#FDE2E4",
+    borderColor: theme.colors.brandBorder,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
-    backgroundColor: "#FFF8F8",
+    backgroundColor: theme.colors.brandSofter,
   },
   photoBoxActive: {
     opacity: 0.92,
-    borderColor: "#ff5864",
+    borderColor: theme.colors.brand,
     transform: [{ scale: 1.03 }],
   },
   photo: {
@@ -924,7 +923,7 @@ const styles = StyleSheet.create({
   placeholderBox: {
     width: 80,
     height: 80,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: theme.colors.surfaceSunken,
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
@@ -933,7 +932,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 6,
     right: 6,
-    backgroundColor: "#ff5864",
+    backgroundColor: theme.colors.brand,
     width: 24,
     height: 24,
     borderRadius: 999,
@@ -944,7 +943,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -3,
     right: -3,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: theme.colors.textPrimary,
     width: 22,
     height: 22,
     borderRadius: 11,
@@ -971,15 +970,15 @@ const styles = StyleSheet.create({
   },
   editText: {
     textAlign: "center",
-    fontSize: 14,
-    color: "#6B7280",
+    fontSize: 13,
+    color: theme.colors.textSecondary,
     marginTop: 12,
     fontFamily: "Poppins",
   },
   warning: {
     textAlign: "center",
-    fontSize: 13,
-    color: "#9CA3AF",
+    fontSize: 12,
+    color: theme.colors.textTertiary,
     marginTop: 4,
     fontFamily: "Poppins",
   },
@@ -988,8 +987,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.divider,
   },
   itemRowLast: {
     borderBottomWidth: 0,
@@ -1000,7 +999,7 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     fontSize: 11,
-    color: "#9CA3AF",
+    color: theme.colors.textTertiary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     fontFamily: "Poppins-SemiBold",
@@ -1008,20 +1007,15 @@ const styles = StyleSheet.create({
   },
   itemValue: {
     fontSize: 15,
-    color: "#1a1a1a",
+    color: theme.colors.textPrimary,
     fontFamily: "Poppins",
   },
   chevronBubble: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    backgroundColor: theme.colors.surfaceAlt,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
   },
 });

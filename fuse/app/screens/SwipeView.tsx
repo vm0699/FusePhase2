@@ -15,10 +15,12 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { X, Heart, SlidersHorizontal } from "lucide-react-native";
+import { X, Heart, SlidersHorizontal, Search, RefreshCw } from "lucide-react-native";
 import { BottomNav } from "../../components/BottomNav";
 import { ProfileInfoCard } from "../../components/ProfileInfoCard";
 import { FusePopup } from "../../components/FusePopup";
+import { EmptyState } from "../../components/ui";
+import SwipeCardSkeleton from "../../components/skeletons/SwipeCardSkeleton";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { API_BASE_URL } from "../config/env";
 
@@ -35,6 +37,12 @@ type DiscoveryFilters = {
   distanceKm?: number;
   distanceFlex?: boolean;
   interests?: string[];
+  datingIntentions?: string[];
+  religion?: string[];
+  ethnicity?: string[];
+  drinking?: string[];
+  smoking?: string[];
+  activeOnly?: boolean;
 } | null;
 
 type DiscoveryProfile = {
@@ -70,13 +78,17 @@ type DiscoveryProfile = {
   familyPlans?: string;
   pets?: string;
   languages?: string[];
+  // Discovery metadata from backend
+  activityLabel?: string | null;
+  distanceKm?: number | null;
+  sharedInterestCount?: number;
 };
 
 type DiscoverySession = {
   filtersKey: string;
   profiles: DiscoveryProfile[];
   currentProfileIndex: number;
-  currentPage: number;
+  lastCursor: string | null;
   hasMoreProfiles: boolean;
   recycledDeck: boolean;
 };
@@ -92,7 +104,7 @@ export default function SwipeView() {
   const [recycledDeck, setRecycledDeck] = useState(false);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
   const hasFetchedOnceRef = React.useRef(false);
-  const currentPageRef = React.useRef(0);
+  const lastCursorRef = React.useRef<string | null>(null);
   const activeFiltersKeyRef = React.useRef("default");
   const discoverySessionKeyRef = React.useRef<string | null>(null);
   const requestInFlightRef = React.useRef(false);
@@ -213,7 +225,7 @@ export default function SwipeView() {
       );
 
       activeFiltersKeyRef.current = filtersKey;
-      currentPageRef.current = Math.max(parsed.currentPage || 0, 0);
+      lastCursorRef.current = parsed.lastCursor || null;
       setProfiles(safeProfiles);
       setCurrentProfileIndex(safeIndex);
       setHasMoreProfiles(Boolean(parsed.hasMoreProfiles));
@@ -233,13 +245,15 @@ export default function SwipeView() {
   };
 
   const fetchProfilesPage = async ({
-    page,
+    cursor = null,
     reset = false,
     showLoader = false,
+    forceRebuild = false,
   }: {
-    page: number;
+    cursor?: string | null;
     reset?: boolean;
     showLoader?: boolean;
+    forceRebuild?: boolean;
   }) => {
     if (requestInFlightRef.current) return;
 
@@ -265,8 +279,9 @@ export default function SwipeView() {
         },
         body: JSON.stringify({
           filters,
-          page,
+          cursor: reset ? null : cursor,
           limit: DISCOVERY_PAGE_SIZE,
+          ...(forceRebuild && { forceRebuild: true }),
         }),
       });
       const result = await response.json();
@@ -278,7 +293,7 @@ export default function SwipeView() {
       const pagination = result.pagination || {};
 
       activeFiltersKeyRef.current = filtersKey;
-      currentPageRef.current = page;
+      lastCursorRef.current = pagination.nextCursor || null;
       setHasMoreProfiles(Boolean(pagination.hasMore));
       setRecycledDeck(Boolean(pagination.recycled));
 
@@ -314,9 +329,11 @@ export default function SwipeView() {
   const resetAndFetchProfiles = async ({
     showLoader = false,
     refreshingState = false,
+    forceRebuild = false,
   }: {
     showLoader?: boolean;
     refreshingState?: boolean;
+    forceRebuild?: boolean;
   } = {}) => {
     if (deckResetInFlightRef.current) return;
 
@@ -326,12 +343,13 @@ export default function SwipeView() {
     }
     setHasMoreProfiles(true);
     setRecycledDeck(false);
-    currentPageRef.current = 0;
+    lastCursorRef.current = null;
 
     await fetchProfilesPage({
-      page: 1,
+      cursor: null,
       reset: true,
       showLoader,
+      forceRebuild,
     });
   };
 
@@ -396,7 +414,7 @@ export default function SwipeView() {
       return;
     }
 
-    fetchProfilesPage({ page: currentPageRef.current + 1 });
+    fetchProfilesPage({ cursor: lastCursorRef.current });
   }, [currentProfileIndex, hasMoreProfiles, isFetchingMore, loading, profiles.length, refreshing]);
 
   React.useEffect(() => {
@@ -428,14 +446,14 @@ export default function SwipeView() {
       filtersKey: activeFiltersKeyRef.current,
       profiles,
       currentProfileIndex,
-      currentPage: currentPageRef.current,
+      lastCursor: lastCursorRef.current,
       hasMoreProfiles,
       recycledDeck,
     });
   }, [currentProfileIndex, hasMoreProfiles, loading, profiles, recycledDeck]);
 
   const onRefresh = () => {
-    resetAndFetchProfiles({ refreshingState: true });
+    resetAndFetchProfiles({ refreshingState: true, forceRebuild: true });
   };
 
   const sendSwipeAction = async (swipedUserId, action) => {
@@ -655,8 +673,14 @@ export default function SwipeView() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#ff5864" />
+      <View style={styles.container}>
+        <View style={styles.topBar}>
+          <Text style={styles.brand}>Fuse</Text>
+          <View style={styles.iconBtn}>
+            <SlidersHorizontal size={20} color="#1a1a1a" strokeWidth={1.8} />
+          </View>
+        </View>
+        <SwipeCardSkeleton />
       </View>
     );
   }
@@ -689,12 +713,19 @@ export default function SwipeView() {
               <View style={styles.photoBox}>
                 <Image source={{ uri: photo }} style={styles.photo} />
 
-                {/* Name + age: only on first photo */}
+                {/* Name + age + activity badge: only on first photo */}
                 {i === 0 && (
                   <View style={styles.nameOverlay}>
                     <Text style={styles.nameText}>
                       {profile.name}{profile.age ? `,  ${profile.age}` : ""}
                     </Text>
+                    {profile.activityLabel ? (
+                      <View style={styles.activityBadge}>
+                        <Text style={styles.activityBadgeText}>
+                          Active {profile.activityLabel}
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                 )}
 
@@ -834,16 +865,19 @@ export default function SwipeView() {
               </Text>
             </>
           ) : (
-            <>
-              <Text style={styles.emptyTitle}>
-                {recycledDeck ? "Your deck has refreshed" : "No profiles"}
-              </Text>
-              <Text style={styles.emptyBody}>
-                {recycledDeck
+            <EmptyState
+              icon={recycledDeck ? RefreshCw : Search}
+              title={recycledDeck ? "Your deck has refreshed" : "No profiles nearby"}
+              message={
+                recycledDeck
                   ? "Previously swiped profiles are back in rotation."
-                  : "Try adjusting your filters."}
-              </Text>
-            </>
+                  : "Try widening your distance, age range, or interests to see more people."
+              }
+              ctaLabel={recycledDeck ? undefined : "Adjust filters"}
+              onCtaPress={
+                recycledDeck ? undefined : () => navigation.navigate("FilterScreen")
+              }
+            />
           )}
         </View>
       )}
@@ -1005,6 +1039,22 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#fff",
     fontFamily: "Poppins-SemiBold",
+  },
+  activityBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.35)",
+  },
+  activityBadgeText: {
+    fontSize: 11,
+    color: "#fff",
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
   heartBtn: {
     position: "absolute",

@@ -6,16 +6,18 @@ import {
   Image,
   StyleSheet,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
+import { Plus } from 'lucide-react-native';
 import { ProfileContext } from '../../ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useIsFocused } from '@react-navigation/native';
 import { AppState } from 'react-native';
 import OnboardingStepper from '../../components/OnboardingStepper';
+import Button from '../../components/ui/Button';
+import { theme } from '../theme';
 import { API_BASE_URL } from '../config/env';
 
 
@@ -241,7 +243,9 @@ export default function PhotoUploadPage() {
               <Image source={{ uri: photo }} style={styles.image} />
             ) : (
               <View style={styles.addPlaceholder}>
-                <Text style={styles.addIcon}>+</Text>
+                <View style={styles.addIconCircle}>
+                  <Plus size={20} color={theme.colors.brand} strokeWidth={2.5} />
+                </View>
                 <Text style={styles.addLabel}>Add photo</Text>
               </View>
             )}
@@ -256,24 +260,15 @@ export default function PhotoUploadPage() {
         )}
       </Text>
 
-      {uploading && (
-        <ActivityIndicator size="large" color="#ff5864" style={{ marginTop: 16 }} />
-      )}
-
-      <TouchableOpacity
-        style={[
-          styles.submitButton,
-          photos.filter(p => p !== null).length >= 4
-            ? styles.activeButton
-            : styles.disabledButton,
-        ]}
-        disabled={photos.filter(p => p !== null).length < 4 || uploading}
-        onPress={handleSubmit}
-      >
-        <Text style={styles.submitText}>
-          {uploading ? 'Uploading...' : 'Continue'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.submitButton}>
+        <Button
+          label="Continue"
+          loadingLabel="Uploading…"
+          loading={uploading}
+          disabled={photos.filter(p => p !== null).length < 4}
+          onPress={handleSubmit}
+        />
+      </View>
     </View>
   );
 }
@@ -330,10 +325,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addIcon: {
-    fontSize: 28,
-    color: '#D1D5DB',
-    lineHeight: 32,
+  addIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF1F3',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
   },
   addLabel: {
     fontSize: 11,
@@ -356,27 +355,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins',
   },
   submitButton: {
-    paddingVertical: 18,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
     position: 'absolute',
     bottom: 30,
     left: 24,
     right: 24,
-  },
-  activeButton: {
-    backgroundColor: '#ff5864',
-  },
-  disabledButton: {
-    backgroundColor: '#ff5864',
-    opacity: 0.4,
-  },
-  submitText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
   },
 });
 

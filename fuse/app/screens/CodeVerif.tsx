@@ -16,11 +16,13 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authStore } from '../auth/authStore';
 import OnboardingStepper from '../../components/OnboardingStepper';
+import Button from '../../components/ui/Button';
 import { API_BASE_URL } from '../config/env';
 
 export default function VerifyCodePage() {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(30);
+  const [isVerifying, setIsVerifying] = useState(false);
   const navigation = useNavigation();
   const route = useRoute();
   const { phoneNumber, countryCode } = route.params;
@@ -78,6 +80,7 @@ export default function VerifyCodePage() {
   const isComplete = code.every((digit) => digit !== '');
 
   const verifyOTPCode = async () => {
+    setIsVerifying(true);
     try {
       console.log('🟣 [VerifyCode] VERIFY OTP clicked');
 
@@ -104,6 +107,7 @@ export default function VerifyCodePage() {
       console.log('🟣 [VerifyCode] verifyCode response JSON:', result);
 
       if (!result.success) {
+        setIsVerifying(false);
         Alert.alert('Error', result.message || 'Invalid OTP');
         return;
       }
@@ -163,6 +167,7 @@ export default function VerifyCodePage() {
       }
     } catch (error) {
       console.error('❌ [VerifyCode] Error verifying OTP:', error);
+      setIsVerifying(false);
       Alert.alert(
         'Error',
         `An error occurred while verifying the OTP: ${error.message}`
@@ -196,7 +201,11 @@ export default function VerifyCodePage() {
                 .map((_, index) => (
                   <TextInput
                     key={index}
-                    style={styles.inputField}
+                    style={[
+                      styles.inputField,
+                      code[index] !== '' && styles.inputFieldFilled,
+                      isVerifying && styles.inputFieldDisabled,
+                    ]}
                     keyboardType="number-pad"
                     maxLength={1}
                     value={code[index]}
@@ -204,12 +213,18 @@ export default function VerifyCodePage() {
                     onKeyPress={(e) => handleKeyPress(index, e)}
                     ref={inputRefs.current[index]}
                     returnKeyType="next"
+                    editable={!isVerifying}
                   />
                 ))}
             </View>
 
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Text style={styles.changeNumber}>Change number</Text>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              disabled={isVerifying}
+            >
+              <Text style={[styles.changeNumber, isVerifying && { opacity: 0.4 }]}>
+                Change number
+              </Text>
             </TouchableOpacity>
 
             <Text style={styles.timerText}>
@@ -218,16 +233,15 @@ export default function VerifyCodePage() {
           </View>
         </ScrollView>
 
-        <TouchableOpacity
-          style={[
-            styles.nextButton,
-            isComplete && timer > 0 ? styles.activeButton : styles.disabledButton,
-          ]}
-          onPress={verifyOTPCode}
-          disabled={!isComplete || timer <= 0}
-        >
-          <Text style={styles.nextButtonText}>Next</Text>
-        </TouchableOpacity>
+        <View style={styles.nextButton}>
+          <Button
+            label="Next"
+            loadingLabel="Verifying…"
+            loading={isVerifying}
+            onPress={verifyOTPCode}
+            disabled={!isComplete || timer <= 0}
+          />
+        </View>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
@@ -276,7 +290,7 @@ const styles = StyleSheet.create({
   },
   inputField: {
     width: 50,
-    height: 50,
+    height: 54,
     borderBottomWidth: 2,
     borderBottomColor: '#D1D5DB',
     textAlign: 'center',
@@ -284,6 +298,13 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     fontWeight: '500',
     backgroundColor: 'transparent',
+  },
+  inputFieldFilled: {
+    borderBottomColor: '#ff5864',
+    color: '#ff5864',
+  },
+  inputFieldDisabled: {
+    opacity: 0.4,
   },
   changeNumber: {
     fontSize: 16,
@@ -299,27 +320,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins',
   },
   nextButton: {
-    paddingVertical: 18,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
     position: 'absolute',
     bottom: 40,
     left: 24,
     right: 24,
-  },
-  activeButton: {
-    backgroundColor: '#ff5864'
-  },
-  disabledButton: {
-    backgroundColor: '#ff5864',
-    opacity: 0.4
-  },
-  nextButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    fontFamily: 'Poppins-Bold',
   },
 });

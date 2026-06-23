@@ -8,22 +8,50 @@ import {
   Modal,
   Platform,
 } from "react-native";
-import { Switch } from "react-native";
-import Icon from "react-native-vector-icons/Feather";
 import { useNavigation } from "@react-navigation/native";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  ChevronLeft,
+  MapPin,
+  Video,
+  Bell,
+  Shield,
+  HelpCircle,
+  Lock,
+  Trash2,
+  ChevronRight,
+} from "lucide-react-native";
 import { FusePopup } from "../../components/FusePopup";
 import { authClient } from "../auth/authClient";
 import { pushManager } from "../notifications/pushManager";
 import { API_BASE_URL } from "../config/env";
+import { theme } from "../theme";
 
 const BASE_URL = API_BASE_URL;
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type SettingRow = {
+  label: string;
+  sublabel?: string;
+  icon: React.ComponentType<{ size: number; color: string }>;
+  route?: string;
+  danger?: boolean;
+  onPress?: () => void;
+};
+
+type SettingGroup = {
+  header: string;
+  rows: SettingRow[];
+};
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
 export default function SettingsScreen() {
   const navigation = useNavigation();
-  const [locationEnabled, setLocationEnabled] = useState(false);
-  const [userLocation, setUserLocation] = useState(null);
+  const insets = useSafeAreaInsets();
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [popupState, setPopupState] = useState<{
@@ -65,8 +93,6 @@ export default function SettingsScreen() {
       });
 
       const { latitude, longitude } = location.coords;
-      setUserLocation({ latitude, longitude });
-      setLocationEnabled(true);
 
       // Store location in backend
       const token = await AsyncStorage.getItem("jwtToken");
@@ -109,7 +135,7 @@ export default function SettingsScreen() {
         "Account deleted",
         "Account deleted successfully.",
         "success",
-        () => navigation.reset({ index: 0, routes: [{ name: "Login" }] })
+        () => (navigation as any).reset({ index: 0, routes: [{ name: "Login" }] })
       );
     } catch (err) {
       showPopup("Error", "Could not delete your account. Please try again.", "error");
@@ -119,110 +145,177 @@ export default function SettingsScreen() {
     }
   };
 
+  // ─── Setting groups ─────────────────────────────────────────────────────────
+
+  const groups: SettingGroup[] = [
+    {
+      header: "Account",
+      rows: [
+        {
+          label: "Delivery location",
+          sublabel: "Update address for gifts & surprises",
+          icon: MapPin,
+          route: "UpdateDeliveryLocation",
+        },
+      ],
+    },
+    {
+      header: "Preferences",
+      rows: [
+        {
+          label: "Video autoplay",
+          icon: Video,
+          route: "Video Autoplay",
+        },
+        {
+          label: "Notifications",
+          icon: Bell,
+          route: "NotificationSettings",
+        },
+        {
+          label: "Privacy settings",
+          icon: Lock,
+          route: "Privacy Settings",
+        },
+      ],
+    },
+    {
+      header: "Safety & Support",
+      rows: [
+        {
+          label: "Security & privacy",
+          icon: Shield,
+          route: "SecuritySettings",
+        },
+        {
+          label: "Contact & FAQ",
+          icon: HelpCircle,
+          route: "Contact FAQ",
+        },
+      ],
+    },
+    {
+      header: "Danger zone",
+      rows: [
+        {
+          label: "Delete account",
+          icon: Trash2,
+          danger: true,
+          onPress: () => setShowDeletePopup(true),
+        },
+      ],
+    },
+  ];
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
+
+  const renderGroup = (group: SettingGroup, gIdx: number) => (
+    <View key={gIdx} style={styles.group}>
+      <Text style={styles.groupHeader}>{group.header.toUpperCase()}</Text>
+      <View style={[styles.groupCard, group.header === "Danger zone" && styles.groupCardDanger]}>
+        {group.rows.map((row, rIdx) => {
+          const IconComp = row.icon;
+          const isLast = rIdx === group.rows.length - 1;
+          return (
+            <TouchableOpacity
+              key={rIdx}
+              style={[styles.row, !isLast && styles.rowDivider]}
+              onPress={() => {
+                if (row.onPress) {
+                  row.onPress();
+                } else if (row.route) {
+                  (navigation as any).navigate(row.route);
+                }
+              }}
+              activeOpacity={0.65}
+            >
+              <View style={[styles.iconBubble, row.danger && styles.iconBubbleDanger]}>
+                <IconComp
+                  size={16}
+                  color={row.danger ? theme.colors.errorFg : theme.colors.textSecondary}
+                />
+              </View>
+              <View style={styles.rowCopy}>
+                <Text style={[styles.rowLabel, row.danger && styles.rowLabelDanger]}>
+                  {row.label}
+                </Text>
+                {!!row.sublabel && (
+                  <Text style={styles.rowSublabel}>{row.sublabel}</Text>
+                )}
+              </View>
+              {!row.danger && (
+                <ChevronRight size={16} color={theme.colors.textTertiary} />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.headerPill}
-          onPress={() => navigation.navigate("Profile")}
+          style={styles.backBtn}
+          onPress={() => navigation.navigate("Profile" as never)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.headerButton}>Cancel</Text>
+          <ChevronLeft size={22} color={theme.colors.textPrimary} />
         </TouchableOpacity>
-
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Settings</Text>
-          <Text style={styles.headerSubtitle}>
-            Privacy, safety, and app preferences
-          </Text>
+          <Text style={styles.headerSubtitle}>Privacy, safety & preferences</Text>
         </View>
-
-        <TouchableOpacity
-          style={styles.headerPill}
-          onPress={() => showPopup("Settings saved", "Your preferences were updated.", "success")}
-        >
-          <Text style={styles.headerDone}>Done</Text>
-        </TouchableOpacity>
+        {/* Spacer to balance back button */}
+        <View style={styles.backBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        {/* Delivery Location - replaces toggle UI only */}
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate("UpdateDeliveryLocation")}
-        >
-          <View style={styles.cardRow}>
-            <View style={styles.cardTextWrap}>
-              <Text style={styles.cardTitle}>Delivery location</Text>
-              <Text style={styles.subText}>
-                Update address for gifts, surprises, and future features.
-              </Text>
-            </View>
-            <View style={styles.chevronBubble}>
-              <Icon name="chevron-right" size={16} color="#6B7280" />
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        {/* Other Settings */}
-        {[
-          { title: "Video autoplay settings", route: "Video Autoplay" },
-          { title: "Notification settings", route: "NotificationSettings" },
-          { title: "Security and Privacy", route: "SecuritySettings" },
-          { title: "Contact and FAQ", route: "Contact FAQ" },
-        ].map((setting, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.card}
-            onPress={() => setting.route && navigation.navigate(setting.route)}
-          >
-            <View style={styles.cardRow}>
-              <Text style={styles.cardText}>{setting.title}</Text>
-              <View style={styles.chevronBubble}>
-                <Icon name="chevron-right" size={16} color="#6B7280" />
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-
-        {/* Delete Account */}
-        <TouchableOpacity
-          onPress={() => setShowDeletePopup(true)}
-          style={[styles.card, styles.deleteButton]}
-        >
-          <Text style={styles.deleteText}>Delete account</Text>
-        </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {groups.map((group, idx) => renderGroup(group, idx))}
 
         {/* Footer */}
         <View style={styles.footer}>
-          <View style={styles.footerBar}></View>
+          <View style={styles.footerBar} />
           <Text style={styles.footerText}>Version 5.392.0</Text>
-          <Text style={styles.footerText}>Created with love.</Text>
+          <Text style={styles.footerText}>Made with love.</Text>
         </View>
       </ScrollView>
 
-      {/* Delete Account Modal */}
+      {/* Delete account confirmation modal */}
       <Modal visible={showDeletePopup} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
+            <View style={styles.modalIconWrap}>
+              <Trash2 size={26} color={theme.colors.errorFg} />
+            </View>
             <Text style={styles.modalTitle}>Wait. Leaving so soon?</Text>
             <Text style={styles.modalText}>
-              Deleting your account will remove all chats, likes, and photos.
+              Deleting your account will remove all chats, likes, and photos permanently.
             </Text>
             <TouchableOpacity
-              style={styles.modalButton}
+              style={styles.modalDeleteBtn}
               onPress={handleDeleteAccount}
               disabled={deleting}
             >
-              <Text style={styles.modalButtonText}>
-                {deleting ? "Deleting..." : " Delete"}
+              <Text style={styles.modalDeleteText}>
+                {deleting ? "Deleting…" : "Yes, delete my account"}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowDeletePopup(false)}>
+            <TouchableOpacity
+              style={styles.modalCancelBtn}
+              onPress={() => setShowDeletePopup(false)}
+            >
               <Text style={styles.modalCancelText}>No, I changed my mind</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
       <FusePopup
         visible={popupState.visible}
         title={popupState.title}
@@ -238,24 +331,29 @@ export default function SettingsScreen() {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FAF8F3" },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.bg,
+  },
+
+  // ── Header ──────────────────────────────────────────────────────────────────
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === "ios" ? 60 : 44,
-    paddingBottom: 16,
+    paddingTop: Platform.OS === "ios" ? 0 : 8,
+    paddingBottom: 14,
   },
-  headerPill: {
-    minWidth: 72,
+  backBtn: {
+    width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#ffffff",
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 14,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
@@ -265,143 +363,172 @@ const styles = StyleSheet.create({
   headerCenter: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 10,
-  },
-  headerButton: {
-    fontSize: 14,
-    color: "#6B7280",
-    fontFamily: "Poppins-SemiBold",
-  },
-  headerDone: {
-    fontSize: 14,
-    color: "#ff5864",
-    fontFamily: "Poppins-Bold",
   },
   headerTitle: {
-    fontSize: 24,
-    color: "#1a1a1a",
+    fontSize: 20,
+    color: theme.colors.textPrimary,
     fontFamily: "Poppins-Bold",
+    letterSpacing: 0.1,
   },
   headerSubtitle: {
+    fontSize: 11,
+    color: theme.colors.textTertiary,
+    fontFamily: "Poppins",
+    marginTop: 1,
+  },
+
+  // ── Scroll ──────────────────────────────────────────────────────────────────
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 48,
+  },
+
+  // ── Groups ──────────────────────────────────────────────────────────────────
+  group: {
+    marginBottom: 24,
+  },
+  groupHeader: {
+    fontSize: 11,
+    color: theme.colors.textTertiary,
+    fontFamily: "Poppins-SemiBold",
+    letterSpacing: 0.9,
+    marginBottom: 8,
+    paddingLeft: 4,
+  },
+  groupCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 18,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  groupCardDanger: {
+    backgroundColor: theme.colors.errorBg,
+  },
+
+  // ── Rows ────────────────────────────────────────────────────────────────────
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 14,
+  },
+  rowDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.divider,
+  },
+  iconBubble: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: theme.colors.surfaceAlt,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconBubbleDanger: {
+    backgroundColor: theme.colors.errorBg,
+  },
+  rowCopy: {
+    flex: 1,
+  },
+  rowLabel: {
+    fontSize: 15,
+    color: theme.colors.textPrimary,
+    fontFamily: "Poppins-SemiBold",
+  },
+  rowLabelDanger: {
+    color: theme.colors.errorFg,
+  },
+  rowSublabel: {
     fontSize: 12,
-    color: "#9CA3AF",
+    color: theme.colors.textTertiary,
     fontFamily: "Poppins",
     marginTop: 2,
   },
-  scrollViewContent: { paddingBottom: 80 },
-  card: {
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 18,
-    marginBottom: 12,
-    marginHorizontal: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+
+  // ── Footer ──────────────────────────────────────────────────────────────────
+  footer: {
+    alignItems: "center",
+    paddingVertical: 8,
+    gap: 4,
   },
-  cardRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
+  footerBar: {
+    width: 36,
+    height: 3,
+    backgroundColor: theme.colors.border,
+    borderRadius: 2,
+    marginBottom: 6,
   },
-  cardTextWrap: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  cardTitle: {
-    fontSize: 16,
-    color: "#1a1a1a",
-    fontFamily: "Poppins-SemiBold",
-  },
-  cardText: {
-    fontSize: 16,
-    color: "#1a1a1a",
-    fontFamily: "Poppins-SemiBold",
-    marginTop: 3,
-  },
-  subText: {
-    fontSize: 13,
-    color: "#6B7280",
-    marginTop: 6,
-    lineHeight: 20,
+  footerText: {
+    color: theme.colors.textTertiary,
+    fontSize: 12,
     fontFamily: "Poppins",
   },
-  chevronBubble: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  deleteButton: { justifyContent: "center", alignItems: "center" },
-  deleteText: {
-    color: "#DC2626",
-    fontFamily: "Poppins-Bold",
-    fontSize: 16,
-  },
-  footer: { alignItems: "center", marginTop: 16, paddingVertical: 16 },
-  footerBar: {
-    width: 40,
-    height: 4,
-    backgroundColor: "#D1D5DB",
-    borderRadius: 2,
-    marginBottom: 8,
-  },
-  footerText: { color: "#9CA3AF", fontSize: 12, fontFamily: "Poppins" },
 
+  // ── Delete modal ─────────────────────────────────────────────────────────────
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: theme.colors.overlay,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
   },
   modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 22,
-    padding: 24,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 24,
+    padding: 28,
     alignItems: "center",
     width: "100%",
     maxWidth: 340,
     elevation: 12,
+    gap: 0,
+  },
+  modalIconWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: theme.colors.errorBg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontFamily: "Poppins-Bold",
-    marginBottom: 10,
-    color: "#1a1a1a",
+    color: theme.colors.textPrimary,
+    marginBottom: 8,
+    textAlign: "center",
   },
   modalText: {
     fontSize: 14,
-    color: "#6B7280",
+    color: theme.colors.textSecondary,
     textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 21,
+    lineHeight: 22,
     fontFamily: "Poppins",
+    marginBottom: 24,
   },
-  modalButton: {
-    backgroundColor: "#e53935",
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 12,
+  modalDeleteBtn: {
+    width: "100%",
+    backgroundColor: theme.colors.errorFg,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+    marginBottom: 10,
   },
-  modalButtonText: {
+  modalDeleteText: {
     color: "#fff",
     fontFamily: "Poppins-Bold",
     fontSize: 15,
   },
+  modalCancelBtn: {
+    paddingVertical: 8,
+  },
   modalCancelText: {
-    color: "#6B7280",
-    marginTop: 12,
+    color: theme.colors.textSecondary,
     fontFamily: "Poppins",
     fontSize: 14,
   },

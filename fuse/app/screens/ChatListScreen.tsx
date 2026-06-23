@@ -3,17 +3,18 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
   StyleSheet,
-  Image,
   Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { MessageCircle } from "lucide-react-native";
 import { BottomNav } from "../../components/BottomNav";
 import { useProfile } from "../../ProfileContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { API_BASE_URL } from "../config/env";
+import { theme } from "../theme";
+import { Avatar, Card, EmptyState } from "../../components/ui";
+import ChatListSkeleton from "../../components/skeletons/ChatListSkeleton";
 
 const BASE_URL = API_BASE_URL;
 
@@ -84,94 +85,95 @@ export default function ChatListScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.heading}>Chats</Text>
+        <Text style={styles.subHeading}>Talk with people you matched with</Text>
+      </View>
+
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ff5864" />
-          <Text style={styles.loadingText}>Loading chats...</Text>
-        </View>
+        <ChatListSkeleton />
       ) : (
-        <>
-          <View style={styles.header}>
-            <Text style={styles.heading}>Chats</Text>
-            <Text style={styles.subHeading}>Talk with people you matched with</Text>
-          </View>
+        <FlatList
+          contentContainerStyle={[
+            styles.listContent,
+            chats.length === 0 && styles.listContentEmpty,
+          ]}
+          data={chats}
+          keyExtractor={(item) => item.chatId || item._id}
+          ListEmptyComponent={
+            <EmptyState
+              icon={MessageCircle}
+              title="No chats yet"
+              message="When you match or accept a compliment, your conversations will show up here."
+            />
+          }
+          renderItem={({ item }) => {
+            if (!item.user || !item.user.name) {
+              console.warn("User data missing for a chat item.");
+              return null;
+            }
 
-          <FlatList
-            contentContainerStyle={styles.listContent}
-            data={chats}
-            keyExtractor={(item) => item.chatId || item._id}
-            renderItem={({ item }) => {
-              if (!item.user || !item.user.name) {
-                console.warn("User data missing for a chat item.");
-                return null;
-              }
+            const profilePic =
+              typeof item.user.photos?.[0] === "string"
+                ? item.user.photos[0]
+                : null;
+            const isPending = item.status === "pending";
 
-              const profilePic =
-                typeof item.user.photos?.[0] === "string"
-                  ? item.user.photos[0]
-                  : null;
-              const isPending = item.status === "pending";
-
-              return (
-                <TouchableOpacity
-                  onPress={() => {
-                    navigation.navigate("ChatScreen", {
-                      receiverId: item.user.id || item.user._id,
-                      receiverUsername: item.user.name,
-                      chatId: item.chatId || item._id,
-                      channelSid: item.twilioChatChannelSid,
-                      twilioChatChannelSid: item.twilioChatChannelSid,
-                      chatStatus: item.status,
-                      actualReceiverId: item.actualReceiverId,
-                      complimentPreview: item.complimentPreview ?? null,
-                      showMatchedBanner: false,
-                    });
-                  }}
-                  style={styles.chatItem}
-                  activeOpacity={0.9}
-                >
-                  <View style={styles.chatRow}>
-                    {profilePic ? (
-                      <Image source={{ uri: profilePic }} style={styles.avatar} />
+            return (
+              <Card
+                onPress={() => {
+                  navigation.navigate("ChatScreen", {
+                    receiverId: item.user.id || item.user._id,
+                    receiverUsername: item.user.name,
+                    chatId: item.chatId || item._id,
+                    channelSid: item.twilioChatChannelSid,
+                    twilioChatChannelSid: item.twilioChatChannelSid,
+                    chatStatus: item.status,
+                    actualReceiverId: item.actualReceiverId,
+                    complimentPreview: item.complimentPreview ?? null,
+                    showMatchedBanner: false,
+                  });
+                }}
+                style={styles.chatItem}
+              >
+                <View style={styles.chatRow}>
+                  <Avatar
+                    uri={profilePic}
+                    name={item.user.name}
+                    size={52}
+                    style={styles.avatar}
+                  />
+                  <View style={styles.chatContent}>
+                    <Text style={styles.chatName}>
+                      {item.user.name || "Unknown User"}
+                    </Text>
+                    {isPending && item.complimentPreview ? (
+                      <Text style={styles.complimentPreview} numberOfLines={1}>
+                        Compliment: {item.complimentPreview}
+                      </Text>
                     ) : (
-                      <View style={styles.avatarPlaceholder}>
-                        <Text style={styles.avatarInitial}>
-                          {(item.user.name || "?").slice(0, 1).toUpperCase()}
-                        </Text>
-                      </View>
+                      <Text style={styles.lastMessageHint}>
+                        Tap to open conversation
+                      </Text>
                     )}
-                    <View style={styles.chatContent}>
-                      <Text style={styles.chatName}>
-                        {item.user.name || "Unknown User"}
-                      </Text>
-                      {isPending && item.complimentPreview ? (
-                        <Text style={styles.complimentPreview} numberOfLines={1}>
-                          Compliment: {item.complimentPreview}
-                        </Text>
-                      ) : (
-                        <Text style={styles.lastMessageHint}>
-                          Tap to open conversation
-                        </Text>
-                      )}
-                    </View>
-                    <View style={styles.badgeRow}>
-                      <Text
-                        style={[
-                          styles.badge,
-                          isPending ? styles.badgePending : styles.badgeMatched,
-                        ]}
-                      >
-                        {isPending ? "Pending" : "Matched"}
-                      </Text>
-                    </View>
                   </View>
-                </TouchableOpacity>
-              );
-            }}
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-          />
-        </>
+                  <View style={styles.badgeRow}>
+                    <Text
+                      style={[
+                        styles.badge,
+                        isPending ? styles.badgePending : styles.badgeMatched,
+                      ]}
+                    >
+                      {isPending ? "Pending" : "Matched"}
+                    </Text>
+                  </View>
+                </View>
+              </Card>
+            );
+          }}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
       )}
 
       <View style={styles.bottomNavWrapper}>
@@ -182,18 +184,7 @@ export default function ChatListScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FAF8F3" },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 10,
-  },
-  loadingText: {
-    fontSize: 13,
-    color: "#9CA3AF",
-    fontFamily: "Poppins",
-  },
+  container: { flex: 1, backgroundColor: theme.colors.bg },
   header: {
     paddingHorizontal: 16,
     paddingTop: Platform.OS === "ios" ? 60 : 44,
@@ -201,14 +192,14 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 26,
-    color: "#1a1a1a",
+    color: theme.colors.textPrimary,
     fontFamily: "Poppins-Bold",
     letterSpacing: 0.2,
   },
   subHeading: {
     marginTop: 2,
     fontSize: 12,
-    color: "#9CA3AF",
+    color: theme.colors.textTertiary,
     fontFamily: "Poppins",
   },
   listContent: {
@@ -216,59 +207,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 92,
   },
+  listContentEmpty: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   chatItem: {
-    padding: 14,
     marginBottom: 12,
-    backgroundColor: "#ffffff",
     borderRadius: 18,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
   },
   chatRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
     marginRight: 12,
-    backgroundColor: "#eee",
-  },
-  avatarPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-    backgroundColor: "#FFF5F5",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#FDE2E4",
-  },
-  avatarInitial: {
-    color: "#ff5864",
-    fontSize: 16,
-    fontFamily: "Poppins-Bold",
   },
   chatContent: { flex: 1 },
   chatName: {
     fontSize: 16,
-    color: "#1a1a1a",
+    color: theme.colors.textPrimary,
     fontFamily: "Poppins-SemiBold",
   },
   complimentPreview: {
     fontSize: 12,
-    color: "#6B7280",
+    color: theme.colors.textSecondary,
     marginTop: 4,
     fontFamily: "Poppins",
   },
   lastMessageHint: {
     fontSize: 12,
-    color: "#9CA3AF",
+    color: theme.colors.textTertiary,
     marginTop: 4,
     fontFamily: "Poppins",
   },
@@ -280,9 +248,10 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     fontSize: 11,
     fontFamily: "Poppins-Bold",
+    overflow: "hidden",
   },
-  badgePending: { backgroundColor: "#FFF5F5", color: "#ff5864" },
-  badgeMatched: { backgroundColor: "#ECFDF5", color: "#059669" },
+  badgePending: { backgroundColor: theme.colors.brandSofter, color: theme.colors.brand },
+  badgeMatched: { backgroundColor: theme.colors.successBg, color: theme.colors.successFg },
   bottomNavWrapper: {
     position: "absolute",
     bottom: 0,

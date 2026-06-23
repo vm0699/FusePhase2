@@ -3,6 +3,7 @@ import {
   saveUserProfile,
   getProfileByPhoneNumber,
   getFilteredProfiles,
+  getDiscoveryPreferences,
   updateUserProfile,
   reorderPhotos,
   deletePhoto,
@@ -43,6 +44,7 @@ router.get('/filteredProfiles', authMiddleware, getFilteredProfiles);
 router.post('/filteredProfiles', authMiddleware, getFilteredProfiles);
 
 router.post('/swipe', authMiddleware, handleSwipe);
+router.get('/discovery-preferences', authMiddleware, getDiscoveryPreferences);
 
 router.put("/reorder-photos", authMiddleware, reorderPhotos);
 router.delete("/delete-photo", authMiddleware, deletePhoto);

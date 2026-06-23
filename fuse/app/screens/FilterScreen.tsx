@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,267 +20,639 @@ type RootStackParamList = {
   Interests: { fromFilter?: boolean; currentValue?: string[] };
   FilterScreen: undefined;
 };
-
 type NavigationProp = StackNavigationProp<RootStackParamList, "FilterScreen">;
 
-type DiscoveryFilters = {
+export type DiscoveryFilters = {
   ageRange: { min: number; max: number };
   ageFlex: boolean;
   distanceKm: number;
   distanceFlex: boolean;
   interests: string[];
+  datingIntentions: string[];
+  religion: string[];
+  ethnicity: string[];
+  drinking: string[];
+  smoking: string[];
+  activeOnly: boolean;
 };
 
-const BASE_URL = API_BASE_URL;
-const TEMP_DISCOVERY_INTERESTS_KEY = "temporaryInterests";
+const TEMP_INTERESTS_KEY = "temporaryInterests";
 const FILTERS_APPLIED_NOTICE_KEY = "filtersAppliedNoticePending";
+
+const DEFAULT_FILTERS: DiscoveryFilters = {
+  ageRange: { min: 18, max: 45 },
+  ageFlex: true,
+  distanceKm: 50,
+  distanceFlex: true,
+  interests: [],
+  datingIntentions: [],
+  religion: [],
+  ethnicity: [],
+  drinking: [],
+  smoking: [],
+  activeOnly: false,
+};
+
+// Option lists matching the existing picker components
+const DATING_INTENTION_OPTIONS = [
+  "Long-term relationship",
+  "Short-term relationship",
+  "New friends",
+  "Open to exploring",
+  "Marriage",
+  "Not sure yet",
+];
+
+const RELIGION_OPTIONS = [
+  "Hindu",
+  "Christian",
+  "Muslim",
+  "Jain",
+  "Sikh",
+  "Buddhist",
+  "Atheist",
+  "Spiritual",
+  "Other",
+];
+
+const ETHNICITY_OPTIONS = [
+  "Asian",
+  "Black",
+  "Latino / Hispanic",
+  "Middle Eastern",
+  "Native American",
+  "Pacific Islander",
+  "South Asian",
+  "White",
+  "Mixed",
+  "Other",
+];
+
+const DRINKING_OPTIONS = ["Yes", "No", "Sometimes", "Prefer not to say"];
+const SMOKING_OPTIONS = ["Yes", "No", "Sometimes", "Prefer not to say"];
+
+// ── Pill chip used for multi-select sections ──────────────────────────────────
+function Chip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[styles.chip, selected && styles.chipSelected]}
+      activeOpacity={0.75}
+    >
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+// ── Section wrapper ───────────────────────────────────────────────────────────
+function Section({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionLabel}>{label}</Text>
+      <View style={styles.sectionCard}>{children}</View>
+    </View>
+  );
+}
+
+// ── Toggle row inside a card ──────────────────────────────────────────────────
+function ToggleRow({
+  label,
+  value,
+  onValueChange,
+}: {
+  label: string;
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+}) {
+  return (
+    <View style={styles.toggleRow}>
+      <Text style={styles.toggleLabel}>{label}</Text>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: "#E5E7EB", true: "#ff9aa3" }}
+        thumbColor={value ? "#ff5864" : "#ffffff"}
+        ios_backgroundColor="#E5E7EB"
+      />
+    </View>
+  );
+}
+
+// ── Divider ───────────────────────────────────────────────────────────────────
+function Divider() {
+  return <View style={styles.divider} />;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const FilterScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const isFocused = useIsFocused();
 
-  const [ageRange, setAgeRange] = useState<[number, number]>([18, 23]);
-  const [distance, setDistance] = useState(17);
-  const [ageExpand, setAgeExpand] = useState(false);
-  const [distanceExpand, setDistanceExpand] = useState(false);
-  const [userInterests, setUserInterests] = useState<string[]>([]);
+  const [filters, setFilters] = useState<DiscoveryFilters>(DEFAULT_FILTERS);
   const [userId, setUserId] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleCancel = async () => {
-    await AsyncStorage.removeItem(TEMP_DISCOVERY_INTERESTS_KEY);
-    navigation.goBack();
-  };
+  // ── helpers ────────────────────────────────────────────────────────────────
+  const toggle = useCallback(<K extends keyof DiscoveryFilters>(
+    field: K,
+    value: DiscoveryFilters[K]
+  ) => {
+    setFilters((prev) => ({ ...prev, [field]: value }));
+  }, []);
 
+  const toggleMulti = useCallback(
+    (field: "datingIntentions" | "religion" | "ethnicity" | "drinking" | "smoking", item: string) => {
+      setFilters((prev) => {
+        const current = prev[field] as string[];
+        return {
+          ...prev,
+          [field]: current.includes(item)
+            ? current.filter((v) => v !== item)
+            : [...current, item],
+        };
+      });
+    },
+    []
+  );
+
+  // ── load ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isFocused) return;
 
     (async () => {
+      setLoading(true);
       const uid = await AsyncStorage.getItem("userId");
-      const token = await AsyncStorage.getItem("jwtToken");
+      const tok = await AsyncStorage.getItem("jwtToken");
       setUserId(uid);
+      setToken(tok);
 
-      if (!uid || !token) return;
-
-      let tempInterests: string[] | null = null;
-      const temp = await AsyncStorage.getItem(TEMP_DISCOVERY_INTERESTS_KEY);
-      if (temp) {
-        try {
-          const parsed = JSON.parse(temp);
-          if (Array.isArray(parsed)) {
-            tempInterests = parsed;
-          }
-        } catch {}
-      }
-
-      const stored = await AsyncStorage.getItem(`filters:${uid}`);
-      if (stored) {
-        try {
-          const parsed: DiscoveryFilters = JSON.parse(stored);
-          setAgeRange([parsed.ageRange.min, parsed.ageRange.max]);
-          setAgeExpand(parsed.ageFlex);
-          setDistance(parsed.distanceKm);
-          setDistanceExpand(parsed.distanceFlex);
-          setUserInterests(tempInterests ?? (parsed.interests || []));
-          return;
-        } catch {}
-      }
-
-      if (tempInterests) {
-        setUserInterests(tempInterests);
+      if (!uid || !tok) {
+        setLoading(false);
         return;
       }
 
-      const res = await fetch(`${BASE_URL}/api/profile`, {
+      // 1. Check for in-progress interest selection from Interests screen
+      let tempInterests: string[] | null = null;
+      try {
+        const temp = await AsyncStorage.getItem(TEMP_INTERESTS_KEY);
+        if (temp) {
+          const parsed = JSON.parse(temp);
+          if (Array.isArray(parsed)) tempInterests = parsed;
+        }
+      } catch {}
+
+      // 2. Try to load from server first (source of truth for cross-device sync)
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/profile/discovery-preferences`, {
+          headers: { Authorization: `Bearer ${tok}` },
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const prefs = json.preferences;
+          if (prefs && typeof prefs === "object") {
+            const merged: DiscoveryFilters = {
+              ageRange: prefs.ageRange ?? DEFAULT_FILTERS.ageRange,
+              ageFlex: prefs.ageFlex ?? DEFAULT_FILTERS.ageFlex,
+              distanceKm: prefs.distanceKm ?? DEFAULT_FILTERS.distanceKm,
+              distanceFlex: prefs.distanceFlex ?? DEFAULT_FILTERS.distanceFlex,
+              interests: tempInterests ?? (prefs.interests ?? []),
+              datingIntentions: prefs.datingIntentions ?? [],
+              religion: prefs.religion ?? [],
+              ethnicity: prefs.ethnicity ?? [],
+              drinking: prefs.drinking ?? [],
+              smoking: prefs.smoking ?? [],
+              activeOnly: prefs.activeOnly ?? false,
+            };
+            setFilters(merged);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {}
+
+      // 3. Fall back to AsyncStorage
+      try {
+        const stored = await AsyncStorage.getItem(`filters:${uid}`);
+        if (stored) {
+          const parsed: DiscoveryFilters = JSON.parse(stored);
+          setFilters({
+            ...DEFAULT_FILTERS,
+            ...parsed,
+            interests: tempInterests ?? parsed.interests ?? [],
+          });
+          setLoading(false);
+          return;
+        }
+      } catch {}
+
+      // 4. Nothing stored — apply tempInterests if any
+      if (tempInterests) {
+        setFilters((prev) => ({ ...prev, interests: tempInterests! }));
+      }
+      setLoading(false);
+    })();
+  }, [isFocused]);
+
+  // Also pick up interest changes when returning from the Interests screen
+  useEffect(() => {
+    if (!isFocused) return;
+    (async () => {
+      try {
+        const temp = await AsyncStorage.getItem(TEMP_INTERESTS_KEY);
+        if (temp) {
+          const parsed = JSON.parse(temp);
+          if (Array.isArray(parsed)) {
+            setFilters((prev) => ({ ...prev, interests: parsed }));
+          }
+        }
+      } catch {}
+    })();
+  }, [isFocused]);
+
+  // ── apply ──────────────────────────────────────────────────────────────────
+  const applyFilters = async () => {
+    if (!userId || saving) return;
+    setSaving(true);
+
+    // 1. Always write to AsyncStorage immediately (fast)
+    await AsyncStorage.setItem(`filters:${userId}`, JSON.stringify(filters));
+    await AsyncStorage.setItem(FILTERS_APPLIED_NOTICE_KEY, "1");
+    await AsyncStorage.removeItem(TEMP_INTERESTS_KEY);
+
+    // 2. Persist to server in the background (fire and forget — don't block UX)
+    if (token) {
+      fetch(`${API_BASE_URL}/api/profile/update`, {
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      });
-      const json = await res.json();
-      if (json?.data?.interests) {
-        setUserInterests(json.data.interests);
-      }
-    })();
-  }, [isFocused]);
+        body: JSON.stringify({ updates: { discoveryPreferences: filters } }),
+      }).catch(() => {});
+    }
 
-  const applyFilters = async () => {
-    if (!userId) return;
-
-    const filters: DiscoveryFilters = {
-      ageRange: { min: ageRange[0], max: ageRange[1] },
-      ageFlex: ageExpand,
-      distanceKm: distance,
-      distanceFlex: distanceExpand,
-      interests: userInterests,
-    };
-
-    await AsyncStorage.setItem(`filters:${userId}`, JSON.stringify(filters));
-    await AsyncStorage.setItem(FILTERS_APPLIED_NOTICE_KEY, "1");
-    await AsyncStorage.removeItem(TEMP_DISCOVERY_INTERESTS_KEY);
+    setSaving(false);
     navigation.goBack();
   };
 
+  // ── clear ──────────────────────────────────────────────────────────────────
   const clearFilters = async () => {
     if (!userId) return;
+    setFilters(DEFAULT_FILTERS);
     await AsyncStorage.removeItem(`filters:${userId}`);
-    await AsyncStorage.removeItem(TEMP_DISCOVERY_INTERESTS_KEY);
+    await AsyncStorage.removeItem(TEMP_INTERESTS_KEY);
+
+    if (token) {
+      fetch(`${API_BASE_URL}/api/profile/update`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ updates: { discoveryPreferences: DEFAULT_FILTERS } }),
+      }).catch(() => {});
+    }
+
+    await AsyncStorage.setItem(FILTERS_APPLIED_NOTICE_KEY, "1");
     navigation.goBack();
   };
+
+  const handleCancel = async () => {
+    await AsyncStorage.removeItem(TEMP_INTERESTS_KEY);
+    navigation.goBack();
+  };
+
+  // ── render ─────────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#ff5864" />
+      </View>
+    );
+  }
+
+  const activeFiltersCount = [
+    filters.datingIntentions.length > 0,
+    filters.religion.length > 0,
+    filters.ethnicity.length > 0,
+    filters.drinking.length > 0,
+    filters.smoking.length > 0,
+    filters.activeOnly,
+    filters.interests.length > 0,
+  ].filter(Boolean).length;
 
   return (
     <View style={styles.screen}>
+      {/* ── HEADER ── */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerPill} onPress={handleCancel}>
-          <Text style={styles.headerButton}>Cancel</Text>
+          <Text style={styles.headerButtonText}>Cancel</Text>
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Filters</Text>
-          <Text style={styles.headerSubtitle}>Tune your discovery preferences</Text>
+          {activeFiltersCount > 0 && (
+            <Text style={styles.headerSubtitle}>
+              {activeFiltersCount} active
+            </Text>
+          )}
         </View>
 
-        <TouchableOpacity style={styles.headerPill} onPress={applyFilters}>
-          <Text style={styles.headerDone}>Apply</Text>
+        <TouchableOpacity
+          style={[styles.headerPill, styles.applyPill]}
+          onPress={applyFilters}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator size="small" color="#ff5864" />
+          ) : (
+            <Text style={styles.headerApplyText}>Apply</Text>
+          )}
         </TouchableOpacity>
       </View>
 
       <ScrollView
-        style={styles.container}
+        style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.label}>How old are they?</Text>
-        <View style={styles.box}>
-          <Text style={styles.valueText}>
-            Between {ageRange[0]} and {ageRange[1]}
-          </Text>
 
-          <Slider
-            minimumValue={18}
-            maximumValue={60}
-            step={1}
-            value={ageRange[0]}
-            onValueChange={(v) => setAgeRange([v, ageRange[1]])}
-            style={styles.slider}
-            minimumTrackTintColor="#ff5864"
-            maximumTrackTintColor="#E5E7EB"
-            thumbTintColor="#ff5864"
-          />
-          <Slider
-            minimumValue={ageRange[0]}
-            maximumValue={60}
-            step={1}
-            value={ageRange[1]}
-            onValueChange={(v) => setAgeRange([ageRange[0], v])}
-            style={styles.slider}
-            minimumTrackTintColor="#ff5864"
-            maximumTrackTintColor="#E5E7EB"
-            thumbTintColor="#ff5864"
-          />
-
-          <View style={styles.toggleRow}>
-            <Text style={styles.helperText}>Expand age range if I run out</Text>
-            <Switch
-              value={ageExpand}
-              onValueChange={setAgeExpand}
-              trackColor={{ false: "#E5E7EB", true: "#ff9aa3" }}
-              thumbColor={ageExpand ? "#ff5864" : "#ffffff"}
+        {/* ── BASICS ── */}
+        <Section label="BASICS">
+          {/* Age range */}
+          <View style={styles.sliderBlock}>
+            <View style={styles.sliderLabelRow}>
+              <Text style={styles.sliderField}>Age</Text>
+              <Text style={styles.sliderValue}>
+                {filters.ageRange.min} – {filters.ageRange.max}
+              </Text>
+            </View>
+            <Slider
+              minimumValue={18}
+              maximumValue={60}
+              step={1}
+              value={filters.ageRange.min}
+              onValueChange={(v) =>
+                toggle("ageRange", {
+                  min: Math.min(v, filters.ageRange.max - 1),
+                  max: filters.ageRange.max,
+                })
+              }
+              style={styles.slider}
+              minimumTrackTintColor="#ff5864"
+              maximumTrackTintColor="#E5E7EB"
+              thumbTintColor="#ff5864"
+            />
+            <Slider
+              minimumValue={18}
+              maximumValue={60}
+              step={1}
+              value={filters.ageRange.max}
+              onValueChange={(v) =>
+                toggle("ageRange", {
+                  min: filters.ageRange.min,
+                  max: Math.max(v, filters.ageRange.min + 1),
+                })
+              }
+              style={styles.slider}
+              minimumTrackTintColor="#ff5864"
+              maximumTrackTintColor="#E5E7EB"
+              thumbTintColor="#ff5864"
+            />
+            <ToggleRow
+              label="Expand age range if I run out"
+              value={filters.ageFlex}
+              onValueChange={(v) => toggle("ageFlex", v)}
             />
           </View>
-        </View>
 
-        <Text style={styles.label}>How far away are they?</Text>
-        <View style={styles.box}>
-          <Text style={styles.valueText}>Up to {distance} km away</Text>
+          <Divider />
 
-          <Slider
-            minimumValue={1}
-            maximumValue={100}
-            step={1}
-            value={distance}
-            onValueChange={setDistance}
-            style={styles.slider}
-            minimumTrackTintColor="#ff5864"
-            maximumTrackTintColor="#E5E7EB"
-            thumbTintColor="#ff5864"
-          />
-
-          <View style={styles.toggleRow}>
-            <Text style={styles.helperText}>Expand distance if I run out</Text>
-            <Switch
-              value={distanceExpand}
-              onValueChange={setDistanceExpand}
-              trackColor={{ false: "#E5E7EB", true: "#ff9aa3" }}
-              thumbColor={distanceExpand ? "#ff5864" : "#ffffff"}
+          {/* Distance */}
+          <View style={styles.sliderBlock}>
+            <View style={styles.sliderLabelRow}>
+              <Text style={styles.sliderField}>Distance</Text>
+              <Text style={styles.sliderValue}>
+                {filters.distanceKm < 100
+                  ? `${filters.distanceKm} km`
+                  : "100+ km"}
+              </Text>
+            </View>
+            <Slider
+              minimumValue={1}
+              maximumValue={100}
+              step={1}
+              value={filters.distanceKm}
+              onValueChange={(v) => toggle("distanceKm", v)}
+              style={styles.slider}
+              minimumTrackTintColor="#ff5864"
+              maximumTrackTintColor="#E5E7EB"
+              thumbTintColor="#ff5864"
+            />
+            <ToggleRow
+              label="Expand distance if I run out"
+              value={filters.distanceFlex}
+              onValueChange={(v) => toggle("distanceFlex", v)}
             />
           </View>
-        </View>
+        </Section>
 
-        <Text style={styles.label}>Shared interests</Text>
-        <Text style={styles.helperTextStandalone}>
-          We will try to show people who share at least one interest.
-        </Text>
+        {/* ── ACTIVITY ── */}
+        <Section label="ACTIVITY">
+          <ToggleRow
+            label="Recently active only"
+            value={filters.activeOnly}
+            onValueChange={(v) => toggle("activeOnly", v)}
+          />
+          {filters.activeOnly && (
+            <Text style={styles.helperNote}>
+              Only show people who were active in the last 7 days.
+            </Text>
+          )}
+        </Section>
 
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() =>
-            navigation.navigate("Interests", {
-              fromFilter: true,
-              currentValue: userInterests,
-            })
-          }
-        >
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.chipsContainer}>
-              {userInterests.length === 0 ? (
-                <Text style={styles.emptyInterestsText}>Tap to choose interests</Text>
+        {/* ── INTERESTS ── */}
+        <Section label="INTERESTS">
+          <TouchableOpacity
+            style={styles.interestsRow}
+            onPress={() =>
+              navigation.navigate("Interests", {
+                fromFilter: true,
+                currentValue: filters.interests,
+              })
+            }
+            activeOpacity={0.8}
+          >
+            <View style={styles.interestsContent}>
+              {filters.interests.length === 0 ? (
+                <Text style={styles.placeholderText}>Tap to choose interests</Text>
               ) : (
-                userInterests.map((item, index) => (
-                  <View key={index} style={styles.chip}>
-                    <Text style={styles.chipText}>{item}</Text>
-                  </View>
-                ))
+                <View style={styles.chipsWrap}>
+                  {filters.interests.map((item) => (
+                    <View key={item} style={styles.chip}>
+                      <Text style={styles.chipText}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
               )}
             </View>
-          </ScrollView>
-          <View style={styles.chevronBubble}>
-            <Ionicons name="chevron-forward" size={16} color="#6B7280" />
-          </View>
-        </TouchableOpacity>
+            <View style={styles.chevron}>
+              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.helperNote}>
+            Profiles matching these interests rank higher.
+          </Text>
+        </Section>
 
+        {/* ── LOOKING FOR ── */}
+        <Section label="LOOKING FOR">
+          <Text style={styles.subLabel}>Dating Intentions</Text>
+          <View style={styles.chipsWrap}>
+            {DATING_INTENTION_OPTIONS.map((opt) => (
+              <Chip
+                key={opt}
+                label={opt}
+                selected={filters.datingIntentions.includes(opt)}
+                onPress={() => toggleMulti("datingIntentions", opt)}
+              />
+            ))}
+          </View>
+        </Section>
+
+        {/* ── LIFESTYLE ── */}
+        <Section label="LIFESTYLE">
+          <Text style={styles.subLabel}>Drinking</Text>
+          <View style={styles.chipsWrap}>
+            {DRINKING_OPTIONS.map((opt) => (
+              <Chip
+                key={opt}
+                label={opt}
+                selected={filters.drinking.includes(opt)}
+                onPress={() => toggleMulti("drinking", opt)}
+              />
+            ))}
+          </View>
+
+          <Divider />
+
+          <Text style={styles.subLabel}>Smoking</Text>
+          <View style={styles.chipsWrap}>
+            {SMOKING_OPTIONS.map((opt) => (
+              <Chip
+                key={opt}
+                label={opt}
+                selected={filters.smoking.includes(opt)}
+                onPress={() => toggleMulti("smoking", opt)}
+              />
+            ))}
+          </View>
+        </Section>
+
+        {/* ── BACKGROUND ── */}
+        <Section label="BACKGROUND">
+          <Text style={styles.subLabel}>Religion</Text>
+          <View style={styles.chipsWrap}>
+            {RELIGION_OPTIONS.map((opt) => (
+              <Chip
+                key={opt}
+                label={opt}
+                selected={filters.religion.includes(opt)}
+                onPress={() => toggleMulti("religion", opt)}
+              />
+            ))}
+          </View>
+
+          <Divider />
+
+          <Text style={styles.subLabel}>Ethnicity</Text>
+          <View style={styles.chipsWrap}>
+            {ETHNICITY_OPTIONS.map((opt) => (
+              <Chip
+                key={opt}
+                label={opt}
+                selected={filters.ethnicity.includes(opt)}
+                onPress={() => toggleMulti("ethnicity", opt)}
+              />
+            ))}
+          </View>
+        </Section>
+
+        {/* ── CLEAR ── */}
         <TouchableOpacity onPress={clearFilters} style={styles.clearButton}>
           <Text style={styles.clearText}>Clear all filters</Text>
         </TouchableOpacity>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   );
 };
+
+export default FilterScreen;
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: "#FAF8F3",
   },
-  container: {
+  loadingContainer: {
     flex: 1,
     backgroundColor: "#FAF8F3",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 36,
-  },
+
+  // HEADER
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: Platform.OS === "ios" ? 60 : 44,
-    paddingBottom: 16,
+    paddingBottom: 14,
+    backgroundColor: "#FAF8F3",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontFamily: "Poppins-Bold",
+    color: "#1a1a1a",
+  },
+  headerSubtitle: {
+    fontSize: 11,
+    fontFamily: "Poppins",
+    color: "#ff5864",
+    marginTop: 1,
   },
   headerPill: {
     minWidth: 72,
-    height: 38,
-    borderRadius: 19,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
@@ -290,147 +663,178 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 10,
+  applyPill: {
+    backgroundColor: "#fff5f6",
   },
-  headerButton: {
+  headerButtonText: {
     fontSize: 14,
     color: "#6B7280",
     fontFamily: "Poppins-SemiBold",
   },
-  headerDone: {
+  headerApplyText: {
     fontSize: 14,
     color: "#ff5864",
     fontFamily: "Poppins-Bold",
   },
-  headerTitle: {
-    fontSize: 24,
-    color: "#1a1a1a",
-    fontFamily: "Poppins-Bold",
+
+  // SCROLL
+  scroll: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 20,
   },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    fontFamily: "Poppins",
-    marginTop: 2,
+
+  // SECTION
+  section: {
+    marginBottom: 20,
   },
-  label: {
-    fontSize: 12,
+  sectionLabel: {
+    fontSize: 11,
     color: "#9CA3AF",
+    fontFamily: "Poppins-SemiBold",
+    letterSpacing: 1,
     textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontFamily: "Poppins-SemiBold",
-    marginTop: 6,
-    marginBottom: 10,
+    marginBottom: 8,
+    marginLeft: 2,
   },
-  valueText: {
-    fontSize: 15,
-    color: "#1a1a1a",
-    fontFamily: "Poppins-SemiBold",
-    marginBottom: 4,
-  },
-  helperText: {
-    fontSize: 13,
-    color: "#6B7280",
-    fontFamily: "Poppins",
-    flex: 1,
-    paddingRight: 10,
-  },
-  helperTextStandalone: {
-    fontSize: 13,
-    color: "#6B7280",
-    fontFamily: "Poppins",
-    marginBottom: 10,
-  },
-  row: {
-    backgroundColor: "#ffffff",
-    padding: 14,
-    borderRadius: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 18,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
-  },
-  box: {
+  sectionCard: {
     backgroundColor: "#ffffff",
     borderRadius: 20,
     padding: 16,
-    marginBottom: 16,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 1 },
     elevation: 2,
   },
+
+  // SLIDERS
+  sliderBlock: {
+    paddingVertical: 4,
+  },
+  sliderLabelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  sliderField: {
+    fontSize: 15,
+    color: "#1a1a1a",
+    fontFamily: "Poppins-SemiBold",
+  },
+  sliderValue: {
+    fontSize: 14,
+    color: "#ff5864",
+    fontFamily: "Poppins-SemiBold",
+  },
+  slider: {
+    width: "100%",
+    height: 36,
+  },
+
+  // TOGGLE ROW
   toggleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 10,
-  },
-  slider: {
-    width: "100%",
-    height: 40,
     marginTop: 8,
   },
-  chipsContainer: {
+  toggleLabel: {
+    fontSize: 13,
+    color: "#6B7280",
+    fontFamily: "Poppins",
+    flex: 1,
+    paddingRight: 12,
+  },
+
+  // DIVIDER
+  divider: {
+    height: 1,
+    backgroundColor: "#F3F4F6",
+    marginVertical: 14,
+  },
+
+  // SUB-LABEL (inside cards)
+  subLabel: {
+    fontSize: 13,
+    color: "#6B7280",
+    fontFamily: "Poppins-SemiBold",
+    marginBottom: 10,
+  },
+
+  // CHIPS
+  chipsWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    alignItems: "center",
-    paddingRight: 8,
+    gap: 8,
+    rowGap: 8,
   },
   chip: {
-    backgroundColor: "#FFF5F5",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 999,
-    marginRight: 8,
-    marginBottom: 6,
+    backgroundColor: "#F3F4F6",
+    borderWidth: 1.5,
+    borderColor: "transparent",
+  },
+  chipSelected: {
+    backgroundColor: "#fff5f6",
+    borderColor: "#ff5864",
   },
   chipText: {
     fontSize: 13,
-    color: "#1a1a1a",
+    color: "#4B5563",
     fontFamily: "Poppins",
   },
-  emptyInterestsText: {
+  chipTextSelected: {
+    color: "#ff5864",
+    fontFamily: "Poppins-SemiBold",
+  },
+
+  // INTERESTS ROW
+  interestsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  interestsContent: {
+    flex: 1,
+  },
+  placeholderText: {
+    fontSize: 14,
     color: "#9CA3AF",
     fontFamily: "Poppins",
-    fontSize: 13,
   },
-  chevronBubble: {
+  chevron: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#F9FAFB",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
     marginLeft: 10,
   },
+
+  // HELPER NOTE
+  helperNote: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "Poppins",
+    marginTop: 8,
+    lineHeight: 17,
+  },
+
+  // CLEAR
   clearButton: {
-    marginTop: 10,
-    marginBottom: 10,
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 14,
+    marginTop: 4,
   },
   clearText: {
     color: "#DC2626",
-    textAlign: "center",
     fontFamily: "Poppins-SemiBold",
     fontSize: 14,
   },
 });
-
-export default FilterScreen;

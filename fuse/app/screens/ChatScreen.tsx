@@ -20,6 +20,7 @@ import { chatApi } from "../api/chatApi";
 import { giftApi } from "../api/giftApi";
 import { createChatRealtime } from "../realtime/chatRealtime";
 import { FusePopup } from "../../components/FusePopup";
+import { Skeleton } from "../../components/ui";
 import { API_BASE_URL } from "../config/env";
 
 
@@ -667,8 +668,27 @@ useEffect(() => {
     >
       <Modal visible={loading} transparent animationType="fade">
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#ff5864" />
-          <Text style={styles.tipText}>{datingTips[tipIndex]}</Text>
+          <View style={styles.skeletonChat}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <View
+                key={i}
+                style={[
+                  styles.skBubbleRow,
+                  i % 2 === 0 ? styles.skLeft : styles.skRight,
+                ]}
+              >
+                <Skeleton
+                  width={i % 2 === 0 ? 210 : 170}
+                  height={46}
+                  radius={18}
+                />
+              </View>
+            ))}
+          </View>
+          <View style={styles.loadingFooter}>
+            <ActivityIndicator size="small" color="#ff5864" />
+            <Text style={styles.tipText}>{datingTips[tipIndex]}</Text>
+          </View>
         </View>
       </Modal>
 
@@ -913,13 +933,32 @@ const styles = StyleSheet.create({
   },
   loadingOverlay: {
     flex: 1,
-    backgroundColor: "rgba(250,248,243,0.95)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "rgba(250,248,243,0.97)",
+    justifyContent: "flex-start",
+    alignItems: "stretch",
     paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 110 : 84,
+  },
+  skeletonChat: {
+    width: "100%",
+  },
+  skBubbleRow: {
+    flexDirection: "row",
+    marginVertical: 7,
+  },
+  skLeft: {
+    justifyContent: "flex-start",
+  },
+  skRight: {
+    justifyContent: "flex-end",
+  },
+  loadingFooter: {
+    marginTop: "auto",
+    alignItems: "center",
+    paddingBottom: 48,
+    gap: 12,
   },
   tipText: {
-    marginTop: 20,
     fontSize: 14,
     color: "#6B7280",
     textAlign: "center",

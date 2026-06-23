@@ -1,6 +1,6 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
+import { createStackNavigator, TransitionPresets } from "@react-navigation/stack";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ProfileProvider } from "./ProfileContext";
@@ -81,6 +81,7 @@ import GiftOrderTrackingScreen from "./app/screens/GiftOrderTrackingScreen";
 import GiftCatalogScreen from "./app/screens/GiftCatalogScreen";
 import GiftItemDetailScreen from "./app/screens/GiftItemDetailScreen";
 import MyGiftsScreen from "./app/screens/MyGiftsScreen";
+import ProfilePreviewScreen from "./app/screens/ProfilePreviewScreen";
 import { navigationRef } from "./app/navigation/navigationRef";
 import { pushManager } from "./app/notifications/pushManager";
 
@@ -136,7 +137,14 @@ export default function AppNavigator() {
               )
             }
           >
-            <Stack.Navigator initialRouteName="AuthGate">
+            <Stack.Navigator
+              initialRouteName="AuthGate"
+              screenOptions={{
+                headerShown: false,
+                gestureEnabled: true,
+                ...TransitionPresets.SlideFromRightIOS,
+              }}
+            >
           <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
           <Stack.Screen name="PhoneVerif" component={PhoneVerif} options={{ headerShown: false }} />
           <Stack.Screen name="CodeVerif" component={CodeVerif} options={{ headerShown: false }} />
@@ -204,6 +212,7 @@ export default function AppNavigator() {
           <Stack.Screen name="GiftCatalog" component={GiftCatalogScreen} options={{ headerShown: false }} />
           <Stack.Screen name="GiftItemDetail" component={GiftItemDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="MyGiftsScreen" component={MyGiftsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ProfilePreview" component={ProfilePreviewScreen} options={{ headerShown: false }} />
             </Stack.Navigator>
           </NavigationContainer>
         </GestureHandlerRootView>

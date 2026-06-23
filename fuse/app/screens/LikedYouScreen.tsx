@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  ActivityIndicator,
   TouchableOpacity,
   Modal,
   TextInput,
@@ -18,6 +17,7 @@ import { ArrowLeft, Heart, MessageCircle, X } from "lucide-react-native";
 import { BottomNav } from "../../components/BottomNav";
 import { ProfileInfoCard } from "../../components/ProfileInfoCard";
 import { FusePopup } from "../../components/FusePopup";
+import LikedYouSkeleton from "../../components/skeletons/LikedYouSkeleton";
 import { API_BASE_URL } from "../config/env";
 
 const BASE_URL = API_BASE_URL;
@@ -370,8 +370,18 @@ export default function LikedYouScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#ff5864" />
+      <View style={styles.container}>
+        <View style={styles.bgOrbTop} />
+        <View style={styles.bgOrbBottom} />
+        <View style={styles.listScroll}>
+          <View style={styles.heroCard}>
+            <Text style={styles.heroEyebrow}>Liked You</Text>
+            <Text style={styles.heroTitle}>People already interested</Text>
+            <Text style={styles.heroSubtitle}>Loading the people who liked you…</Text>
+          </View>
+          <LikedYouSkeleton />
+        </View>
+        <BottomNav />
       </View>
     );
   }

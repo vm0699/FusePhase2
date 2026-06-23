@@ -12,9 +12,11 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ProfileContext } from '../../ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingStepper from '../../components/OnboardingStepper';
+import Button from '../../components/ui/Button';
 import { API_BASE_URL } from '../config/env';
 
 const BASE_URL = API_BASE_URL;
@@ -26,6 +28,7 @@ export default function ProfileSetupPage() {
   const [localProfile, setLocalProfile] = useState({
     username: profileData.options.username || '',
     gender: profileData.options.gender || '',
+    preferredGender: profileData.options.preferredGender || '',
     mode: profileData.options.reason || '',
   });
 
@@ -38,8 +41,16 @@ export default function ProfileSetupPage() {
     setIsUsernameValid(text.length >= 8 && text.length <= 15);
   };
 
+  const resolvePreferredGenderArray = (val: string): string[] => {
+    if (val === 'Women') return ['Woman'];
+    if (val === 'Men') return ['Man'];
+    if (val === 'Everyone') return ['Man', 'Woman', 'Nonbinary'];
+    return [];
+  };
+
   const isComplete =
     localProfile.gender !== '' &&
+    localProfile.preferredGender !== '' &&
     localProfile.mode !== '' &&
     isUsernameValid;
 
@@ -64,6 +75,7 @@ export default function ProfileSetupPage() {
         updates: {
           username: localProfile.username,
           gender: localProfile.gender,
+          preferredGender: resolvePreferredGenderArray(localProfile.preferredGender),
           onboardingStage: 'PROFILE_SETUP_DONE',
         },
       }),
@@ -161,6 +173,37 @@ export default function ProfileSetupPage() {
 
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
+                  Who do you want to meet?
+                </Text>
+                {['Women', 'Men', 'Everyone'].map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.radioOption,
+                      localProfile.preferredGender === option && styles.radioOptionSelected,
+                    ]}
+                    onPress={() =>
+                      setLocalProfile({ ...localProfile, preferredGender: option })
+                    }
+                  >
+                    <View style={[
+                      styles.radioCircle,
+                      localProfile.preferredGender === option && styles.radioCircleSelected,
+                    ]}>
+                      {localProfile.preferredGender === option && (
+                        <View style={styles.radioSelected} />
+                      )}
+                    </View>
+                    <Text style={[
+                      styles.radioLabel,
+                      localProfile.preferredGender === option && styles.radioLabelSelected,
+                    ]}>{option}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>
                   What brings you to Fuse?
                 </Text>
                 <Text style={styles.sectionSubtitle}>
@@ -228,16 +271,14 @@ export default function ProfileSetupPage() {
             </View>
           </ScrollView>
 
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              isComplete ? styles.activeButton : styles.disabledButton,
-            ]}
-            onPress={handleNavigate}
-            disabled={!isComplete}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-          </TouchableOpacity>
+          <View style={styles.footer}>
+            <LinearGradient
+              colors={['rgba(250,248,243,0)', '#FAF8F3']}
+              style={styles.footerFade}
+              pointerEvents="none"
+            />
+            <Button label="Next" onPress={handleNavigate} disabled={!isComplete} />
+          </View>
         </KeyboardAvoidingView>
       </View>
     </TouchableWithoutFeedback>
@@ -411,28 +452,21 @@ const styles = StyleSheet.create({
   link: {
     color: '#ff5864',
   },
-  nextButton: {
-    paddingVertical: 18,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
+  footer: {
     position: 'absolute',
-    bottom: 20,
-    left: 24,
-    right: 24,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 28,
   },
-  activeButton: {
-    backgroundColor: '#ff5864',
-  },
-  disabledButton: {
-    backgroundColor: '#ff5864',
-    opacity: 0.4,
-  },
-  nextButtonText: {
-    color: 'white',
-    fontSize: 17,
-    fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+  footerFade: {
+    position: 'absolute',
+    top: -28,
+    left: 0,
+    right: 0,
+    height: 28,
   },
 });
 

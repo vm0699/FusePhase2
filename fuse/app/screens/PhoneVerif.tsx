@@ -16,6 +16,7 @@ import RNPickerSelect from 'react-native-picker-select';
 import { ProfileContext } from '../../ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingStepper from '../../components/OnboardingStepper';
+import Button from '../../components/ui/Button';
 import { API_BASE_URL } from '../config/env';
 
 export default function PhoneVerificationPage() {
@@ -23,6 +24,7 @@ export default function PhoneVerificationPage() {
   const [showVerification, setShowVerification] = useState(false);
   const [countryCode, setCountryCode] = useState('91');
   const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const navigation = useNavigation();
   const { updateProfileData } = useContext(ProfileContext);
@@ -64,6 +66,7 @@ export default function PhoneVerificationPage() {
   };
 
   const handleSendOTP = async () => {
+    setIsSending(true);
     try {
       const fullPhoneNumber = `+${countryCode}${phoneNumber}`;
 
@@ -84,6 +87,8 @@ export default function PhoneVerificationPage() {
       console.log('🟣 [PhoneVerif] send OTP response:', result);
 
       if (!result.success) {
+        setIsSending(false);
+        setShowVerification(false);
         Alert.alert('Error', result.message || 'Failed to send OTP');
         return;
       }
@@ -109,6 +114,8 @@ export default function PhoneVerificationPage() {
       });
     } catch (error) {
       console.error('❌ [PhoneVerif] Verification Error:', error);
+      setIsSending(false);
+      setShowVerification(false);
       Alert.alert('Error', 'An error occurred while verifying the phone number.');
     }
   };
@@ -148,35 +155,69 @@ export default function PhoneVerificationPage() {
           Fuse will send a verification code to this number
         </Text>
 
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            isPhoneValid ? styles.activeButton : styles.disabledButton,
-          ]}
-          onPress={handlePhoneSubmit}
-          disabled={!isPhoneValid}
-        >
-          <Text style={styles.submitButtonText}>Continue</Text>
-        </TouchableOpacity>
+        <View style={styles.submitButton}>
+          <Button
+            label="Continue"
+            onPress={handlePhoneSubmit}
+            disabled={!isPhoneValid}
+          />
+        </View>
 
-        <Modal visible={showVerification} transparent animationType="slide">
-          <View style={styles.modalBackground}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalText}>
-                Is this your number? +{countryCode}
-                {phoneNumber}
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  handleSendOTP();
-                  setShowVerification(false);
-                }}
-                style={styles.modalButton}
-              >
-                <Text style={styles.modalButtonText}>Send OTP</Text>
-              </TouchableOpacity>
+        <Modal
+          visible={showVerification}
+          transparent
+          animationType="slide"
+          statusBarTranslucent
+        >
+          <TouchableWithoutFeedback
+            onPress={() => {
+              if (!isSending) setShowVerification(false);
+            }}
+          >
+            <View style={styles.modalBackground}>
+              <TouchableWithoutFeedback>
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHandle} />
+
+                  <Text style={styles.modalHeading}>Confirm your number</Text>
+                  <Text style={styles.modalSubtext}>
+                    We'll send a verification code to
+                  </Text>
+
+                  <View style={styles.modalPhoneRow}>
+                    <Text style={styles.modalPhoneNumber}>
+                      +{countryCode} {phoneNumber}
+                    </Text>
+                  </View>
+
+                  <Button
+                    label="Send OTP"
+                    loadingLabel="Sending code…"
+                    loading={isSending}
+                    onPress={handleSendOTP}
+                    style={styles.modalButton}
+                  />
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (!isSending) setShowVerification(false);
+                    }}
+                    style={styles.modalEditRow}
+                    disabled={isSending}
+                  >
+                    <Text
+                      style={[
+                        styles.modalEditText,
+                        isSending && { opacity: 0.4 },
+                      ]}
+                    >
+                      Edit number
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
             </View>
-          </View>
+          </TouchableWithoutFeedback>
         </Modal>
       </View>
     </TouchableWithoutFeedback>
@@ -229,50 +270,75 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins',
   },
   submitButton: {
-    paddingVertical: 18,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
     position: 'absolute',
     bottom: 40,
     left: 24,
     right: 24,
   },
-  activeButton: { backgroundColor: '#ff5864' },
-  disabledButton: { backgroundColor: '#ff5864', opacity: 0.4 },
-  submitButtonText: { color: 'white', fontSize: 18, fontWeight: '600', fontFamily: 'Poppins-SemiBold' },
+
+  // Modal — bottom sheet
   modalBackground: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
   },
   modalContent: {
-    width: 300,
-    padding: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 28,
+    paddingTop: 16,
+    paddingBottom: 44,
     alignItems: 'center',
   },
-  modalText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 2,
+    marginBottom: 28,
+  },
+  modalHeading: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1a1a1a',
     fontFamily: 'Poppins-Bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtext: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontFamily: 'Poppins',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modalPhoneRow: {
+    backgroundColor: '#FAF8F3',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    marginBottom: 28,
+  },
+  modalPhoneNumber: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    fontFamily: 'Poppins-SemiBold',
+    letterSpacing: 0.5,
+    textAlign: 'center',
   },
   modalButton: {
-    backgroundColor: '#ff5864',
-    paddingVertical: 12,
-    paddingHorizontal: 35,
-    borderRadius: 10,
+    marginBottom: 16,
   },
-  modalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: 'Poppins-SemiBold',
+  modalEditRow: {
+    paddingVertical: 6,
+  },
+  modalEditText: {
+    fontSize: 15,
+    color: '#6B7280',
+    fontFamily: 'Poppins',
+    textDecorationLine: 'underline',
   },
   pickerWrapper: {
     width: 130,
