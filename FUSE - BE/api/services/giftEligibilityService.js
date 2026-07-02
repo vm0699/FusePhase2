@@ -4,6 +4,7 @@ import Message from "../models/MessageModel.js";
 import Block from "../models/Block.js";
 import Report from "../models/Report.js";
 import GiftOrder, { GIFT_ORDER_ACTIVE_STATUSES } from "../models/GiftOrder.js";
+import UserProfile from "../models/UserProfile.js";
 
 /**
  * Gift eligibility + rate-limit rules (Phase 2 MVP).
@@ -189,6 +190,12 @@ export const evaluateGiftEligibility = async ({ chatId, userId }) => {
 
   if (await hasSafetyHoldBetweenUsers(userId, otherId)) {
     return { ...base, reason: "SAFETY_HOLD" };
+  }
+
+  // Recipient must have gifts enabled
+  const recipient = await UserProfile.findById(otherId).select("safetyPreferences").lean();
+  if (recipient?.safetyPreferences?.allowGifts === false) {
+    return { ...base, reason: "RECIPIENT_GIFTS_DISABLED" };
   }
 
   base.activeOrderExists = await hasActiveGiftOrder(chat._id);

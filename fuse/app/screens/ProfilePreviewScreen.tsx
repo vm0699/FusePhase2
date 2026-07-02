@@ -88,8 +88,8 @@ export default function ProfilePreviewScreen({ navigation, route }) {
           <Text style={styles.topBarTitle}>Your profile</Text>
           <Text style={styles.topBarSub}>As others see you in discovery</Text>
         </View>
-        {/* balance spacer */}
-        <View style={styles.backBtn} />
+        {/* balance spacer — invisible, just reserves width so the title stays centered */}
+        <View style={styles.spacer} />
       </View>
 
       <ScrollView
@@ -251,6 +251,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 4,
     elevation: 2,
+  },
+  spacer: {
+    width: 38,
+    height: 38,
   },
   topBarCenter: {
     flex: 1,

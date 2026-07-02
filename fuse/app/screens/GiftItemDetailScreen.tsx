@@ -72,7 +72,7 @@ export default function GiftItemDetailScreen() {
         catalogItemId,
         quantity: 1,
       });
-      const intentId = intentData?.intent?._id || intentData?._id;
+      const intentId = intentData?.giftIntentId || intentData?.intent?.intentId;
       if (!intentId) throw new Error("Failed to create gift intent.");
 
       // 2 — initiate payment; returns { paymentId, mode, providerOrderId }

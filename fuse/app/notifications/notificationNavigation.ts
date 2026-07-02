@@ -96,6 +96,25 @@ export function resolveNotificationRoute(
         },
       };
 
+    // ─── Explore — bookings ──────────────────────────────────────────────
+    case NOTIFICATION_TYPES.BOOKING_CONFIRMED:
+    case NOTIFICATION_TYPES.BOOKING_INVITE_RECEIVED:
+    case NOTIFICATION_TYPES.BOOKING_INVITE_ACCEPTED:
+    case NOTIFICATION_TYPES.BOOKING_INVITE_DECLINED:
+    case NOTIFICATION_TYPES.BOOKING_INVITE_EXPIRED:
+    case NOTIFICATION_TYPES.BOOKING_CANCELLED:
+      return { name: "MyBookings" };
+
+    // ─── Explore — tickets ───────────────────────────────────────────────
+    case NOTIFICATION_TYPES.TICKET_CONFIRMED:
+    case NOTIFICATION_TYPES.TICKET_FULFILLED:
+      return { name: "MyTicketOrders" };
+
+    // ─── Explore — premium ───────────────────────────────────────────────
+    case NOTIFICATION_TYPES.PREMIUM_QUOTE_READY:
+    case NOTIFICATION_TYPES.PREMIUM_CONFIRMED:
+      return { name: "ExploreHome" };
+
     default:
       return { name: "MainTabs" };
   }

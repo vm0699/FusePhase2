@@ -2,12 +2,13 @@ import React from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { User, Users, Heart, Video, MessageCircle } from "lucide-react-native";
+import { Users, Heart, Video, Compass, MessageCircle } from "lucide-react-native";
 import { useProfile } from "../ProfileContext";
 
+// Order left → right: Video (far left) · Explore · Swipe (center) · Liked You · Chats (far right)
 const navItems = [
-  { icon: User, label: "Profile", route: "Profile" },
-  { icon: Video, label: "Video Call", route: "VideoInitiateScreen" },
+  { icon: Video, label: "Video", route: "VideoInitiateScreen" },
+  { icon: Compass, label: "Explore", route: "ExploreHome" },
   { icon: Users, label: "Swipe", route: "SwipeView" },
   { icon: Heart, label: "Liked You", route: "Liked You" },
   { icon: MessageCircle, label: "Chats", route: "ChatListScreen" },

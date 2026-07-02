@@ -12,6 +12,8 @@ import { StatusBar } from "expo-status-bar";
 import Login from "./app/screens/Login";
 import PhoneVerif from "./app/screens/PhoneVerif";
 import CodeVerif from "./app/screens/CodeVerif";
+import EmailEntryScreen from "./app/screens/EmailEntryScreen";
+import EmailCodeVerif from "./app/screens/EmailCodeVerif";
 import Intro from "./app/screens/Intro";
 import ProfileSetup from "./app/screens/ProfileSetup";
 import ProfileDetails from "./app/screens/ProfileDetails";
@@ -82,6 +84,17 @@ import GiftCatalogScreen from "./app/screens/GiftCatalogScreen";
 import GiftItemDetailScreen from "./app/screens/GiftItemDetailScreen";
 import MyGiftsScreen from "./app/screens/MyGiftsScreen";
 import ProfilePreviewScreen from "./app/screens/ProfilePreviewScreen";
+
+// Fuse Explore screens
+import ExploreHomeScreen from "./app/screens/ExploreHomeScreen";
+import ExploreCategoryScreen from "./app/screens/ExploreCategoryScreen";
+import VenueDetailScreen from "./app/screens/VenueDetailScreen";
+import BookingCheckoutScreen from "./app/screens/BookingCheckoutScreen";
+import MyBookingsScreen from "./app/screens/MyBookingsScreen";
+import EventDetailScreen from "./app/screens/EventDetailScreen";
+import EventTicketCheckoutScreen from "./app/screens/EventTicketCheckoutScreen";
+import MyTicketOrdersScreen from "./app/screens/MyTicketOrdersScreen";
+import PremiumRequestScreen from "./app/screens/PremiumRequestScreen";
 import { navigationRef } from "./app/navigation/navigationRef";
 import { pushManager } from "./app/notifications/pushManager";
 
@@ -148,6 +161,8 @@ export default function AppNavigator() {
           <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
           <Stack.Screen name="PhoneVerif" component={PhoneVerif} options={{ headerShown: false }} />
           <Stack.Screen name="CodeVerif" component={CodeVerif} options={{ headerShown: false }} />
+          <Stack.Screen name="EmailEntry" component={EmailEntryScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="EmailCodeVerif" component={EmailCodeVerif} options={{ headerShown: false }} />
           <Stack.Screen name="Intro" component={Intro} options={{ headerShown: false }} />
           <Stack.Screen name="ProfileSetup" component={ProfileSetup} options={{ headerShown: false }} />
           <Stack.Screen name="LocationSetup" component={LocationSetupScreen} options={{ headerShown: false }} />
@@ -213,6 +228,17 @@ export default function AppNavigator() {
           <Stack.Screen name="GiftItemDetail" component={GiftItemDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="MyGiftsScreen" component={MyGiftsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ProfilePreview" component={ProfilePreviewScreen} options={{ headerShown: false }} />
+
+          {/* Fuse Explore */}
+          <Stack.Screen name="ExploreHome" component={ExploreHomeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ExploreCategory" component={ExploreCategoryScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="VenueDetail" component={VenueDetailScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="BookingCheckout" component={BookingCheckoutScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="MyBookings" component={MyBookingsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="EventDetail" component={EventDetailScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="EventTicketCheckout" component={EventTicketCheckoutScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="MyTicketOrders" component={MyTicketOrdersScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="PremiumRequest" component={PremiumRequestScreen} options={{ headerShown: false }} />
             </Stack.Navigator>
           </NavigationContainer>
         </GestureHandlerRootView>

@@ -7,6 +7,17 @@ const profileSchema = new Schema(
     // ===== CORE IDENTITY =====
     phoneNumber: { type: String, required: true, unique: true },
 
+    // Optional secondary login identity — linked to an existing phone account
+    // via Settings, used only for the "log in with email" OTP shortcut.
+    email: {
+      type: String,
+      default: null,
+      trim: true,
+      lowercase: true,
+      sparse: true,
+      unique: true,
+    },
+
     // ===== ONBOARDING CHECKPOINT TRACKER (2.1 CORE) =====
     onboardingStage: {
       type: String,
@@ -103,6 +114,12 @@ const profileSchema = new Schema(
     smoking: { type: String, default: "" },
     marijuana: { type: String, default: "" },
     drugs: { type: String, default: "" },
+
+    // ===== SAFETY / COMMERCE PREFERENCES =====
+    safetyPreferences: {
+      allowGifts: { type: Boolean, default: true },
+      allowDateInvites: { type: Boolean, default: true },
+    },
 
     // ===== DISCOVERY PREFERENCES =====
     preferredGender: { type: [String], default: [] },

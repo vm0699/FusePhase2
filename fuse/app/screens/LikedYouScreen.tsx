@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { ArrowLeft, Heart, MessageCircle, X } from "lucide-react-native";
 import { BottomNav } from "../../components/BottomNav";
+import HeaderAvatar from "../../components/ui/HeaderAvatar";
 import { ProfileInfoCard } from "../../components/ProfileInfoCard";
 import { FusePopup } from "../../components/FusePopup";
 import LikedYouSkeleton from "../../components/skeletons/LikedYouSkeleton";
@@ -373,6 +374,10 @@ export default function LikedYouScreen() {
       <View style={styles.container}>
         <View style={styles.bgOrbTop} />
         <View style={styles.bgOrbBottom} />
+        <View style={styles.topBar}>
+          <Text style={styles.brand}>Fuse</Text>
+          <HeaderAvatar size={34} />
+        </View>
         <View style={styles.listScroll}>
           <View style={styles.heroCard}>
             <Text style={styles.heroEyebrow}>Liked You</Text>
@@ -390,6 +395,13 @@ export default function LikedYouScreen() {
     <View style={styles.container}>
       <View style={styles.bgOrbTop} />
       <View style={styles.bgOrbBottom} />
+
+      {!expandedProfile && (
+        <View style={styles.topBar}>
+          <Text style={styles.brand}>Fuse</Text>
+          <HeaderAvatar size={34} />
+        </View>
+      )}
 
       {expandedProfile ? (
         <ScrollView
@@ -658,7 +670,7 @@ const styles = StyleSheet.create({
   },
   listScroll: {
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === "ios" ? 60 : 42,
+    paddingTop: 12,
     paddingBottom: 98,
   },
   detailScroll: {
@@ -666,6 +678,21 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 58 : 40,
     paddingBottom: 98,
     gap: 12,
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 56 : 38,
+    paddingBottom: 6,
+  },
+  brand: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    fontFamily: "Poppins-Bold",
+    letterSpacing: 1,
   },
   heroCard: {
     backgroundColor: "#ffffff",

@@ -27,10 +27,7 @@ export default function VerifyCodePage() {
   const route = useRoute();
   const { phoneNumber, countryCode } = route.params;
 
-  const inputRefs = useRef([]);
-  inputRefs.current = Array(6)
-    .fill(1)
-    .map((_, i) => inputRefs.current[i] ?? React.createRef());
+  const inputNodes = useRef<(TextInput | null)[]>(Array(6).fill(null));
 
   useEffect(() => {
     console.log('🟣 [VerifyCode] mounted');
@@ -45,7 +42,7 @@ export default function VerifyCodePage() {
     setCode(newCode);
 
     if (value !== '' && index < 5) {
-      inputRefs.current[index + 1].current?.focus();
+      inputNodes.current[index + 1]?.focus();
     }
   };
 
@@ -61,7 +58,7 @@ export default function VerifyCodePage() {
       }
 
       if (index > 0) {
-        inputRefs.current[index - 1].current?.focus();
+        inputNodes.current[index - 1]?.focus();
         const newCode = [...code];
         newCode[index - 1] = '';
         setCode(newCode);
@@ -211,7 +208,7 @@ export default function VerifyCodePage() {
                     value={code[index]}
                     onChangeText={(value) => handleCodeChange(index, value)}
                     onKeyPress={(e) => handleKeyPress(index, e)}
-                    ref={inputRefs.current[index]}
+                    ref={(node) => { inputNodes.current[index] = node; }}
                     returnKeyType="next"
                     editable={!isVerifying}
                   />

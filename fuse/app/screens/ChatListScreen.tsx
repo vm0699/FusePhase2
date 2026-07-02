@@ -14,6 +14,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { API_BASE_URL } from "../config/env";
 import { theme } from "../theme";
 import { Avatar, Card, EmptyState } from "../../components/ui";
+import HeaderAvatar from "../../components/ui/HeaderAvatar";
 import ChatListSkeleton from "../../components/skeletons/ChatListSkeleton";
 
 const BASE_URL = API_BASE_URL;
@@ -86,8 +87,11 @@ export default function ChatListScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.heading}>Chats</Text>
-        <Text style={styles.subHeading}>Talk with people you matched with</Text>
+        <View style={styles.headerText}>
+          <Text style={styles.heading}>Chats</Text>
+          <Text style={styles.subHeading}>Talk with people you matched with</Text>
+        </View>
+        <HeaderAvatar size={34} />
       </View>
 
       {loading ? (
@@ -186,9 +190,15 @@ export default function ChatListScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.bg },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingTop: Platform.OS === "ios" ? 60 : 44,
     paddingBottom: 10,
+  },
+  headerText: {
+    flex: 1,
   },
   heading: {
     fontSize: 26,

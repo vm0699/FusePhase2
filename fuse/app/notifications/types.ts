@@ -17,6 +17,19 @@ export const NOTIFICATION_TYPES = {
   VIDEO_CALL_INVITE: "VIDEO_CALL_INVITE",
   VIDEO_CALL_MISSED: "VIDEO_CALL_MISSED",
   ACCOUNT_ALERT: "ACCOUNT_ALERT",
+  // Explore — bookings
+  BOOKING_CONFIRMED: "BOOKING_CONFIRMED",
+  BOOKING_INVITE_RECEIVED: "BOOKING_INVITE_RECEIVED",
+  BOOKING_INVITE_ACCEPTED: "BOOKING_INVITE_ACCEPTED",
+  BOOKING_INVITE_DECLINED: "BOOKING_INVITE_DECLINED",
+  BOOKING_INVITE_EXPIRED: "BOOKING_INVITE_EXPIRED",
+  BOOKING_CANCELLED: "BOOKING_CANCELLED",
+  // Explore — tickets
+  TICKET_CONFIRMED: "TICKET_CONFIRMED",
+  TICKET_FULFILLED: "TICKET_FULFILLED",
+  // Explore — premium
+  PREMIUM_QUOTE_READY: "PREMIUM_QUOTE_READY",
+  PREMIUM_CONFIRMED: "PREMIUM_CONFIRMED",
 } as const;
 
 export type NotificationType =
@@ -28,6 +41,9 @@ export type NotificationPayloadData = {
   chatId?: string | null;
   intentId?: string | null;
   orderId?: string | null;
+  bookingId?: string | null;
+  ticketOrderId?: string | null;
+  requestId?: string | null;
   senderId?: string | null;
   recipientId?: string | null;
   counterpartId?: string | null;

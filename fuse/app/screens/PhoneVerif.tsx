@@ -161,12 +161,18 @@ export default function PhoneVerificationPage() {
             onPress={handlePhoneSubmit}
             disabled={!isPhoneValid}
           />
+          <TouchableOpacity
+            style={styles.emailLoginRow}
+            onPress={() => (navigation as any).navigate('EmailEntry')}
+          >
+            <Text style={styles.emailLoginText}>Continue with email instead</Text>
+          </TouchableOpacity>
         </View>
 
         <Modal
           visible={showVerification}
           transparent
-          animationType="slide"
+          animationType="fade"
           statusBarTranslucent
         >
           <TouchableWithoutFeedback
@@ -275,28 +281,42 @@ const styles = StyleSheet.create({
     left: 24,
     right: 24,
   },
-
-  // Modal — bottom sheet
-  modalBackground: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 28,
-    paddingTop: 16,
-    paddingBottom: 44,
+  emailLoginRow: {
+    marginTop: 16,
     alignItems: 'center',
   },
+  emailLoginText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontFamily: 'Poppins-SemiBold',
+    textDecorationLine: 'underline',
+  },
+
+  // Modal — centered dialog
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.50)',
+    paddingHorizontal: 28,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 28,
+    paddingHorizontal: 28,
+    paddingTop: 36,
+    paddingBottom: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 12,
+  },
   modalHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 2,
-    marginBottom: 28,
+    // hidden — no drag handle on centered dialog
+    display: 'none',
   },
   modalHeading: {
     fontSize: 20,

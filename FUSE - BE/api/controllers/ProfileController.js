@@ -1637,6 +1637,8 @@ export const updateUserProfile = async (req, res) => {
       // Discovery
       "preferredGender",
       "discoveryPreferences",
+      // Safety / commerce prefs
+      "safetyPreferences",
     ];
 
     // ✅ Allowed onboarding stages (guardrail)
@@ -1860,6 +1862,74 @@ export const updateUserProfile = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error while updating profile.",
+    });
+  }
+};
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Links an email address to the logged-in user's account.
+ * Isolated from updateUserProfile since email is a login credential
+ * (uniqueness-enforced) rather than a general profile field.
+ */
+export const addEmail = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: missing user in token",
+      });
+    }
+
+    const email =
+      typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+
+    if (!email || !EMAIL_REGEX.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid email address is required.",
+      });
+    }
+
+    const existing = await UserProfile.findOne({ email, _id: { $ne: userId } });
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: "This email is already linked to another account.",
+      });
+    }
+
+    const user = await UserProfile.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    user.email = email;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Email linked to your account.",
+      data: { email },
+    });
+  } catch (error) {
+    console.error("🔥 [addEmail] ERROR:", error);
+
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "This email is already linked to another account.",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while linking email.",
     });
   }
 };

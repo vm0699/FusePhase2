@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Camera } from "expo-camera";
 import { PermissionsAndroid } from "react-native";
 import { BottomNav } from "../../components/BottomNav";
+import HeaderAvatar from "../../components/ui/HeaderAvatar";
 import Icon from "react-native-vector-icons/Feather";
 
 export default function VideoInitiateScreen() {
@@ -142,6 +143,10 @@ export default function VideoInitiateScreen() {
           <View style={styles.bgOrbOne} />
           <View style={styles.bgOrbTwo} />
 
+          <View style={styles.topBar}>
+            <HeaderAvatar size={34} />
+          </View>
+
           <View
             style={[
               styles.centerWrap,
@@ -216,6 +221,11 @@ const styles = StyleSheet.create({
   centerWrap: {
     flex: 1,
     justifyContent: "center",
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 20,
   },
   bgOrbOne: {
     position: "absolute",

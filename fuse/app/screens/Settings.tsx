@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Modal,
   Platform,
+  TextInput,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import * as Location from "expo-location";
@@ -22,6 +24,7 @@ import {
   Lock,
   Trash2,
   ChevronRight,
+  Mail,
 } from "lucide-react-native";
 import { FusePopup } from "../../components/FusePopup";
 import { authClient } from "../auth/authClient";
@@ -54,6 +57,9 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
   const [popupState, setPopupState] = useState<{
     visible: boolean;
     title: string;
@@ -145,6 +151,45 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleSaveEmail = async () => {
+    const trimmed = emailInput.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      Alert.alert("Invalid email", "Please enter a valid email address.");
+      return;
+    }
+
+    setSavingEmail(true);
+    try {
+      const token = await AsyncStorage.getItem("jwtToken");
+      const res = await fetch(`${BASE_URL}/api/profile/add-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: trimmed }),
+      });
+      const result = await res.json();
+
+      if (!result.success) {
+        showPopup("Error", result.message || "Failed to save email.", "error");
+        return;
+      }
+
+      setShowEmailModal(false);
+      setEmailInput("");
+      showPopup(
+        "Email linked",
+        "You can now log in with this email instead of your phone number.",
+        "success"
+      );
+    } catch (err) {
+      showPopup("Error", "Could not save your email. Please try again.", "error");
+    } finally {
+      setSavingEmail(false);
+    }
+  };
+
   // ─── Setting groups ─────────────────────────────────────────────────────────
 
   const groups: SettingGroup[] = [
@@ -156,6 +201,12 @@ export default function SettingsScreen() {
           sublabel: "Update address for gifts & surprises",
           icon: MapPin,
           route: "UpdateDeliveryLocation",
+        },
+        {
+          label: "Add email for backup login",
+          sublabel: "Sign in with email instead of your phone",
+          icon: Mail,
+          onPress: () => setShowEmailModal(true),
         },
       ],
     },
@@ -268,8 +319,8 @@ export default function SettingsScreen() {
           <Text style={styles.headerTitle}>Settings</Text>
           <Text style={styles.headerSubtitle}>Privacy, safety & preferences</Text>
         </View>
-        {/* Spacer to balance back button */}
-        <View style={styles.backBtn} />
+        {/* Spacer to balance back button — invisible, reserves width only */}
+        <View style={styles.spacer} />
       </View>
 
       <ScrollView
@@ -311,6 +362,49 @@ export default function SettingsScreen() {
               onPress={() => setShowDeletePopup(false)}
             >
               <Text style={styles.modalCancelText}>No, I changed my mind</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add email modal */}
+      <Modal visible={showEmailModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconWrap}>
+              <Mail size={26} color={theme.colors.brand} />
+            </View>
+            <Text style={styles.modalTitle}>Add backup email</Text>
+            <Text style={styles.modalText}>
+              Link an email to your account so you can log in with it instead of your phone number.
+            </Text>
+            <TextInput
+              style={styles.emailInput}
+              placeholder="Email address"
+              placeholderTextColor={theme.colors.textTertiary}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={emailInput}
+              onChangeText={setEmailInput}
+            />
+            <TouchableOpacity
+              style={styles.modalSaveBtn}
+              onPress={handleSaveEmail}
+              disabled={savingEmail}
+            >
+              <Text style={styles.modalSaveText}>
+                {savingEmail ? "Saving…" : "Save email"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalCancelBtn}
+              onPress={() => {
+                setShowEmailModal(false);
+                setEmailInput("");
+              }}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -359,6 +453,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
+  },
+  spacer: {
+    width: 38,
+    height: 38,
   },
   headerCenter: {
     flex: 1,
@@ -510,6 +608,32 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontFamily: "Poppins",
     marginBottom: 24,
+  },
+  emailInput: {
+    width: "100%",
+    height: 50,
+    borderWidth: 1.5,
+    borderColor: theme.colors.brandBorder,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    fontFamily: "Poppins",
+    color: theme.colors.textPrimary,
+    backgroundColor: theme.colors.surfaceAlt,
+    marginBottom: 16,
+  },
+  modalSaveBtn: {
+    width: "100%",
+    backgroundColor: theme.colors.brand,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  modalSaveText: {
+    color: "#fff",
+    fontFamily: "Poppins-Bold",
+    fontSize: 15,
   },
   modalDeleteBtn: {
     width: "100%",

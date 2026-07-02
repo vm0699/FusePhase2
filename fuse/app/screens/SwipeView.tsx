@@ -20,6 +20,7 @@ import { BottomNav } from "../../components/BottomNav";
 import { ProfileInfoCard } from "../../components/ProfileInfoCard";
 import { FusePopup } from "../../components/FusePopup";
 import { EmptyState } from "../../components/ui";
+import HeaderAvatar from "../../components/ui/HeaderAvatar";
 import SwipeCardSkeleton from "../../components/skeletons/SwipeCardSkeleton";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { API_BASE_URL } from "../config/env";
@@ -675,7 +676,10 @@ export default function SwipeView() {
     return (
       <View style={styles.container}>
         <View style={styles.topBar}>
-          <Text style={styles.brand}>Fuse</Text>
+          <View style={styles.topBarLeft}>
+            <HeaderAvatar size={34} />
+            <Text style={styles.brand}>Fuse</Text>
+          </View>
           <View style={styles.iconBtn}>
             <SlidersHorizontal size={20} color="#1a1a1a" strokeWidth={1.8} />
           </View>
@@ -689,7 +693,10 @@ export default function SwipeView() {
     <View style={styles.container}>
       {/* TOP BAR */}
       <View style={styles.topBar}>
-        <Text style={styles.brand}>Fuse</Text>
+        <View style={styles.topBarLeft}>
+          <HeaderAvatar size={34} />
+          <Text style={styles.brand}>Fuse</Text>
+        </View>
         <TouchableOpacity
           style={styles.iconBtn}
           onPress={() => navigation.navigate("FilterScreen")}
@@ -987,6 +994,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === "ios" ? 60 : 40,
     paddingBottom: 10,
+  },
+  topBarLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   brand: {
     fontSize: 22,
