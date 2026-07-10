@@ -9,14 +9,16 @@ import {
 import { Gift, Coffee, Ticket, Crown, Clock } from "lucide-react-native";
 import { theme } from "../../../app/theme";
 
-export type ExploreCategory = "gifts" | "dates" | "events" | "premium" | "soon";
+export type ExploreCategory = "gifts" | "dates" | "events" | "premium" | "soon" | string;
 
-const CATEGORIES: {
+export type CategoryStripItem = {
   id: ExploreCategory;
   label: string;
   Icon: any;
   soon?: boolean;
-}[] = [
+};
+
+const CATEGORIES: CategoryStripItem[] = [
   { id: "gifts", label: "Gifts", Icon: Gift },
   { id: "dates", label: "Dates", Icon: Coffee },
   { id: "events", label: "Events", Icon: Ticket },
@@ -24,19 +26,30 @@ const CATEGORIES: {
   { id: "soon", label: "More soon", Icon: Clock, soon: true },
 ];
 
+// "Meet People" mode categories — mapped to the Event.category schema enum.
+export const SOCIAL_CATEGORIES: CategoryStripItem[] = [
+  { id: "sports", label: "Run clubs", Icon: Ticket },
+  { id: "social", label: "Meetups", Icon: Coffee },
+  { id: "party", label: "Parties", Icon: Gift },
+  { id: "music", label: "Gigs", Icon: Crown },
+  { id: "workshop", label: "Workshops", Icon: Clock },
+];
+
 type Props = {
   activeCategory?: ExploreCategory | null;
   onSelect?: (cat: ExploreCategory) => void;
+  categories?: CategoryStripItem[];
 };
 
-export default function CategoryStrip({ activeCategory, onSelect }: Props) {
+export default function CategoryStrip({ activeCategory, onSelect, categories }: Props) {
+  const items = categories ?? CATEGORIES;
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.row}
     >
-      {CATEGORIES.map(({ id, label, Icon, soon }) => {
+      {items.map(({ id, label, Icon, soon }) => {
         const isActive = activeCategory === id && !soon;
         return (
           <Pressable

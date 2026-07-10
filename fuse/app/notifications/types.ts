@@ -30,6 +30,11 @@ export const NOTIFICATION_TYPES = {
   // Explore — premium
   PREMIUM_QUOTE_READY: "PREMIUM_QUOTE_READY",
   PREMIUM_CONFIRMED: "PREMIUM_CONFIRMED",
+  // Explore — Iteration 2: Event Circles
+  EVENT_RSVP_CONFIRMED: "EVENT_RSVP_CONFIRMED",
+  EVENT_WAVE_RECEIVED: "EVENT_WAVE_RECEIVED",
+  EVENT_WAVE_MATCHED: "EVENT_WAVE_MATCHED",
+  EVENT_BADGE_EARNED: "EVENT_BADGE_EARNED",
 } as const;
 
 export type NotificationType =
@@ -44,6 +49,7 @@ export type NotificationPayloadData = {
   bookingId?: string | null;
   ticketOrderId?: string | null;
   requestId?: string | null;
+  eventId?: string | null;
   senderId?: string | null;
   recipientId?: string | null;
   counterpartId?: string | null;

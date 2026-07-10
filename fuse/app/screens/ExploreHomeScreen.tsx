@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -9,13 +9,15 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { Gift, Coffee, Ticket, Crown, Sparkles, ChevronLeft } from "lucide-react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Gift, Coffee, Ticket, Crown, Sparkles, ChevronLeft, Users } from "lucide-react-native";
 
 import { theme } from "../theme";
-import exploreApi, { type ExploreHome } from "../api/exploreApi";
+import exploreApi, { type ExploreHome, type ExploreMode } from "../api/exploreApi";
 import LocationChip from "../../components/ui/explore/LocationChip";
 import HeroCarousel from "../../components/ui/explore/HeroCarousel";
-import CategoryStrip from "../../components/ui/explore/CategoryStrip";
+import CategoryStrip, { SOCIAL_CATEGORIES } from "../../components/ui/explore/CategoryStrip";
+import ExploreModeToggle from "../../components/ui/explore/ExploreModeToggle";
 import SectionRail from "../../components/ui/explore/SectionRail";
 import VenueCard from "../../components/ui/explore/VenueCard";
 import EventCard from "../../components/ui/explore/EventCard";
@@ -23,18 +25,12 @@ import GiftCard from "../../components/ui/explore/GiftCard";
 import HeaderAvatar from "../../components/ui/HeaderAvatar";
 import { Skeleton } from "../../components/ui";
 
-const HERO_SLIDES = [
+const DATE_HERO_SLIDES = [
   {
     id: "dates",
     title: "Plan a real date 🍵",
     subtitle: "Book curated Chennai cafés & restaurants",
     bgColor: "#ff5864",
-  },
-  {
-    id: "events",
-    title: "What's happening this weekend?",
-    subtitle: "Local events, comedy nights & more",
-    bgColor: "#7C3AED",
   },
   {
     id: "gifts",
@@ -44,16 +40,31 @@ const HERO_SLIDES = [
   },
 ];
 
+const PEOPLE_HERO_SLIDES = [
+  {
+    id: "meetpeople",
+    title: "Never go out alone 🎉",
+    subtitle: "Run clubs, house parties & meetups happening in Chennai",
+    bgColor: "#7C3AED",
+  },
+];
+
 export default function ExploreHomeScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const [mode, setMode] = useState<ExploreMode>("dates");
+  const [modeReady, setModeReady] = useState(false);
+  const homeByMode = useRef<Record<ExploreMode, ExploreHome | null>>({ dates: null, people: null });
   const [home, setHome] = useState<ExploreHome | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const userIdRef = useRef<string | null>(null);
 
-  const load = useCallback(async () => {
+  const loadMode = useCallback(async (targetMode: ExploreMode, { silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
-      const res = await exploreApi.getHome();
+      const res = await exploreApi.getHome(targetMode);
+      homeByMode.current[targetMode] = res.home;
       setHome(res.home);
     } catch {
       // silent — empty states handle it
@@ -63,21 +74,66 @@ export default function ExploreHomeScreen() {
     }
   }, []);
 
+  // Initial load: resolve stored mode preference, else ask the server for a default.
   useEffect(() => {
-    load();
-  }, [load]);
+    (async () => {
+      const uid = await AsyncStorage.getItem("userId");
+      userIdRef.current = uid;
+      const storedMode = uid ? await AsyncStorage.getItem(`exploreMode:${uid}`) : null;
+
+      if (storedMode === "dates" || storedMode === "people") {
+        setMode(storedMode);
+        setModeReady(true);
+        await loadMode(storedMode);
+        return;
+      }
+
+      // No stored preference — fetch once to learn the server's suggested default.
+      try {
+        const res = await exploreApi.getHome();
+        const resolvedMode = res.defaultMode || "dates";
+        homeByMode.current[resolvedMode] = res.home as ExploreHome;
+        setMode(resolvedMode);
+        setHome(res.home);
+        if (uid) await AsyncStorage.setItem(`exploreMode:${uid}`, resolvedMode);
+      } catch {
+        setMode("dates");
+      } finally {
+        setModeReady(true);
+        setLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onSwitchMode = useCallback(
+    async (nextMode: ExploreMode) => {
+      if (nextMode === mode) return;
+      setMode(nextMode);
+      if (userIdRef.current) {
+        AsyncStorage.setItem(`exploreMode:${userIdRef.current}`, nextMode).catch(() => {});
+      }
+      const cached = homeByMode.current[nextMode];
+      if (cached) {
+        setHome(cached);
+      } else {
+        await loadMode(nextMode);
+      }
+    },
+    [mode, loadMode]
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
-    load();
+    loadMode(mode, { silent: true });
   };
 
-  const slides = HERO_SLIDES.map((s) => ({
+  const heroSlides = (mode === "people" ? PEOPLE_HERO_SLIDES : DATE_HERO_SLIDES).map((s) => ({
     ...s,
     onPress: () => {
       if (s.id === "dates") navigation.navigate("ExploreCategory", { category: "dates" });
-      else if (s.id === "events") navigation.navigate("ExploreCategory", { category: "events" });
       else if (s.id === "gifts") navigation.navigate("GiftCatalog");
+      else if (s.id === "meetpeople") navigation.navigate("ExploreCategory", { category: "events", audience: "MEET_PEOPLE" });
     },
   }));
 
@@ -103,6 +159,8 @@ export default function ExploreHomeScreen() {
         </View>
       </View>
 
+      {modeReady && <ExploreModeToggle mode={mode} onChange={onSwitchMode} />}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
@@ -119,130 +177,79 @@ export default function ExploreHomeScreen() {
       >
         {/* ─── Hero carousel ───────────────────────────────────────────────── */}
         <View style={styles.section}>
-          <HeroCarousel slides={slides} />
+          <HeroCarousel slides={heroSlides} />
         </View>
 
-        {/* ─── Category strip ──────────────────────────────────────────────── */}
-        <View style={styles.sectionNoPad}>
-          <CategoryStrip
-            onSelect={(cat) => {
-              if (cat === "gifts") navigation.navigate("GiftCatalog");
-              else navigation.navigate("ExploreCategory", { category: cat });
-            }}
-          />
-        </View>
+        {mode === "people" ? (
+          <MeetPeopleSection home={home} loading={loading} navigation={navigation} />
+        ) : (
+          <DateIdeasSection home={home} loading={loading} navigation={navigation} />
+        )}
+      </ScrollView>
+    </View>
+  );
+}
 
-        {/* ─── Date venues rail ────────────────────────────────────────────── */}
-        <View style={styles.sectionNoPad}>
-          <SectionRail
-            title="Perfect for a first date"
-            onSeeAll={() => navigation.navigate("ExploreCategory", { category: "dates" })}
-          >
-            {loading
-              ? [1, 2, 3].map((k) => (
-                  <Skeleton key={k} width={190} height={190} radius={16} />
-                ))
-              : (home?.featuredVenues ?? []).map((venue) => (
-                  <VenueCard
-                    key={venue._id}
-                    venue={venue}
-                    onPress={() =>
-                      navigation.navigate("VenueDetail", { venueId: venue._id })
-                    }
-                  />
-                ))}
-            {!loading && (home?.featuredVenues ?? []).length === 0 && (
-              <ComingSoonCard
-                icon={<Coffee size={22} color={theme.colors.brand} strokeWidth={1.8} />}
-                text="Chennai date venues coming soon!"
-              />
-            )}
-          </SectionRail>
-        </View>
+function DateIdeasSection({
+  home,
+  loading,
+  navigation,
+}: {
+  home: ExploreHome | null;
+  loading: boolean;
+  navigation: any;
+}) {
+  return (
+    <>
+      {/* ─── Category strip ──────────────────────────────────────────────── */}
+      <View style={styles.sectionNoPad}>
+        <CategoryStrip
+          onSelect={(cat) => {
+            if (cat === "gifts") navigation.navigate("GiftCatalog");
+            else navigation.navigate("ExploreCategory", { category: cat });
+          }}
+        />
+      </View>
 
-        {/* ─── Featured events rail ─────────────────────────────────────────── */}
-        <View style={styles.sectionNoPad}>
-          <SectionRail
-            title="Trending this weekend"
-            onSeeAll={() => navigation.navigate("ExploreCategory", { category: "events" })}
-          >
-            {loading
-              ? [1, 2].map((k) => (
-                  <Skeleton key={k} width={200} height={210} radius={16} />
-                ))
-              : (home?.featuredEvents ?? []).map((event) => (
-                  <EventCard
-                    key={event._id}
-                    event={event}
-                    onPress={() =>
-                      navigation.navigate("EventDetail", { eventId: event._id })
-                    }
-                  />
-                ))}
-            {!loading && (home?.featuredEvents ?? []).length === 0 && (
-              <ComingSoonCard
-                icon={<Ticket size={22} color="#7C3AED" strokeWidth={1.8} />}
-                text="Chennai events coming soon!"
-              />
-            )}
-          </SectionRail>
-        </View>
+      {/* ─── Date venues rail ────────────────────────────────────────────── */}
+      <View style={styles.sectionNoPad}>
+        <SectionRail
+          title="Perfect for a first date"
+          onSeeAll={() => navigation.navigate("ExploreCategory", { category: "dates" })}
+        >
+          {loading
+            ? [1, 2, 3].map((k) => (
+                <Skeleton key={k} width={190} height={190} radius={16} />
+              ))
+            : (home?.featuredVenues ?? []).map((venue) => (
+                <VenueCard
+                  key={venue._id}
+                  venue={venue}
+                  onPress={() =>
+                    navigation.navigate("VenueDetail", { venueId: venue._id })
+                  }
+                />
+              ))}
+          {!loading && (home?.featuredVenues ?? []).length === 0 && (
+            <ComingSoonCard
+              icon={<Coffee size={22} color={theme.colors.brand} strokeWidth={1.8} />}
+              text="Chennai date venues coming soon!"
+            />
+          )}
+        </SectionRail>
+      </View>
 
-        {/* ─── Gift suggestions rail ───────────────────────────────────────── */}
-        <View style={styles.sectionNoPad}>
-          <SectionRail
-            title="Thoughtful gifts"
-            onSeeAll={() => navigation.navigate("GiftCatalog")}
-          >
-            {loading
-              ? [1, 2, 3].map((k) => (
-                  <Skeleton key={k} width={148} height={180} radius={16} />
-                ))
-              : (home?.giftSuggestions ?? []).map((item) => (
-                  <GiftCard
-                    key={item._id}
-                    item={item}
-                    onPress={() =>
-                      navigation.navigate("GiftItemDetail", { catalogItemId: item._id })
-                    }
-                  />
-                ))}
-            {!loading && (home?.giftSuggestions ?? []).length === 0 && (
-              <ComingSoonCard
-                icon={<Gift size={22} color={theme.colors.brand} strokeWidth={1.8} />}
-                text="Gift catalog loading..."
-              />
-            )}
-          </SectionRail>
-        </View>
-
-        {/* ─── Premium concierge banner ─────────────────────────────────────── */}
-        <View style={styles.section}>
-          <Pressable
-            onPress={() => navigation.navigate("PremiumRequest")}
-            style={({ pressed }) => [styles.premiumBanner, pressed && { opacity: 0.92 }]}
-          >
-            <View style={styles.premiumLeft}>
-              <Crown size={22} color="#F59E0B" strokeWidth={1.8} />
-              <View>
-                <Text style={styles.premiumTitle}>Premium Experiences</Text>
-                <Text style={styles.premiumSub}>
-                  Custom surprises, concierge-planned dates &amp; more
-                </Text>
-              </View>
-            </View>
-            <Sparkles size={18} color="#F59E0B" strokeWidth={1.8} />
-          </Pressable>
-        </View>
-
-        {/* ─── Upcoming events rail ────────────────────────────────────────── */}
-        {!loading && (home?.upcomingEvents ?? []).length > 0 && (
-          <View style={styles.sectionNoPad}>
-            <SectionRail
-              title="Upcoming in Chennai"
-              onSeeAll={() => navigation.navigate("ExploreCategory", { category: "events" })}
-            >
-              {home!.upcomingEvents.map((event) => (
+      {/* ─── Featured events rail ─────────────────────────────────────────── */}
+      <View style={styles.sectionNoPad}>
+        <SectionRail
+          title="Trending this weekend"
+          onSeeAll={() => navigation.navigate("ExploreCategory", { category: "events" })}
+        >
+          {loading
+            ? [1, 2].map((k) => (
+                <Skeleton key={k} width={200} height={210} radius={16} />
+              ))
+            : (home?.featuredEvents ?? []).map((event) => (
                 <EventCard
                   key={event._id}
                   event={event}
@@ -251,11 +258,177 @@ export default function ExploreHomeScreen() {
                   }
                 />
               ))}
-            </SectionRail>
+          {!loading && (home?.featuredEvents ?? []).length === 0 && (
+            <ComingSoonCard
+              icon={<Ticket size={22} color="#7C3AED" strokeWidth={1.8} />}
+              text="Chennai events coming soon!"
+            />
+          )}
+        </SectionRail>
+      </View>
+
+      {/* ─── Gift suggestions rail ───────────────────────────────────────── */}
+      <View style={styles.sectionNoPad}>
+        <SectionRail
+          title="Thoughtful gifts"
+          onSeeAll={() => navigation.navigate("GiftCatalog")}
+        >
+          {loading
+            ? [1, 2, 3].map((k) => (
+                <Skeleton key={k} width={148} height={180} radius={16} />
+              ))
+            : (home?.giftSuggestions ?? []).map((item) => (
+                <GiftCard
+                  key={item._id}
+                  item={item}
+                  onPress={() =>
+                    navigation.navigate("GiftItemDetail", { catalogItemId: item._id })
+                  }
+                />
+              ))}
+          {!loading && (home?.giftSuggestions ?? []).length === 0 && (
+            <ComingSoonCard
+              icon={<Gift size={22} color={theme.colors.brand} strokeWidth={1.8} />}
+              text="Gift catalog loading..."
+            />
+          )}
+        </SectionRail>
+      </View>
+
+      {/* ─── Premium concierge banner ─────────────────────────────────────── */}
+      <View style={styles.section}>
+        <Pressable
+          onPress={() => navigation.navigate("PremiumRequest")}
+          style={({ pressed }) => [styles.premiumBanner, pressed && { opacity: 0.92 }]}
+        >
+          <View style={styles.premiumLeft}>
+            <Crown size={22} color="#F59E0B" strokeWidth={1.8} />
+            <View>
+              <Text style={styles.premiumTitle}>Premium Experiences</Text>
+              <Text style={styles.premiumSub}>
+                Custom surprises, concierge-planned dates &amp; more
+              </Text>
+            </View>
           </View>
-        )}
-      </ScrollView>
-    </View>
+          <Sparkles size={18} color="#F59E0B" strokeWidth={1.8} />
+        </Pressable>
+      </View>
+
+      {/* ─── Upcoming events rail ────────────────────────────────────────── */}
+      {!loading && (home?.upcomingEvents ?? []).length > 0 && (
+        <View style={styles.sectionNoPad}>
+          <SectionRail
+            title="Upcoming in Chennai"
+            onSeeAll={() => navigation.navigate("ExploreCategory", { category: "events" })}
+          >
+            {home!.upcomingEvents!.map((event) => (
+              <EventCard
+                key={event._id}
+                event={event}
+                onPress={() =>
+                  navigation.navigate("EventDetail", { eventId: event._id })
+                }
+              />
+            ))}
+          </SectionRail>
+        </View>
+      )}
+    </>
+  );
+}
+
+function MeetPeopleSection({
+  home,
+  loading,
+  navigation,
+}: {
+  home: ExploreHome | null;
+  loading: boolean;
+  navigation: any;
+}) {
+  const openEvent = (eventId: string) => navigation.navigate("EventDetail", { eventId });
+
+  return (
+    <>
+      <View style={styles.sectionNoPad}>
+        <CategoryStrip
+          categories={SOCIAL_CATEGORIES}
+          onSelect={(cat) =>
+            navigation.navigate("ExploreCategory", { category: "events", audience: "MEET_PEOPLE", eventCategory: cat })
+          }
+        />
+      </View>
+
+      {!loading && (home?.myUpcomingEvents ?? []).length > 0 && (
+        <View style={styles.sectionNoPad}>
+          <SectionRail
+            title="Your upcoming plans"
+            onSeeAll={() => navigation.navigate("MyEvents")}
+          >
+            {home!.myUpcomingEvents!.map((event) => (
+              <EventCard key={event._id} event={event} onPress={() => openEvent(event._id)} />
+            ))}
+          </SectionRail>
+        </View>
+      )}
+
+      <View style={styles.sectionNoPad}>
+        <SectionRail
+          title="This weekend in Chennai"
+          onSeeAll={() =>
+            navigation.navigate("ExploreCategory", { category: "events", audience: "MEET_PEOPLE" })
+          }
+        >
+          {loading
+            ? [1, 2, 3].map((k) => <Skeleton key={k} width={200} height={210} radius={16} />)
+            : (home?.thisWeekend ?? []).map((event) => (
+                <EventCard key={event._id} event={event} onPress={() => openEvent(event._id)} />
+              ))}
+          {!loading && (home?.thisWeekend ?? []).length === 0 && (
+            <ComingSoonCard
+              icon={<Users size={22} color="#7C3AED" strokeWidth={1.8} />}
+              text="More Chennai meetups coming soon!"
+            />
+          )}
+        </SectionRail>
+      </View>
+
+      <View style={styles.sectionNoPad}>
+        <SectionRail
+          title="Free to join"
+          onSeeAll={() =>
+            navigation.navigate("ExploreCategory", { category: "events", audience: "MEET_PEOPLE", pricingType: "FREE_RSVP" })
+          }
+        >
+          {loading
+            ? [1, 2].map((k) => <Skeleton key={k} width={200} height={210} radius={16} />)
+            : (home?.freeEvents ?? []).map((event) => (
+                <EventCard key={event._id} event={event} onPress={() => openEvent(event._id)} />
+              ))}
+          {!loading && (home?.freeEvents ?? []).length === 0 && (
+            <ComingSoonCard
+              icon={<Users size={22} color="#7C3AED" strokeWidth={1.8} />}
+              text="No free RSVP events yet"
+            />
+          )}
+        </SectionRail>
+      </View>
+
+      {!loading && (home?.featuredSocial ?? []).length > 0 && (
+        <View style={styles.sectionNoPad}>
+          <SectionRail
+            title="Featured"
+            onSeeAll={() =>
+              navigation.navigate("ExploreCategory", { category: "events", audience: "MEET_PEOPLE" })
+            }
+          >
+            {home!.featuredSocial!.map((event) => (
+              <EventCard key={event._id} event={event} onPress={() => openEvent(event._id)} />
+            ))}
+          </SectionRail>
+        </View>
+      )}
+    </>
   );
 }
 

@@ -40,6 +40,12 @@ export const NOTIFICATION_TYPES = {
   EXPLORE_ADMIN_NEW_BOOKING: "EXPLORE_ADMIN_NEW_BOOKING",
   EXPLORE_ADMIN_NEW_TICKET: "EXPLORE_ADMIN_NEW_TICKET",
   EXPLORE_ADMIN_NEW_PREMIUM: "EXPLORE_ADMIN_NEW_PREMIUM",
+
+  // Fuse Explore — Iteration 2: Event Circles
+  EVENT_RSVP_CONFIRMED: "EVENT_RSVP_CONFIRMED",
+  EVENT_WAVE_RECEIVED: "EVENT_WAVE_RECEIVED",
+  EVENT_WAVE_MATCHED: "EVENT_WAVE_MATCHED",
+  EVENT_BADGE_EARNED: "EVENT_BADGE_EARNED",
 };
 
 export const NOTIFICATION_DEFAULTS = {
@@ -215,6 +221,28 @@ export const NOTIFICATION_DEFAULTS = {
     title: "New premium request",
     body: "A premium request needs follow-up.",
     screen: "PremiumRequestScreen",
+  },
+
+  // Explore — Iteration 2: Event Circles
+  [NOTIFICATION_TYPES.EVENT_RSVP_CONFIRMED]: {
+    title: "You're going!",
+    body: "Your RSVP is confirmed.",
+    screen: "MyEvents",
+  },
+  [NOTIFICATION_TYPES.EVENT_WAVE_RECEIVED]: {
+    title: "Someone waved at you",
+    body: "Someone from your event circle waved at you.",
+    screen: "EventCircle",
+  },
+  [NOTIFICATION_TYPES.EVENT_WAVE_MATCHED]: {
+    title: "It's a match!",
+    body: "You and someone from an event circle matched. Say hi!",
+    screen: "ChatScreen",
+  },
+  [NOTIFICATION_TYPES.EVENT_BADGE_EARNED]: {
+    title: "Badge earned!",
+    body: "You earned the Fuse Regular badge.",
+    screen: "MyEvents",
   },
 };
 

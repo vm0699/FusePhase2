@@ -28,6 +28,10 @@ export type Venue = {
   reviewCount?: number;
 };
 
+export type EventAudience = "DATE_IDEA" | "MEET_PEOPLE";
+export type EventPricingType = "FREE_RSVP" | "PAID_EXTERNAL" | "PAID_FUSE";
+export type EventRsvpStatus = "GOING" | "CANCELLED" | "CHECKED_IN";
+
 export type Event = {
   _id: string;
   title: string;
@@ -37,10 +41,10 @@ export type Event = {
   eventDate: string;
   images: string[];
   tags: string[];
-  ticketPrice: number;
+  ticketPrice?: number;
   originalPrice?: number;
   savingsAmount: number;
-  availableSlots: number;
+  availableSlots: number | null;
   isSoldOut: boolean;
   isFeatured: boolean;
   agePolicy?: string;
@@ -49,6 +53,26 @@ export type Event = {
   importantInfo?: string;
   maxPerOrder?: number;
   eventEndDate?: string;
+  // Iteration 2
+  audience: EventAudience;
+  pricingType: EventPricingType;
+  organizer?: { name: string; instagram?: string };
+  externalBookingUrl?: string;
+  externalPrice?: string;
+  rsvpCap: number | null;
+  goingCount: number;
+  myRsvp?: { status: EventRsvpStatus; showMeInCircle: boolean } | null;
+  promoCode?: string;
+};
+
+export type EventRsvp = {
+  _id: string;
+  eventId: string;
+  status: EventRsvpStatus;
+  showMeInCircle: boolean;
+  eventSnapshot: { title: string; eventDate: string; eventEndDate?: string };
+  checkedInAt?: string | null;
+  createdAt: string;
 };
 
 export type GiftSuggestion = {
@@ -61,11 +85,19 @@ export type GiftSuggestion = {
   category?: string;
 };
 
+export type ExploreMode = "dates" | "people";
+
 export type ExploreHome = {
-  featuredVenues: Venue[];
-  upcomingEvents: Event[];
-  featuredEvents: Event[];
-  giftSuggestions: GiftSuggestion[];
+  // "dates" mode / legacy
+  featuredVenues?: Venue[];
+  upcomingEvents?: Event[];
+  featuredEvents?: Event[];
+  giftSuggestions?: GiftSuggestion[];
+  // "people" mode
+  myUpcomingEvents?: Event[];
+  thisWeekend?: Event[];
+  freeEvents?: Event[];
+  featuredSocial?: Event[];
 };
 
 export type BookingStatus =
@@ -206,8 +238,9 @@ async function patchJson(path: string, body?: any) {
 export const exploreApi = {
   // ─── Home ─────────────────────────────────────────────────────────────────
 
-  async getHome(): Promise<{ city: string; home: ExploreHome }> {
-    return getJson("/api/explore/home");
+  async getHome(mode?: ExploreMode): Promise<{ city: string; mode?: ExploreMode; defaultMode: ExploreMode; home: ExploreHome }> {
+    const qs = mode ? `?mode=${mode}` : "";
+    return getJson(`/api/explore/home${qs}`);
   },
 
   // ─── Venues ───────────────────────────────────────────────────────────────
@@ -227,9 +260,11 @@ export const exploreApi = {
 
   // ─── Events ───────────────────────────────────────────────────────────────
 
-  async getEvents(opts?: { category?: string; limit?: number; offset?: number }): Promise<{ events: Event[] }> {
+  async getEvents(opts?: { category?: string; audience?: EventAudience; pricingType?: EventPricingType; limit?: number; offset?: number }): Promise<{ events: Event[] }> {
     const params = new URLSearchParams();
     if (opts?.category) params.set("category", opts.category);
+    if (opts?.audience) params.set("audience", opts.audience);
+    if (opts?.pricingType) params.set("pricingType", opts.pricingType);
     if (opts?.limit != null) params.set("limit", String(opts.limit));
     if (opts?.offset != null) params.set("offset", String(opts.offset));
     const qs = params.toString() ? `?${params.toString()}` : "";
@@ -238,6 +273,44 @@ export const exploreApi = {
 
   async getEventDetail(eventId: string): Promise<{ event: Event }> {
     return getJson(`/api/explore/events/${eventId}`);
+  },
+
+  // ─── Event Circle (RSVP / wave / check-in) ───────────────────────────────
+
+  async rsvpEvent(eventId: string, showMeInCircle: boolean = true): Promise<{ rsvp: { status: EventRsvpStatus; showMeInCircle: boolean }; promoCode?: string }> {
+    return postJson(`/api/explore/events/${eventId}/rsvp`, { showMeInCircle });
+  },
+
+  async cancelRsvp(eventId: string): Promise<{ success: boolean }> {
+    return postJson(`/api/explore/events/${eventId}/rsvp/cancel`, {});
+  },
+
+  async updateRsvpVisibility(eventId: string, showMeInCircle: boolean): Promise<{ success: boolean }> {
+    return patchJson(`/api/explore/events/${eventId}/rsvp`, { showMeInCircle });
+  },
+
+  async getMyEvents(): Promise<{
+    upcoming: EventRsvp[];
+    past: EventRsvp[];
+    eventStats: { checkInCount: number; currentStreak: number; badges: string[] };
+  }> {
+    return getJson("/api/explore/my-events");
+  },
+
+  async getEventCircle(eventId: string): Promise<{
+    hasAccess: boolean;
+    teaser?: { goingCount: number; genderBalance: { men: number; women: number; other: number }; sharedInterestCount: number };
+    attendees?: Array<{ userId: string; name: string; age: number | null; photo?: string; sharedInterestCount: number; waveStatus: "NONE" | "PENDING" | "MATCHED" }>;
+  }> {
+    return getJson(`/api/explore/events/${eventId}/circle`);
+  },
+
+  async waveAtAttendee(eventId: string, toUserId: string): Promise<{ isMatch: boolean; chatId?: string; otherUser?: { _id: string; name: string; photos: string[] } }> {
+    return postJson(`/api/explore/events/${eventId}/wave`, { toUserId });
+  },
+
+  async checkInEvent(eventId: string, code: string): Promise<{ success: boolean; badgeEarned?: string }> {
+    return postJson(`/api/explore/events/${eventId}/checkin`, { code });
   },
 
   // ─── Bookings ─────────────────────────────────────────────────────────────

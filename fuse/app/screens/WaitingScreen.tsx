@@ -36,7 +36,7 @@ export default function WaitingScreen() {
     const leaveQueueAndDisconnect = (reason = "left") => {
       if (socket.current) {
         console.log("[video-client] leaving_queue", { userId, reason });
-        socket.current.emit("leave_video_queue", { userId, reason });
+        socket.current.emit("leave_video_queue", { reason });
         socket.current.disconnect();
         socket.current = null;
       }
@@ -113,91 +113,108 @@ export default function WaitingScreen() {
       }
     };
 
-    try {
-      if (!userId || !interests) {
-        console.warn("Invalid params. userId or interests missing.");
-        return navigation.goBack();
-      }
-
-      if (!SERVER_URL) {
-        console.error("[video-client] missing_server_url");
-        Alert.alert("Error", "API base URL is missing.");
-        return navigation.goBack();
-      }
-
-      socket.current = io(SERVER_URL, {
-        path: "/socket.io",
-        transports: ["websocket", "polling"],
-        forceNew: true,
-        reconnection: true,
-        reconnectionAttempts: 10,
-        reconnectionDelay: 1500,
-        timeout: 15000,
-      });
-
-      socket.current.on("connect", () => {
-        const normalizedInterests = interests.map((i) => i.toLowerCase());
-        console.log("[video-client] socket_connected", {
-          socketId: socket.current?.id,
-          userId,
-          interests: normalizedInterests,
-        });
-        socket.current.emit("join_video_queue", {
-          userId,
-          interests: normalizedInterests,
-        });
-      });
-
-      socket.current.on("queue_joined", () => {
-        console.log("[video-client] queue_joined", { userId });
-        waitingRef.current = true;
-        setWaiting(true);
-      });
-
-      socket.current.on("match_found", (payload) => {
-        console.log("[video-client] match_found", payload);
-        handleMatchFound(payload);
-      });
-
-      socket.current.on("queue_error", (err) => {
-        console.error("Queue error:", err);
-        Alert.alert("Error", err?.message || "Failed to join video queue.");
-      });
-
-      socket.current.on("disconnect", () => {
-        console.log("[video-client] socket_disconnected", { userId });
-      });
-
-      socket.current.on("connect_error", (err) => {
-        console.error("[video-client] socket_connect_error", {
-          userId,
-          serverUrl: SERVER_URL,
-          message: err?.message || null,
-          description: err?.description || null,
-          type: err?.type || null,
-        });
-      });
-
-      timeoutRef.current = setTimeout(() => {
-        if (waitingRef.current && !navigatedRef.current) {
-          leaveQueueAndDisconnect("timeout");
-          Alert.alert("No match found", "Please try again later.");
+    const connectSocket = async () => {
+      try {
+        if (!userId || !interests) {
+          console.warn("Invalid params. userId or interests missing.");
           navigation.goBack();
+          return;
         }
-      }, 60000);
 
-      return () => {
-        isMounted = false;
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
+        if (!SERVER_URL) {
+          console.error("[video-client] missing_server_url");
+          Alert.alert("Error", "API base URL is missing.");
+          navigation.goBack();
+          return;
         }
-        if (!navigatedRef.current) {
-          leaveQueueAndDisconnect("screen_unmount");
+
+        // Socket connections are authenticated server-side via this JWT —
+        // the server derives the real userId from it and no longer trusts
+        // any userId sent in event payloads.
+        const jwtToken = await AsyncStorage.getItem("jwtToken");
+        if (!jwtToken) {
+          navigation.replace("Login");
+          return;
         }
-      };
-    } catch (err) {
-      console.error("useEffect error in WaitingScreen:", err);
-    }
+
+        if (!isMounted) return;
+
+        socket.current = io(SERVER_URL, {
+          path: "/socket.io",
+          transports: ["websocket", "polling"],
+          forceNew: true,
+          reconnection: true,
+          reconnectionAttempts: 10,
+          reconnectionDelay: 1500,
+          timeout: 15000,
+          auth: { token: jwtToken },
+        });
+
+        socket.current.on("connect", () => {
+          const normalizedInterests = interests.map((i) => i.toLowerCase());
+          console.log("[video-client] socket_connected", {
+            socketId: socket.current?.id,
+            userId,
+            interests: normalizedInterests,
+          });
+          socket.current.emit("join_video_queue", {
+            interests: normalizedInterests,
+          });
+        });
+
+        socket.current.on("queue_joined", () => {
+          console.log("[video-client] queue_joined", { userId });
+          waitingRef.current = true;
+          setWaiting(true);
+        });
+
+        socket.current.on("match_found", (payload) => {
+          console.log("[video-client] match_found", payload);
+          handleMatchFound(payload);
+        });
+
+        socket.current.on("queue_error", (err) => {
+          console.error("Queue error:", err);
+          Alert.alert("Error", err?.message || "Failed to join video queue.");
+        });
+
+        socket.current.on("disconnect", () => {
+          console.log("[video-client] socket_disconnected", { userId });
+        });
+
+        socket.current.on("connect_error", (err) => {
+          console.error("[video-client] socket_connect_error", {
+            userId,
+            serverUrl: SERVER_URL,
+            message: err?.message || null,
+            description: err?.description || null,
+            type: err?.type || null,
+          });
+        });
+
+        timeoutRef.current = setTimeout(() => {
+          if (waitingRef.current && !navigatedRef.current) {
+            leaveQueueAndDisconnect("timeout");
+            Alert.alert("No match found", "Please try again later.");
+            navigation.goBack();
+          }
+        }, 60000);
+      } catch (err) {
+        console.error("connectSocket error in WaitingScreen:", err);
+      }
+    };
+
+    void connectSocket();
+
+    return () => {
+      isMounted = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (!navigatedRef.current) {
+        leaveQueueAndDisconnect("screen_unmount");
+      }
+    };
   }, []);
 
   return (

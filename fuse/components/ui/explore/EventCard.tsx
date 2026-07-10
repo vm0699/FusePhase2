@@ -6,7 +6,7 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
-import { Calendar, MapPin, Ticket } from "lucide-react-native";
+import { Calendar, MapPin, Ticket, Users } from "lucide-react-native";
 import { theme } from "../../../app/theme";
 import type { Event } from "../../../app/api/exploreApi";
 
@@ -27,6 +27,12 @@ function formatEventDate(dateStr: string): string {
   } catch {
     return dateStr;
   }
+}
+
+function pricingLabel(event: Event): string {
+  if (event.pricingType === "FREE_RSVP") return "Free";
+  if (event.pricingType === "PAID_EXTERNAL") return event.externalPrice || "Via organizer";
+  return `₹${event.ticketPrice ?? ""}`;
 }
 
 export default function EventCard({ event, onPress, style }: Props) {
@@ -77,15 +83,24 @@ export default function EventCard({ event, onPress, style }: Props) {
         <View style={styles.priceRow}>
           <View style={styles.row}>
             <Ticket size={12} color={theme.colors.brand} strokeWidth={2} />
-            <Text style={styles.price}>₹{event.ticketPrice}</Text>
-            {event.originalPrice && event.originalPrice > event.ticketPrice && (
-              <Text style={styles.originalPrice}>₹{event.originalPrice}</Text>
-            )}
+            <Text style={styles.price}>{pricingLabel(event)}</Text>
+            {event.pricingType === "PAID_FUSE" &&
+              event.originalPrice != null &&
+              event.ticketPrice != null &&
+              event.originalPrice > event.ticketPrice && (
+                <Text style={styles.originalPrice}>₹{event.originalPrice}</Text>
+              )}
           </View>
-          {!event.isSoldOut && (
+          {!event.isSoldOut && event.availableSlots != null && (
             <Text style={styles.slots}>{event.availableSlots} left</Text>
           )}
         </View>
+        {event.goingCount > 0 && (
+          <View style={styles.row}>
+            <Users size={12} color={theme.colors.textSecondary} strokeWidth={2} />
+            <Text style={styles.meta}>{event.goingCount} from Fuse going</Text>
+          </View>
+        )}
       </View>
     </Pressable>
   );

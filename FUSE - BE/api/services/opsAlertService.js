@@ -111,6 +111,30 @@ export const alertNewTicketOrder = async (ticketOrder) => {
   ]);
 };
 
+// ─── event capacity (Explore Iteration 2) ──────────────────────────────────────
+
+export const alertEventCapacity = async (event) => {
+  const summary = {
+    type: "Event Nearing Capacity",
+    event: event?.title || "—",
+    going: `${event?.rsvpCount || 0} / ${event?.rsvpCap ?? "∞"}`,
+    at: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+  };
+
+  const waMessage =
+    `🔥 *Event nearing capacity* — ${summary.event}\n` +
+    `Going: ${summary.going}\n` +
+    `Time: ${summary.at}\n` +
+    `Admin: ${ADMIN_URL}/events/${event?._id}`;
+
+  const emailHtml = buildEmailHtml("Event Nearing Capacity", summary, event?._id);
+
+  await Promise.allSettled([
+    sendWhatsAppAlert(waMessage),
+    sendEmailAlert(`[Fuse] Event nearing capacity: ${summary.event}`, emailHtml),
+  ]);
+};
+
 // ─── premium request ──────────────────────────────────────────────────────────
 
 export const alertNewPremiumRequest = async (request) => {
@@ -192,4 +216,5 @@ export default {
   alertNewBooking,
   alertNewTicketOrder,
   alertNewPremiumRequest,
+  alertEventCapacity,
 };

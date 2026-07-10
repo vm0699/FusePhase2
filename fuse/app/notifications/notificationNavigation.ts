@@ -115,6 +115,30 @@ export function resolveNotificationRoute(
     case NOTIFICATION_TYPES.PREMIUM_CONFIRMED:
       return { name: "ExploreHome" };
 
+    // ─── Explore — Iteration 2: Event Circles ─────────────────────────────
+    case NOTIFICATION_TYPES.EVENT_RSVP_CONFIRMED:
+    case NOTIFICATION_TYPES.EVENT_BADGE_EARNED:
+      return { name: "MyEvents" };
+
+    case NOTIFICATION_TYPES.EVENT_WAVE_RECEIVED:
+      if (!data.eventId) return { name: "MyEvents" };
+      return { name: "EventCircle", params: { eventId: data.eventId } };
+
+    case NOTIFICATION_TYPES.EVENT_WAVE_MATCHED:
+      if (!data.chatId) return { name: "ChatListScreen" };
+      return {
+        name: "ChatScreen",
+        params: {
+          receiverId: counterpartId,
+          receiverUsername: counterpartName,
+          chatId: data.chatId,
+          channelSid: twilioChannelSid,
+          twilioChatChannelSid: twilioChannelSid,
+          chatStatus: data.chatStatus || "accepted",
+          showMatchedBanner: true,
+        },
+      };
+
     default:
       return { name: "MainTabs" };
   }

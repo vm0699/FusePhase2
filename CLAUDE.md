@@ -2,6 +2,8 @@
 
 This note is for Claude before starting the next implementation phase.
 
+> **Explore Iteration 2 (implemented 2026-07-03):** see `FUSE_EXPLORE_ITERATION2_PLAN.md` (repo root, companion to `FUSE_EXPLORE_PLAN.md`) — all stages A–G complete and verified. It supersedes the "marketplace-first" framing for cold-start: Explore now splits into a segmented tab — "Date Ideas" (matched users) vs "Meet People" (run clubs, house parties, meetups aggregated from existing Chennai organizers, free listings) — and adds the **Event Circle** social layer (RSVP → see other Fuse attendees → wave → match via the shared `matchService`, code-based check-in, event-scoped discovery filters). Read that plan (esp. its Progress Log) before touching any Explore, Event, or discovery-scoring code — it has the exact files/functions involved.
+
 ## 0. Read This First: Current Swipe Discovery Handoff Verified From Code
 
 This section is the current source-of-truth for the filter screen, profile fetching, priority ordering, and swipe discovery wiring. It was verified against the current codebase. Some older sections below mention backend "widening variants"; that is stale. The current backend does not use variant widening. It builds one scored deck, caches it, paginates it, and only rebuilds with already-swiped users included if the unswiped deck is empty.

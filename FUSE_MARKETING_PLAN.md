@@ -7,14 +7,18 @@
 
 Fuse is a live-but-unpromoted dating/social app (~20 users, several are test accounts). This plan takes it from a standing start to its **first 100 real organic users in Chennai**, digital-only, on a small paid budget — then unlocks an IRL event + paid amplification as the scaling lever once that base exists.
 
-The brand story leads with Fuse's real differentiators, not generic dating-app claims:
-- **Gifting economy** — send a thoughtful, platform-approved gift *after* real conversation (never to buy attention).
-- **Offline dating** — Fuse is built to get you off the app and onto an actual date.
-- **Real-world Explore / events** — curated Chennai venues, events, and experiences inside the app.
+**v2 refinement (post Explore Iteration 2, 2026-07-03):** Fuse is no longer marketed as "a dating app with a shop tab." It is **"Chennai's going-out app where you never go alone"** — one product, two doors:
+- **Meet People** (group events: run clubs, house parties, gigs, meetups) → the **acquisition door**, especially for women (group settings are lower-stakes than 1:1 swiping). See who else from Fuse is going; connect after.
+- **Date Ideas** (matches, gifts, venue bookings, invite-your-match) → the **retention/monetization door**.
 
-Positioning one-liner (working): **"Chennai's dating app that actually gets you off the app. Match. Gift. Go out."**
+Positioning one-liner (v2): **"Match. Gift. Go out — with your match or with the city."** Sub-line: *Chennai's going-out app where you never go alone.*
 
-Silent-but-critical objective baked into every tactic: **acquire women first**. The gifting + curated-experiences angles are female-attractive by design; we lean on them (not loud "safety" messaging) to keep the gender ratio healthy from user #1.
+Three differentiators, sequenced under the two-door frame:
+- **Real-world Explore / events** — the lead acquisition hook; the social layer (*who else from Fuse is going*) is something Hinge (no events) and District (no people) structurally cannot offer.
+- **Gifting economy** — the retention/dating hook; a thoughtful platform-approved gift *after* real conversation (never to buy attention).
+- **Offline dating** — the through-line; matches don't die in the chat, they become a real plan.
+
+Silent-but-critical objective baked into every tactic: **acquire women first**. Group meetups are now the product-backed female entry point ("come for the run club, stay for the dating app"), reinforced by verified attendees and honest gender-balance in the circle teaser. We lean on this, not loud "safety" messaging.
 
 ---
 
@@ -22,9 +26,9 @@ Silent-but-critical objective baked into every tactic: **acquire women first**. 
 
 **Target audience (Phase A):** Chennai, 21–30, urban, English/Tanglish-speaking, college-final-year to young-working professionals. Skew content female-first. Secondary: their friend groups (dating apps spread socially).
 
-**The wedge (why Fuse, not Tinder/Bumble/Hinge):** those apps end at the chat. Fuse is designed for what happens *next* — a real gesture (gift) and a real date (Explore/events in Chennai). We sell **actually meeting**, not swiping.
+**The wedge (why Fuse, not Tinder/Bumble/Hinge/District):** dating apps end at the chat; ticket apps (District/Insider/BookMyShow) sell a seat but you go alone. Fuse is the only one doing the middle — **the plan AND the people in it**. We sell **going out without going alone**, not swiping.
 
-**Cold-start truth:** a dating app is a two-sided marketplace. 100 users with a ~50/50 ratio in *one city* beats 1,000 scattered users. Everything is Chennai-geo-concentrated on purpose — density is the strategy.
+**Cold-start truth (v2):** the fastest path to liquidity is NOT dating ads (a dating app at 100 users has an empty deck — the ad betrays itself). It's **events**: a real Chennai run club with 60 runners + 8 Fuse people is full and believable from day one. Events make Fuse *useful before matching liquidity exists*; each listing needs only ~5 Fuse users for the "I didn't come alone" moment. Everything stays Chennai-geo-concentrated — density is the strategy.
 
 **Content job:** ~80% reach/relatable/local (shareable, no pitch); ~20% direct product/CTA. Earn the pitch by being entertaining and locally useful first.
 
@@ -48,12 +52,12 @@ Unlocks: a **Fuse Chennai singles mixer / curated experience** (offline position
 
 - **Handle:** `fuse.chennai` / `getfuse.in` style — city in the name aids local discovery.
 - **Name field (searchable):** "Fuse — Chennai Dating" (IG Name field is SEO; use keywords).
-- **Bio:**
-  > Chennai's dating app that gets you *off* the app.
-  > Match → gift → actually go out.
+- **Bio (v2, two-door):**
+  > Chennai's going-out app. You never go alone.
+  > Meet people at real events · turn matches into real dates.
   > 🎟️ Founding 100 — join the first members ↓
 - **Link-in-bio:** one link → simple page with App/Play Store links + Founding-100 signup. Track clicks.
-- **Highlights (5):** `How it works` · `Gifting` · `Chennai spots` · `Founding 100` · `FAQ/Safe`.
+- **Highlights (6):** `Meet People` · `Date Ideas` · `This weekend` · `Gifting` · `Founding 100` · `FAQ/Safe`.
 - **Grid seeding:** post 3 foundational reels before any promotion.
 - **Pinned reels (3):** "what is Fuse" explainer, strongest relatable hook, gifting-concept reel.
 
@@ -288,3 +292,84 @@ Track weekly: followers, reel reach, **saves + shares** (weight over likes), pro
 - **Weeks 1–2:** account live + first 5 reels posted; ≥1 reel clears meaningfully higher saves/shares; link-in-bio getting clicks.
 - **Weeks 3–4:** first creator collab live; measurable signup lift; ratio not badly skewed.
 - **Week ~6 (Phase-A success):** ~100 real Chennai users, workable gender ratio, 2–3 proven reels → triggers Phase B (IRL event + paid scale).
+
+---
+
+## 14. Explore Events Integration — the v2 acquisition engine (post Explore Iteration 2, 2026-07-03)
+
+> Full product/tech plan: `FUSE_EXPLORE_ITERATION2_PLAN.md` (all stages A–G complete). This section makes **events the primary acquisition engine**; content amplifies them. Nothing above is deleted — it's re-sequenced under the two-door frame.
+
+Explore is split into **"Date Ideas"** (matched users: venues, gifts, bookings) and **"Meet People"** (run clubs, house parties, gigs, meetups — open to everyone). Fuse aggregates existing Chennai events for free (organizer green-light, no commission) and adds the **Event Circle**: RSVP through Fuse → see who else from Fuse is going → wave → connect → check in at the venue. Positioning: **"Match. Gift. Go out — with your match or with the city."**
+
+### 14.1 Strategic foundation (the "why anyone needs this")
+- **Exact need:** the gap between meeting people online and actually meeting them offline — *"I want to go out and meet people in Chennai, but I either go alone, or my matches die in the chat."* Fuse's promise: **you never go alone.**
+- **Why reach for Fuse (not "switch"):** entry is a free event RSVP, not a dating commitment (low switching cost). Fuse is the only app combining **the plan AND the people in it** — Hinge has people but no events; District has events but no people.
+- **How we create the need:** name the pain (relatable content) → make it concrete + urgent (a real event + who's going + a perk) → de-risk (group, verified, free, gender-balanced) → reward (circle, better match odds, Fuse Regular badge) → ritualize (weekly "This weekend on Fuse"). Latent want → habit → need.
+
+### 14.2 Event-led path to "Founding 100"
+1. List **3–4 real Chennai events/month** via admin (run clubs, board-game cafés, open-mics, house parties) — supply costs ₹0.
+2. Each event needs only **~5 Fuse users** to feel alive; seed from existing users + content.
+3. Each organizer **cross-promotes** "RSVP on Fuse" to their community → ₹0-CAC acquisition of the exact persona.
+4. Every event = a **micro-campaign** = 3 content moments: announce → circle-teaser countdown → recap reel. 4 events/month ≈ 12+ free content moments.
+5. Users arrive for the event, stay for the app. The 100-user goal becomes an outcome of running ~4 real circles, not just posting.
+
+### 14.3 Organizer outreach — the core new growth channel
+- **Targets:** run clubs, board-game cafés, open-mic/comedy hosts, house-party throwers, college fest teams, small gig promoters, hobby meetups (cycling, trekking, book clubs).
+- **Pitch (borrowed trust, zero ask):** *"We put your event in front of Chennai's most socially active 21–30 crowd, free. They RSVP through Fuse, you get more attendees. Optionally give them a code/offer. All we ask: mention 'RSVP on Fuse' once."*
+- **DM template:**
+  > Hi [name] — love what you're doing with [run club/open mic]. I run Fuse, a Chennai going-out app. We list local events free and show our users who else is going, so people show up in a group instead of alone. Happy to feature [event] this weekend at zero cost — you just get more RSVPs. Want me to add it? (We can give your Fuse RSVPs a small perk too.)
+- **Target:** 3–4 confirmed organizers into Week 2; ≥1 female-led community (run/book clubs skew female = ratio help).
+- **Build:** a one-page organizer explainer (what Fuse is, what they get, a "who's going" screenshot).
+
+### 14.4 6th content pillar — "This weekend on Fuse" (RITUAL/FOMO)
+Weekly event-roundup reel + carousel: "This weekend in Chennai — 5 things + who from Fuse is going." Save-bait + FOMO + **organizer tags** (they reshare = free reach). Fixed weekly slot (e.g., Thursdays).
+
+### 14.5 New event-driven reel scripts (S16–S20)
+Format legend as §6. These are angles Hinge/District structurally cannot make.
+
+**S16 — "POV: you moved to Chennai and know nobody" [U/F] · Meet People (REACH/female-friendly)**
+- Hook: "POV: you moved to Chennai for work and your only friends are your colleagues."
+- Body: scrolling alone on a Saturday → open Fuse → "Meet People" → RSVP a Sunday run club → "8 people from Fuse going" → cut to being there, not alone.
+- CTA: "You don't have to go alone. Fuse — bio."
+- Caption: "New in Chennai? The app isn't for finding a date first. It's for finding your people. 🔗"
+- Tags: #chennai #newinchennai #datinginchennai #chennaidiaries #meetpeople #chennaievents #runclub
+
+**S17 — "I went to a run club alone — here's who I met" [U/testimonial] · Meet People (PROOF)**
+- Hook: "I almost didn't go. Went alone. Here's what happened."
+- Body: first-person recap of a real Fuse-listed event — showed up, saw the Fuse circle, met people, one became a chat. Warm, unscripted.
+- CTA: "There's one this weekend too. Bio."
+- Caption: "The 'go alone' fear is the only thing between you and your next friend group. Fuse fixes that."
+- Tags: #chennai #runclub #chennaidiaries #meetpeople #datinginchennai #chennaievents
+
+**S18 — "This weekend on Fuse" [X carousel + voiceover] · This weekend on Fuse (RITUAL) — WEEKLY**
+- Hook: "5 things happening in Chennai this weekend — and who's going."
+- Body: 5 real listed events w/ flyers/b-roll + "X from Fuse going" each. Tag every organizer.
+- CTA: "RSVP free on Fuse. Bio."
+- Caption: "Your weekend plan, sorted. Save it 📌 Tag who you're dragging along. [tag organizers]"
+- Tags: #chennai #chennaievents #thingstodoinchennai #chennaidiaries #chennaithisweekend #datinginchennai
+
+**S19 — "House party but everyone's verified" [U/X] · Meet People (safety-quiet)**
+- Hook: "A house party where everyone's actually verified? In Chennai?"
+- Body: the vibe of a curated meetup — see who's going before you go, honest gender balance, no randoms. Low-key safety, no lecture.
+- CTA: "See who's going before you go. Fuse — bio."
+- Caption: "Know the room before you walk in. That's the whole idea."
+- Tags: #chennai #chennaidiaries #meetpeople #chennaievents #datinginchennai #houseparty
+
+**S20 — "Match → but make it a real plan" [X screen-rec] · Product/Date Ideas (RETENTION)**
+- Hook: "You matched. Now what? On Fuse — an actual plan."
+- Body: screen-rec — match → chat → "Date Ideas" → pick a Chennai venue/event → invite your match → send a small gift.
+- CTA: "Stop letting matches die in the chat. Bio."
+- Caption: "Every other app leaves you at 'hey'. Fuse turns the match into Saturday."
+- Tags: #datinginchennai #chennai #chennaidiaries #datingapp #datenight #chennaievents
+
+### 14.6 Refinements to earlier sections
+- **Bio/highlights (§3):** already updated to the two-door line + Meet People / Date Ideas / This weekend highlights.
+- **Pillars (§4):** add pillar #6 "This weekend on Fuse"; rebalance weekly toward Meet-People/event content as the acquisition lead.
+- **Calendar (§5):** fixed weekly **S18** (Thursdays); rotate **S16/S17/S19** into Meet-People slots, **S20** into product slots.
+- **Female-seeding (§8):** now product-backed — lead female acquisition with group-event content (S16/S17/S19) + female-led organizer communities.
+- **Phase B (§9):** de-risked — the "Fuse mixer" is just the first Fuse-hosted event in the Meet People feed; RSVP/circle/check-in infra already exists.
+- **Paid budget (§10):** best Phase-A spend = boosting a proven event-recap or "who's going" reel (verifiable, FOMO). Keep no-boost-until-proven.
+- **Metrics (§11):** add event-funnel metrics — events listed/month, **organizers confirmed**, RSVPs, **avg Fuse-circle size/event**, check-ins, event→signup attribution.
+
+### 14.7 Founding-100 perk gets concrete
+Early circle access + event promo codes + the **"Fuse Regular" badge** (3 check-ins) as a status mechanic — "Founding 100 + Regulars first" for capped Fuse-hosted events.

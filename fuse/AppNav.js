@@ -95,6 +95,8 @@ import EventDetailScreen from "./app/screens/EventDetailScreen";
 import EventTicketCheckoutScreen from "./app/screens/EventTicketCheckoutScreen";
 import MyTicketOrdersScreen from "./app/screens/MyTicketOrdersScreen";
 import PremiumRequestScreen from "./app/screens/PremiumRequestScreen";
+import MyEventsScreen from "./app/screens/MyEventsScreen";
+import EventCircleScreen from "./app/screens/EventCircleScreen";
 import { navigationRef } from "./app/navigation/navigationRef";
 import { pushManager } from "./app/notifications/pushManager";
 
@@ -239,6 +241,8 @@ export default function AppNavigator() {
           <Stack.Screen name="EventTicketCheckout" component={EventTicketCheckoutScreen} options={{ headerShown: false }} />
           <Stack.Screen name="MyTicketOrders" component={MyTicketOrdersScreen} options={{ headerShown: false }} />
           <Stack.Screen name="PremiumRequest" component={PremiumRequestScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="MyEvents" component={MyEventsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="EventCircle" component={EventCircleScreen} options={{ headerShown: false }} />
             </Stack.Navigator>
           </NavigationContainer>
         </GestureHandlerRootView>

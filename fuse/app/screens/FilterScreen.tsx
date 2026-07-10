@@ -22,6 +22,8 @@ type RootStackParamList = {
 };
 type NavigationProp = StackNavigationProp<RootStackParamList, "FilterScreen">;
 
+export type EventScope = "EVERYONE" | "EVENT_GOERS" | "MY_CIRCLES";
+
 export type DiscoveryFilters = {
   ageRange: { min: number; max: number };
   ageFlex: boolean;
@@ -34,6 +36,7 @@ export type DiscoveryFilters = {
   drinking: string[];
   smoking: string[];
   activeOnly: boolean;
+  eventScope: EventScope;
 };
 
 const TEMP_INTERESTS_KEY = "temporaryInterests";
@@ -51,6 +54,7 @@ const DEFAULT_FILTERS: DiscoveryFilters = {
   drinking: [],
   smoking: [],
   activeOnly: false,
+  eventScope: "EVERYONE",
 };
 
 // Option lists matching the existing picker components
@@ -241,6 +245,7 @@ const FilterScreen = () => {
               drinking: prefs.drinking ?? [],
               smoking: prefs.smoking ?? [],
               activeOnly: prefs.activeOnly ?? false,
+              eventScope: prefs.eventScope ?? DEFAULT_FILTERS.eventScope,
             };
             setFilters(merged);
             setLoading(false);
@@ -358,6 +363,7 @@ const FilterScreen = () => {
     filters.smoking.length > 0,
     filters.activeOnly,
     filters.interests.length > 0,
+    filters.eventScope !== "EVERYONE",
   ].filter(Boolean).length;
 
   return (
@@ -488,6 +494,45 @@ const FilterScreen = () => {
               Only show people who were active in the last 7 days.
             </Text>
           )}
+        </Section>
+
+        {/* ── EVENT DISCOVERY ── */}
+        <Section label="PEOPLE WHO GO OUT">
+          <View style={styles.eventScopeRow}>
+            {(
+              [
+                { key: "EVERYONE", label: "Everyone" },
+                { key: "EVENT_GOERS", label: "Event-goers" },
+                { key: "MY_CIRCLES", label: "My circles" },
+              ] as { key: EventScope; label: string }[]
+            ).map((opt) => (
+              <TouchableOpacity
+                key={opt.key}
+                style={[
+                  styles.eventScopePill,
+                  filters.eventScope === opt.key && styles.eventScopePillActive,
+                ]}
+                onPress={() => toggle("eventScope", opt.key)}
+                activeOpacity={0.85}
+              >
+                <Text
+                  style={[
+                    styles.eventScopePillText,
+                    filters.eventScope === opt.key && styles.eventScopePillTextActive,
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.helperNote}>
+            {filters.eventScope === "EVENT_GOERS"
+              ? "Only show people who've checked into at least one Fuse event."
+              : filters.eventScope === "MY_CIRCLES"
+              ? "Only show people who share an event circle with you."
+              : "Show everyone, regardless of event activity."}
+          </Text>
         </Section>
 
         {/* ── INTERESTS ── */}
@@ -815,6 +860,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 10,
+  },
+  eventScopeRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  eventScopePill: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "#F9FAFB",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+  },
+  eventScopePillActive: {
+    backgroundColor: "#FFE7E9",
+    borderColor: "#ff5864",
+  },
+  eventScopePillText: {
+    fontSize: 12,
+    fontFamily: "Poppins-SemiBold",
+    color: "#6B7280",
+  },
+  eventScopePillTextActive: {
+    color: "#ff5864",
   },
 
   // HELPER NOTE

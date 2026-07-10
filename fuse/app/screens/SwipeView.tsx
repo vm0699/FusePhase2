@@ -44,6 +44,7 @@ type DiscoveryFilters = {
   drinking?: string[];
   smoking?: string[];
   activeOnly?: boolean;
+  eventScope?: "EVERYONE" | "EVENT_GOERS" | "MY_CIRCLES";
 } | null;
 
 type DiscoveryProfile = {
@@ -83,6 +84,7 @@ type DiscoveryProfile = {
   activityLabel?: string | null;
   distanceKm?: number | null;
   sharedInterestCount?: number;
+  sharedEventTitle?: string | null;
 };
 
 type DiscoverySession = {
@@ -733,6 +735,13 @@ export default function SwipeView() {
                         </Text>
                       </View>
                     ) : null}
+                    {profile.sharedEventTitle ? (
+                      <View style={styles.eventBadge}>
+                        <Text style={styles.eventBadgeText}>
+                          You were both at {profile.sharedEventTitle}
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                 )}
 
@@ -1063,6 +1072,22 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.35)",
   },
   activityBadgeText: {
+    fontSize: 11,
+    color: "#fff",
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+  eventBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(124,58,237,0.55)",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.35)",
+  },
+  eventBadgeText: {
     fontSize: 11,
     color: "#fff",
     fontWeight: "600",
