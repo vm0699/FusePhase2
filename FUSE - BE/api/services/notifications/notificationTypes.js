@@ -3,9 +3,6 @@ export const NOTIFICATION_TYPES = {
   COMPLIMENT_ACCEPTED: "COMPLIMENT_ACCEPTED",
   COMPLIMENT_REJECTED: "COMPLIMENT_REJECTED",
   CHAT_MESSAGE: "CHAT_MESSAGE",
-  GIFT_INTENT_RECEIVED: "GIFT_INTENT_RECEIVED",
-  GIFT_INTENT_ACCEPTED: "GIFT_INTENT_ACCEPTED",
-  GIFT_INTENT_REJECTED: "GIFT_INTENT_REJECTED",
   GIFT_PAYMENT_SUCCESS: "GIFT_PAYMENT_SUCCESS",
   GIFT_PAYMENT_FAILED: "GIFT_PAYMENT_FAILED",
   GIFT_ORDER_DISPATCHED: "GIFT_ORDER_DISPATCHED",
@@ -68,21 +65,6 @@ export const NOTIFICATION_DEFAULTS = {
     title: "New message",
     body: "You have a new message.",
     screen: "ChatScreen",
-  },
-  [NOTIFICATION_TYPES.GIFT_INTENT_RECEIVED]: {
-    title: "Gift request received",
-    body: "You received a gift intent.",
-    screen: "GiftIntentDetailsScreen",
-  },
-  [NOTIFICATION_TYPES.GIFT_INTENT_ACCEPTED]: {
-    title: "Gift accepted",
-    body: "Your gift intent was accepted.",
-    screen: "GiftIntentDetailsScreen",
-  },
-  [NOTIFICATION_TYPES.GIFT_INTENT_REJECTED]: {
-    title: "Gift declined",
-    body: "Your gift intent was declined.",
-    screen: "GiftIntentDetailsScreen",
   },
   [NOTIFICATION_TYPES.GIFT_PAYMENT_SUCCESS]: {
     title: "Gift payment successful",

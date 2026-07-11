@@ -1,11 +1,8 @@
 /**
- * Unified ops alert service for all Fuse Explore verticals.
+ * Unified ops alert service for all Fuse Explore verticals, including gifting.
  * Channels: WhatsApp (Twilio) + Email (nodemailer) + Admin push (notificationService).
  *
  * All methods are fire-and-forget — they never throw or block callers.
- *
- * Note: adminAlertService.js is kept for the gift flow (backward compat).
- * New verticals (bookings, events, premium) use this service.
  */
 import { sendWhatsAppAlert } from "./opsAlert/whatsapp.js";
 import { sendEmailAlert } from "./opsAlert/email.js";
@@ -50,6 +47,35 @@ export const alertNewGiftOrder = async (order) => {
   await Promise.allSettled([
     sendWhatsAppAlert(waMessage),
     sendEmailAlert(`[Fuse] New Gift Order ${summary.code}`, emailHtml),
+    notifyAdminPush("GIFT_ADMIN_NEW_ORDER", summary, order),
+  ]);
+};
+
+/**
+ * Recipient declined a paid gift -> refund owed. Ops must see this or the
+ * refund sits invisible (no gateway auto-refund exists yet — manual SOP).
+ */
+export const alertGiftRefundRequired = async (order) => {
+  const summary = {
+    type: "Gift refund",
+    code: code(order),
+    tier: tier(order),
+    amount: amount(order),
+    at: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+  };
+
+  const waMessage =
+    `💸 *Refund Owed* — ${summary.code}\n` +
+    `Tier: ${summary.tier} | Amount: ${summary.amount}\n` +
+    `Recipient declined a paid gift.\n` +
+    `Time: ${summary.at}\n` +
+    `Admin: ${ADMIN_URL}/orders/${order?._id}`;
+
+  const emailHtml = buildEmailHtml("Refund Owed", summary, order?._id);
+
+  await Promise.allSettled([
+    sendWhatsAppAlert(waMessage),
+    sendEmailAlert(`[Fuse] Refund Owed — ${summary.code}`, emailHtml),
     notifyAdminPush("GIFT_ADMIN_NEW_ORDER", summary, order),
   ]);
 };
@@ -213,6 +239,7 @@ const buildEmailHtml = (heading, summary, entityId) => `
 
 export default {
   alertNewGiftOrder,
+  alertGiftRefundRequired,
   alertNewBooking,
   alertNewTicketOrder,
   alertNewPremiumRequest,

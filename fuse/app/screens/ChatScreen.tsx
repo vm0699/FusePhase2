@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // import { Client as TwilioChatClient } from "twilio-chat";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import { chatApi } from "../api/chatApi";
 import { giftApi } from "../api/giftApi";
@@ -121,25 +121,32 @@ export default function ChatScreen({ route }) {
   }, [activeChannelSid]);
 
   // 🎁 Load gift eligibility once the chat is accepted (and after messages flow).
+  const loadGiftEligibility = useCallback(async () => {
+    if (!chatId || status !== "accepted") {
+      setGiftEligibility(null);
+      return;
+    }
+    try {
+      const elig = await giftApi.getEligibility(chatId);
+      setGiftEligibility(elig);
+    } catch {
+      setGiftEligibility(null);
+    }
+  }, [chatId, status]);
+
   useEffect(() => {
-    let active = true;
-    const loadEligibility = async () => {
-      if (!chatId || status !== "accepted") {
-        if (active) setGiftEligibility(null);
-        return;
-      }
-      try {
-        const elig = await giftApi.getEligibility(chatId);
-        if (active) setGiftEligibility(elig);
-      } catch {
-        if (active) setGiftEligibility(null);
-      }
-    };
-    loadEligibility();
-    return () => {
-      active = false;
-    };
-  }, [chatId, status, bothChatted]);
+    void loadGiftEligibility();
+  }, [loadGiftEligibility, bothChatted]);
+
+  // 🎁 Refresh eligibility whenever this screen regains focus — e.g. returning
+  // from the gift catalog/checkout, or coming back after the other side sent
+  // their first message while we were away. Prevents the gift button from
+  // staying stuck in a stale locked state.
+  useFocusEffect(
+    useCallback(() => {
+      void loadGiftEligibility();
+    }, [loadGiftEligibility])
+  );
 
   const giftReasonMessage = (reason?: string | null) => {
     switch (reason) {

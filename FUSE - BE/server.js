@@ -50,6 +50,13 @@ const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Razorpay webhook signature verification needs the exact raw request bytes,
+// not the parsed-and-reserialized body, so this one path gets a raw Buffer
+// body instead of JSON. Must be registered BEFORE the global express.json()
+// below — body-parser skips re-parsing once req._body is already set, so
+// every other route is unaffected.
+app.use('/api/gifts/razorpay/webhook', express.raw({ type: 'application/json' }));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors({

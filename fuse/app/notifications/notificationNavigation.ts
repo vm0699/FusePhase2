@@ -38,9 +38,6 @@ export function resolveNotificationRoute(
     case NOTIFICATION_TYPES.COMPLIMENT_REJECTED:
       return { name: "Liked You" };
 
-    case NOTIFICATION_TYPES.GIFT_INTENT_RECEIVED:
-    case NOTIFICATION_TYPES.GIFT_INTENT_ACCEPTED:
-    case NOTIFICATION_TYPES.GIFT_INTENT_REJECTED:
     case NOTIFICATION_TYPES.GIFT_PAYMENT_FAILED:
       if (!data.intentId) return { name: "ChatListScreen" };
       return {

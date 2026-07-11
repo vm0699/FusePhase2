@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import RazorpayCheckout from "react-native-razorpay";
 import { giftApi } from "../api/giftApi";
 import { FusePopup } from "../../components/FusePopup";
 
@@ -62,6 +63,44 @@ export default function GiftItemDetailScreen() {
     void loadItem();
   }, [loadItem]);
 
+  // Shared tail: confirm the payment server-side, resolve the real order id,
+  // and navigate to tracking — used by both the PLACEHOLDER and RAZORPAY paths
+  // so they can never drift out of sync.
+  const finalizeAfterPayment = useCallback(
+    async (intentId: string, confirmPayload: Parameters<typeof giftApi.confirmPayment>[1]) => {
+      const confirmData = await giftApi.confirmPayment(intentId, confirmPayload);
+
+      let orderId =
+        confirmData?.order?._id ||
+        (confirmData?.order as any)?.orderId;
+
+      // Defensive fallback: payment succeeded but the order id wasn't in the
+      // confirm response (should not normally happen). Look it up via the
+      // intent instead of guessing — never navigate to tracking with an id
+      // that isn't a real order id (that 404s and looks like a hang).
+      if (!orderId) {
+        try {
+          const intentDetails = await giftApi.getIntent(intentId);
+          orderId = intentDetails?.order?.orderId || null;
+        } catch {
+          orderId = null;
+        }
+      }
+
+      if (!orderId) {
+        showPopup(
+          "Payment received",
+          "Your gift was paid for, but we couldn't load the tracking page just now. You'll find it under Profile → My Gifts.",
+          "success"
+        );
+        return;
+      }
+
+      navigation.replace("GiftOrderTrackingScreen", { orderId, chatId });
+    },
+    [navigation, chatId, showPopup]
+  );
+
   const handlePay = useCallback(async () => {
     if (!item || !chatId) return;
     setPaying(true);
@@ -75,40 +114,60 @@ export default function GiftItemDetailScreen() {
       const intentId = intentData?.giftIntentId || intentData?.intent?.intentId;
       if (!intentId) throw new Error("Failed to create gift intent.");
 
-      // 2 — initiate payment; returns { paymentId, mode, providerOrderId }
+      // 2 — initiate payment; returns { paymentId, mode, providerOrderId, razorpayKeyId? }
       const payData = await giftApi.initiatePayment(intentId);
       const paymentMode = payData?.mode || "PLACEHOLDER";
       const paymentId = payData?.paymentId;
+      if (!paymentId) throw new Error("Payment could not be initiated.");
 
       if (paymentMode === "RAZORPAY") {
-        showPopup(
-          "Payment unavailable",
-          "Razorpay is not set up on this device yet. Please try again after the app update.",
-          "info"
-        );
-        setPaying(false);
+        if (!payData.razorpayKeyId || !payData.providerOrderId) {
+          throw new Error("Payment isn't fully set up yet. Please try again shortly.");
+        }
+
+        // 3a — open the native Razorpay checkout sheet and wait for the result.
+        let checkoutResult: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        };
+        try {
+          checkoutResult = await RazorpayCheckout.open({
+            key: payData.razorpayKeyId,
+            amount: Math.round((item.amount ?? item.finalAmount) * 100),
+            currency: payData.currency || "INR",
+            name: "Fuse",
+            description: item.name,
+            order_id: payData.providerOrderId,
+            theme: { color: "#ff5864" },
+          });
+        } catch (checkoutError: any) {
+          // Cancelled or failed inside the Razorpay sheet — not a system
+          // error, so this is informational, not "Payment failed".
+          showPopup(
+            "Payment not completed",
+            checkoutError?.description || "You can try again anytime.",
+            "info"
+          );
+          return;
+        }
+
+        // 4a — confirm with the real signature from the checkout result.
+        // (providerOrderId isn't part of the confirm contract — the backend
+        // verifies against the value it already stored during initiate.)
+        await finalizeAfterPayment(intentId, {
+          paymentId,
+          providerPaymentId: checkoutResult.razorpay_payment_id,
+          signature: checkoutResult.razorpay_signature,
+        });
         return;
       }
 
-      if (!paymentId) throw new Error("Payment could not be initiated.");
-
-      // 3 — confirm (PLACEHOLDER mode); response contains { order: { _id, orderCode, status } }
-      const confirmData = await giftApi.confirmPayment(intentId, {
+      // 3b/4b — PLACEHOLDER mode: no real payment sheet, confirm directly.
+      await finalizeAfterPayment(intentId, {
         paymentId,
         providerPaymentId: "placeholder_pay_" + Date.now(),
-        providerOrderId: payData?.providerOrderId || "placeholder_order",
         signature: "placeholder_signature",
-      });
-
-      // 4 — navigate to tracking using orderId from confirm response
-      const orderId =
-        confirmData?.order?._id ||
-        confirmData?.order?.orderId ||
-        confirmData?.orderId;
-
-      navigation.replace("GiftOrderTrackingScreen", {
-        orderId: orderId || intentId,
-        chatId,
       });
     } catch (err: any) {
       showPopup(
@@ -119,7 +178,7 @@ export default function GiftItemDetailScreen() {
     } finally {
       setPaying(false);
     }
-  }, [item, chatId, navigation, showPopup]);
+  }, [item, chatId, catalogItemId, finalizeAfterPayment, showPopup]);
 
   const occasionLabel = item?.occasion ? OCCASION_MAP[item.occasion] || item.occasion : null;
 
@@ -143,6 +202,13 @@ export default function GiftItemDetailScreen() {
       ) : !item ? (
         <View style={styles.centered}>
           <Text style={styles.errorText}>Gift not available.</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => { setLoading(true); void loadItem(); }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -261,6 +327,14 @@ const styles = StyleSheet.create({
 
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
   errorText: { fontFamily: "Poppins", fontSize: 14, color: "#9CA3AF" },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: "#ff5864",
+    borderRadius: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+  },
+  retryText: { fontFamily: "Poppins-SemiBold", fontSize: 14, color: "#ffffff" },
 
   content: { paddingHorizontal: 20, paddingBottom: 40, alignItems: "center" },
 

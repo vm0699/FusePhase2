@@ -30,6 +30,7 @@ export default function GiftCatalogScreen() {
 
   const [catalog, setCatalog] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selectedOccasion, setSelectedOccasion] = useState("ALL");
   const [popup, setPopup] = useState<{
     visible: boolean;
@@ -49,10 +50,12 @@ export default function GiftCatalogScreen() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const data = await giftApi.getCatalog({ chatId, recipientId });
       setCatalog(data);
     } catch (err: any) {
+      setLoadError(true);
       showPopup("Couldn't load gifts", err?.message || "Please try again.", "error");
     } finally {
       setLoading(false);
@@ -104,6 +107,13 @@ export default function GiftCatalogScreen() {
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#ff5864" />
+        </View>
+      ) : loadError ? (
+        <View style={styles.centered}>
+          <Text style={styles.emptyText}>Couldn't load gifts right now.</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={load} activeOpacity={0.8}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -256,6 +266,14 @@ const styles = StyleSheet.create({
 
   emptyWrap: { alignItems: "center", paddingTop: 48 },
   emptyText: { fontFamily: "Poppins", fontSize: 14, color: "#9CA3AF" },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: "#ff5864",
+    borderRadius: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+  },
+  retryText: { fontFamily: "Poppins-SemiBold", fontSize: 14, color: "#ffffff" },
 
   disclaimer: {
     position: "absolute",

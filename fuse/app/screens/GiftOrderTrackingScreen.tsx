@@ -188,6 +188,13 @@ export default function GiftOrderTrackingScreen() {
       ) : (
         <View style={styles.loadingWrap}>
           <Text style={styles.emptyText}>Gift order unavailable.</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => { setLoading(true); void loadOrder(); }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -291,4 +298,12 @@ const styles = StyleSheet.create({
   linkButton: { alignItems: "center", paddingVertical: 10 },
   linkText: { color: "#6B7280", fontFamily: "Poppins-SemiBold" },
   emptyText: { color: "#6B7280", fontFamily: "Poppins" },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: "#ff5864",
+    borderRadius: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+  },
+  retryText: { fontFamily: "Poppins-SemiBold", fontSize: 14, color: "#ffffff" },
 });
