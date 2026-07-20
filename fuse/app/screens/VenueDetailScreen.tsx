@@ -22,6 +22,7 @@ import {
 import { theme } from "../theme";
 import exploreApi, { type Venue } from "../api/exploreApi";
 import StickyCTABar from "../../components/ui/explore/StickyCTABar";
+import { useExploreComingSoon } from "../../components/ui/explore/useExploreComingSoon";
 
 type RouteParams = { venueId: string };
 
@@ -30,6 +31,9 @@ export default function VenueDetailScreen() {
   const route = useRoute();
   const { venueId } = (route.params || {}) as RouteParams;
   const insets = useSafeAreaInsets();
+  const comingSoon = useExploreComingSoon(
+    "Table bookings are launching soon in Chennai. You can explore the venue now — booking opens shortly!"
+  );
 
   const [venue, setVenue] = useState<Venue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -164,10 +168,12 @@ export default function VenueDetailScreen() {
       <StickyCTABar
         label="Book a table"
         subLabel={`₹${venue.bookingFee} booking fee · Address revealed after confirmation`}
-        onPress={() =>
-          navigation.navigate("BookingCheckout", { venueId: venue._id })
-        }
+        onPress={() => {
+          if (comingSoon.gate()) return;
+          navigation.navigate("BookingCheckout", { venueId: venue._id });
+        }}
       />
+      {comingSoon.modal}
     </View>
   );
 }

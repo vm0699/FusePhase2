@@ -11,6 +11,10 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 import expo.modules.ReactActivityDelegateWrapper
 
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+
 class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     // Set the theme to AppTheme BEFORE onCreate to support
@@ -21,6 +25,28 @@ class MainActivity : ReactActivity() {
     SplashScreenManager.registerOnActivity(this)
     // @generated end expo-splashscreen
     super.onCreate(null)
+    hideSystemNavigationBar()
+  }
+
+  // Immersive nav bar: hidden by default, swipe from the bottom edge to reveal
+  // it temporarily (BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE) — the Play
+  // Store-compliant mode; the bar is never permanently locked away.
+  private fun hideSystemNavigationBar() {
+    WindowCompat.setDecorFitsSystemWindows(window, false)
+    val controller = WindowInsetsControllerCompat(window, window.decorView)
+    controller.hide(WindowInsetsCompat.Type.navigationBars())
+    controller.systemBarsBehavior =
+      WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+  }
+
+  // Android re-shows system bars whenever the window loses and regains focus
+  // (switching apps, opening a dialog/keyboard, etc.) — reapply here so the
+  // immersive state actually sticks instead of only applying once at launch.
+  override fun onWindowFocusChanged(hasFocus: Boolean) {
+    super.onWindowFocusChanged(hasFocus)
+    if (hasFocus) {
+      hideSystemNavigationBar()
+    }
   }
 
   /**

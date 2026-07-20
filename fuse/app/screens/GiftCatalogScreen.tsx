@@ -3,24 +3,43 @@ import {
   ActivityIndicator,
   FlatList,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+// ScrollView from gesture-handler (not plain react-native) so its horizontal
+// pan wins gesture-priority against react-navigation's stack screen-transition
+// gesture recognizer, which is also gesture-handler-based and otherwise
+// intercepts the drag before a plain RN ScrollView ever sees it.
+import { ScrollView } from "react-native-gesture-handler";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { giftApi } from "../api/giftApi";
 import { FusePopup } from "../../components/FusePopup";
 import GiftGridCard, { GiftGridCardItem } from "../../components/GiftGridCard";
 
-const OCCASIONS = [
-  { key: "ALL", label: "All" },
-  { key: "FIRST_DATE", label: "🌹 First Date" },
-  { key: "CELEBRATION", label: "🎉 Celebration" },
-  { key: "JUST_BECAUSE", label: "🎁 Just Because" },
-  { key: "THANK_YOU", label: "🙏 Thank You" },
-  { key: "APOLOGY", label: "💙 Apology" },
+// Emoji per category — falls back to 🎁 for anything not listed here so a
+// future category added server-side never renders a blank chip.
+const CATEGORY_EMOJI: Record<string, string> = {
+  "Chocolates & Sweets": "🍫",
+  "Flowers & Bouquets": "💐",
+  "Plants & Succulents": "🌿",
+  "Soft Toys & Cute Gifts": "🧸",
+  "Candles & Self-care": "🕯️",
+  "Cakes & Bakes": "🎂",
+  "Mugs & Drinkware": "☕",
+};
+
+// Display priority for category chips (Flowers first, dating-relevance after).
+// Any category not listed here falls back to the end, alphabetically.
+const CATEGORY_ORDER = [
+  "Flowers & Bouquets",
+  "Chocolates & Sweets",
+  "Soft Toys & Cute Gifts",
+  "Cakes & Bakes",
+  "Candles & Self-care",
+  "Plants & Succulents",
+  "Mugs & Drinkware",
 ];
 
 export default function GiftCatalogScreen() {
@@ -31,7 +50,7 @@ export default function GiftCatalogScreen() {
   const [catalog, setCatalog] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [selectedOccasion, setSelectedOccasion] = useState("ALL");
+  const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [popup, setPopup] = useState<{
     visible: boolean;
     title: string;
@@ -72,10 +91,24 @@ export default function GiftCatalogScreen() {
   const allItems: GiftGridCardItem[] = [...low, ...mid];
   const suggested: GiftGridCardItem[] = catalog?.suggested || [];
 
+  // Category chips are built from whatever categories are actually present
+  // in the loaded catalog — no hardcoded list to fall out of sync with the DB —
+  // then sorted by CATEGORY_ORDER (Flowers first, etc.).
+  const categories = (
+    Array.from(new Set(allItems.map((i) => i.category).filter(Boolean))) as string[]
+  ).sort((a, b) => {
+    const ai = CATEGORY_ORDER.indexOf(a);
+    const bi = CATEGORY_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+
   const filteredItems =
-    selectedOccasion === "ALL"
+    selectedCategory === "ALL"
       ? allItems
-      : allItems.filter((i: any) => i.occasion === selectedOccasion);
+      : allItems.filter((i: any) => i.category === selectedCategory);
 
   const handleSelect = (item: GiftGridCardItem) => {
     navigation.navigate("GiftItemDetail", {
@@ -103,6 +136,39 @@ export default function GiftCatalogScreen() {
         </View>
         <View style={styles.headerSpacer} />
       </View>
+
+      {/* Category chips — a sibling of the FlatList (not inside its header).
+          A horizontal ScrollView nested inside a FlatList's ListHeaderComponent
+          fights the FlatList's own touch responder on Android and doesn't
+          scroll; living outside it here also makes it a persistent filter bar
+          that stays visible while the grid below scrolls. */}
+      {!loading && !loadError && categories.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsScroll}
+          style={styles.chipsRow}
+        >
+          {[{ key: "ALL", label: "All" }, ...categories.map((c) => ({
+            key: c,
+            label: `${CATEGORY_EMOJI[c] || "🎁"} ${c}`,
+          }))].map((cat) => {
+            const active = selectedCategory === cat.key;
+            return (
+              <TouchableOpacity
+                key={cat.key}
+                style={[styles.chip, active && styles.chipActive]}
+                onPress={() => setSelectedCategory(cat.key)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
 
       {loading ? (
         <View style={styles.centered}>
@@ -150,29 +216,6 @@ export default function GiftCatalogScreen() {
                   </ScrollView>
                 </View>
               )}
-
-              {/* Occasion chips */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsScroll}
-              >
-                {OCCASIONS.map((occ) => {
-                  const active = selectedOccasion === occ.key;
-                  return (
-                    <TouchableOpacity
-                      key={occ.key}
-                      style={[styles.chip, active && styles.chipActive]}
-                      onPress={() => setSelectedOccasion(occ.key)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                        {occ.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
 
               <Text style={styles.allLabel}>All gifts</Text>
             </View>
@@ -241,7 +284,13 @@ const styles = StyleSheet.create({
   suggestedScroll: { paddingHorizontal: 10 },
   suggestedCardWrap: { width: 160, marginRight: 2 },
 
-  chipsScroll: { paddingHorizontal: 12, paddingVertical: 10 },
+  chipsRow: {
+    flexGrow: 0,
+    height: 56,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  chipsScroll: { paddingHorizontal: 12, alignItems: "center" },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 7,

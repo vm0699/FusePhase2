@@ -114,6 +114,22 @@ if (-not $proxyUp) {
 & $ADB reverse tcp:8082 tcp:8082 | Out-Null
 OK "ADB reverse tunnels: :5000 (backend) :8081 (metro) :8082 (proxy) active"
 
+# ── 5b. Tunnel watchdog — re-asserts tunnels every 5s so they survive USB/emulator reconnects ──
+$WATCHDOG   = Join-Path $PSScriptRoot "tunnel-watchdog.ps1"
+$pidFile    = Join-Path $PSScriptRoot ".tunnel-watchdog.pid"
+$watchdogUp = $false
+if (Test-Path $pidFile) {
+    $oldPid = Get-Content $pidFile -ErrorAction SilentlyContinue
+    if ($oldPid -and (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $watchdogUp = $true }
+}
+if (-not $watchdogUp) {
+    $wd = Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$WATCHDOG`"", "-AdbPath", "`"$ADB`"" -WindowStyle Minimized -PassThru
+    Set-Content -Path $pidFile -Value $wd.Id
+    OK "Tunnel watchdog started (auto-heals tunnels on reconnect)"
+} else {
+    OK "Tunnel watchdog already running"
+}
+
 # ── 6. SharedPreferences: route bundle through proxy ──────────────────────────
 $prefsDir  = "/data/data/$PACKAGE/shared_prefs"
 $prefsFile = "$prefsDir/${PACKAGE}_preferences.xml"

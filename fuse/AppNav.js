@@ -83,6 +83,7 @@ import GiftOrderTrackingScreen from "./app/screens/GiftOrderTrackingScreen";
 import GiftCatalogScreen from "./app/screens/GiftCatalogScreen";
 import GiftItemDetailScreen from "./app/screens/GiftItemDetailScreen";
 import MyGiftsScreen from "./app/screens/MyGiftsScreen";
+import ChatGiftOrdersScreen from "./app/screens/ChatGiftOrdersScreen";
 import ProfilePreviewScreen from "./app/screens/ProfilePreviewScreen";
 
 // Fuse Explore screens
@@ -229,6 +230,7 @@ export default function AppNavigator() {
           <Stack.Screen name="GiftCatalog" component={GiftCatalogScreen} options={{ headerShown: false }} />
           <Stack.Screen name="GiftItemDetail" component={GiftItemDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="MyGiftsScreen" component={MyGiftsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ChatGiftOrdersScreen" component={ChatGiftOrdersScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ProfilePreview" component={ProfilePreviewScreen} options={{ headerShown: false }} />
 
           {/* Fuse Explore */}

@@ -177,6 +177,11 @@ export const giftApi = {
   async declineOrder(orderId: string): Promise<{ status: string }> {
     return postJson(`/api/gifts/orders/${orderId}/decline`);
   },
+
+  async getChatGiftOrders(chatId: string): Promise<{ orders: GiftOrderView[] }> {
+    const data = await getJson(`/api/chat/${chatId}/gifts`);
+    return { orders: data?.orders || [] };
+  },
 };
 
 export default giftApi;

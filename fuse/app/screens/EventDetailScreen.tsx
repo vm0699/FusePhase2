@@ -28,6 +28,7 @@ import {
 import { theme } from "../theme";
 import exploreApi, { type Event, type EventRsvpStatus } from "../api/exploreApi";
 import StickyCTABar from "../../components/ui/explore/StickyCTABar";
+import { useExploreComingSoon } from "../../components/ui/explore/useExploreComingSoon";
 
 type RouteParams = { eventId: string };
 
@@ -60,6 +61,9 @@ export default function EventDetailScreen() {
   const route = useRoute();
   const { eventId } = (route.params || {}) as RouteParams;
   const insets = useSafeAreaInsets();
+  const comingSoon = useExploreComingSoon(
+    "Events on Fuse are launching soon in Chennai. Browse what's coming — tickets and RSVP open shortly!"
+  );
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -228,11 +232,10 @@ export default function EventDetailScreen() {
           {event.audience === "MEET_PEOPLE" && (
             <Pressable
               style={styles.circleTeaser}
-              onPress={() =>
-                isGoing
-                  ? navigation.navigate("EventCircle", { eventId: event._id })
-                  : undefined
-              }
+              onPress={() => {
+                if (comingSoon.gate()) return;
+                if (isGoing) navigation.navigate("EventCircle", { eventId: event._id });
+              }}
             >
               <Users size={16} color={theme.colors.brand} strokeWidth={2} />
               <Text style={styles.circleTeaserText}>
@@ -366,7 +369,10 @@ export default function EventDetailScreen() {
       {event.pricingType === "PAID_EXTERNAL" && (
         <Pressable
           style={styles.secondaryRsvpBar}
-          onPress={isGoing ? handleCancelRsvp : handleRsvp}
+          onPress={() => {
+            if (comingSoon.gate()) return;
+            isGoing ? handleCancelRsvp() : handleRsvp();
+          }}
           disabled={rsvpBusy}
         >
           {rsvpBusy ? (
@@ -401,6 +407,7 @@ export default function EventDetailScreen() {
             : `₹${event.ticketPrice} per ticket · Address revealed after purchase`
         }
         onPress={() => {
+          if (comingSoon.gate()) return;
           if (event.pricingType === "FREE_RSVP") {
             isGoing ? handleCancelRsvp() : handleRsvp();
           } else if (event.pricingType === "PAID_EXTERNAL") {
@@ -412,6 +419,7 @@ export default function EventDetailScreen() {
         loading={rsvpBusy && event.pricingType === "FREE_RSVP"}
         disabled={event.pricingType === "PAID_FUSE" && isSoldOut}
       />
+      {comingSoon.modal}
     </View>
   );
 }

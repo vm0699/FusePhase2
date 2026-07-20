@@ -24,6 +24,7 @@ import EventCard from "../../components/ui/explore/EventCard";
 import GiftCard from "../../components/ui/explore/GiftCard";
 import HeaderAvatar from "../../components/ui/HeaderAvatar";
 import { Skeleton } from "../../components/ui";
+import { FusePopup } from "../../components/FusePopup";
 
 const DATE_HERO_SLIDES = [
   {
@@ -58,7 +59,17 @@ export default function ExploreHomeScreen() {
   const [home, setHome] = useState<ExploreHome | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showGiftExplainer, setShowGiftExplainer] = useState(false);
   const userIdRef = useRef<string | null>(null);
+
+  // Gifting is per-conversation (it requires a specific chat + recipient for
+  // eligibility, pricing, and delivery), so there's no generic "browse gifts"
+  // entry point here — every Explore gift tap routes through this instead of
+  // navigating to GiftCatalog/GiftItemDetail with no chatId (which silently
+  // can't complete a purchase).
+  const handleGiftEntryPress = useCallback(() => {
+    setShowGiftExplainer(true);
+  }, []);
 
   const loadMode = useCallback(async (targetMode: ExploreMode, { silent = false } = {}) => {
     if (!silent) setLoading(true);
@@ -132,7 +143,7 @@ export default function ExploreHomeScreen() {
     ...s,
     onPress: () => {
       if (s.id === "dates") navigation.navigate("ExploreCategory", { category: "dates" });
-      else if (s.id === "gifts") navigation.navigate("GiftCatalog");
+      else if (s.id === "gifts") handleGiftEntryPress();
       else if (s.id === "meetpeople") navigation.navigate("ExploreCategory", { category: "events", audience: "MEET_PEOPLE" });
     },
   }));
@@ -183,9 +194,30 @@ export default function ExploreHomeScreen() {
         {mode === "people" ? (
           <MeetPeopleSection home={home} loading={loading} navigation={navigation} />
         ) : (
-          <DateIdeasSection home={home} loading={loading} navigation={navigation} />
+          <DateIdeasSection
+            home={home}
+            loading={loading}
+            navigation={navigation}
+            onGiftPress={handleGiftEntryPress}
+          />
         )}
       </ScrollView>
+
+      <FusePopup
+        visible={showGiftExplainer}
+        title="Send a gift 🎁"
+        message="Gifts are sent inside a conversation, once you've matched and started chatting — that's how we make sure delivery details and eligibility are correct. Head to your chats to pick who to send one to."
+        tone="info"
+        onClose={() => setShowGiftExplainer(false)}
+        primaryAction={{
+          label: "Go to Chats",
+          onPress: () => {
+            setShowGiftExplainer(false);
+            navigation.navigate("ChatListScreen");
+          },
+        }}
+        secondaryAction={{ label: "Not now", onPress: () => setShowGiftExplainer(false) }}
+      />
     </View>
   );
 }
@@ -194,10 +226,12 @@ function DateIdeasSection({
   home,
   loading,
   navigation,
+  onGiftPress,
 }: {
   home: ExploreHome | null;
   loading: boolean;
   navigation: any;
+  onGiftPress: () => void;
 }) {
   return (
     <>
@@ -205,7 +239,7 @@ function DateIdeasSection({
       <View style={styles.sectionNoPad}>
         <CategoryStrip
           onSelect={(cat) => {
-            if (cat === "gifts") navigation.navigate("GiftCatalog");
+            if (cat === "gifts") onGiftPress();
             else navigation.navigate("ExploreCategory", { category: cat });
           }}
         />
@@ -271,7 +305,7 @@ function DateIdeasSection({
       <View style={styles.sectionNoPad}>
         <SectionRail
           title="Thoughtful gifts"
-          onSeeAll={() => navigation.navigate("GiftCatalog")}
+          onSeeAll={onGiftPress}
         >
           {loading
             ? [1, 2, 3].map((k) => (
@@ -281,9 +315,7 @@ function DateIdeasSection({
                 <GiftCard
                   key={item._id}
                   item={item}
-                  onPress={() =>
-                    navigation.navigate("GiftItemDetail", { catalogItemId: item._id })
-                  }
+                  onPress={onGiftPress}
                 />
               ))}
           {!loading && (home?.giftSuggestions ?? []).length === 0 && (

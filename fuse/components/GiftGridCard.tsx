@@ -12,6 +12,7 @@ export type GiftGridCardItem = {
   name: string;
   imageUrl?: string;
   amount: number;   // backend serializes as amount (= finalAmount)
+  category?: string;
   occasion?: string;
   tier?: string;
 };

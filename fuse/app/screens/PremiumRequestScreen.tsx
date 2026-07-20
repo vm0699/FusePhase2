@@ -15,6 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import { ArrowLeft, Crown, Sparkles } from "lucide-react-native";
 import { theme } from "../theme";
 import exploreApi from "../api/exploreApi";
+import { useExploreComingSoon } from "../../components/ui/explore/useExploreComingSoon";
 
 const OCCASION_OPTIONS = [
   "Romantic Surprise",
@@ -34,6 +35,9 @@ export default function PremiumRequestScreen() {
   const [budget, setBudget] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const comingSoon = useExploreComingSoon(
+    "Premium concierge is launching soon in Chennai. We'll open requests here very shortly — thanks for your interest!"
+  );
 
   const isValid =
     occasion.length > 0 &&
@@ -41,6 +45,7 @@ export default function PremiumRequestScreen() {
 
   const handleSubmit = async () => {
     if (!isValid) return;
+    if (comingSoon.gate()) return;
     setLoading(true);
     try {
       const res = await exploreApi.submitPremiumRequest({
@@ -201,6 +206,7 @@ export default function PremiumRequestScreen() {
             No payment required yet. Our team will reach out before anything is charged.
           </Text>
         </ScrollView>
+        {comingSoon.modal}
       </View>
     </KeyboardAvoidingView>
   );

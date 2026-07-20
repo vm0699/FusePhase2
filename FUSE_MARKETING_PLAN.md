@@ -1,375 +1,720 @@
-# Fuse — Chennai Launch, Marketing & Instagram Content Plan
+# FUSE — 15-Day Reel Blitz (Marketing Plan v3)
 
-> Source of truth for Fuse's go-to-market. Companion to `FUSE_EXPLORE_PLAN.md`.
-> Status: approved. Phase A ("Founding 100") is the active phase.
-
-## Context
-
-Fuse is a live-but-unpromoted dating/social app (~20 users, several are test accounts). This plan takes it from a standing start to its **first 100 real organic users in Chennai**, digital-only, on a small paid budget — then unlocks an IRL event + paid amplification as the scaling lever once that base exists.
-
-**v2 refinement (post Explore Iteration 2, 2026-07-03):** Fuse is no longer marketed as "a dating app with a shop tab." It is **"Chennai's going-out app where you never go alone"** — one product, two doors:
-- **Meet People** (group events: run clubs, house parties, gigs, meetups) → the **acquisition door**, especially for women (group settings are lower-stakes than 1:1 swiping). See who else from Fuse is going; connect after.
-- **Date Ideas** (matches, gifts, venue bookings, invite-your-match) → the **retention/monetization door**.
-
-Positioning one-liner (v2): **"Match. Gift. Go out — with your match or with the city."** Sub-line: *Chennai's going-out app where you never go alone.*
-
-Three differentiators, sequenced under the two-door frame:
-- **Real-world Explore / events** — the lead acquisition hook; the social layer (*who else from Fuse is going*) is something Hinge (no events) and District (no people) structurally cannot offer.
-- **Gifting economy** — the retention/dating hook; a thoughtful platform-approved gift *after* real conversation (never to buy attention).
-- **Offline dating** — the through-line; matches don't die in the chat, they become a real plan.
-
-Silent-but-critical objective baked into every tactic: **acquire women first**. Group meetups are now the product-backed female entry point ("come for the run club, stay for the dating app"), reinforced by verified attendees and honest gender-balance in the circle teaser. We lean on this, not loud "safety" messaging.
+> Source of truth for Fuse's go-to-market content engine. Companion to `FUSE_EXPLORE_PLAN.md` / `FUSE_EXPLORE_ITERATION2_PLAN.md`.
+> Status: **v3 — replaces the v2 weekly-cadence plan entirely.** 75 reels · 15 days · 5/day · ~30s each.
+> Locked production decisions (2026-07-17): competitor call-outs allowed (fact-based) + light spice · founder on camera 1/day · Tanglish-heavy scripts · founder shoots/edits/posts, 2–3 friends (M+F) available for skits · exactly **5 heavy-edit reels** outsourced to an editor · everything else must be solo/CapCut-executable.
 
 ---
 
-## 1. Strategic Spine
+## 0. Strategic Spine (carried forward, compressed)
 
-**Target audience (Phase A):** Chennai, 21–30, urban, English/Tanglish-speaking, college-final-year to young-working professionals. Skew content female-first. Secondary: their friend groups (dating apps spread socially).
-
-**The wedge (why Fuse, not Tinder/Bumble/Hinge/District):** dating apps end at the chat; ticket apps (District/Insider/BookMyShow) sell a seat but you go alone. Fuse is the only one doing the middle — **the plan AND the people in it**. We sell **going out without going alone**, not swiping.
-
-**Cold-start truth (v2):** the fastest path to liquidity is NOT dating ads (a dating app at 100 users has an empty deck — the ad betrays itself). It's **events**: a real Chennai run club with 60 runners + 8 Fuse people is full and believable from day one. Events make Fuse *useful before matching liquidity exists*; each listing needs only ~5 Fuse users for the "I didn't come alone" moment. Everything stays Chennai-geo-concentrated — density is the strategy.
-
-**Content job:** ~80% reach/relatable/local (shareable, no pitch); ~20% direct product/CTA. Earn the pitch by being entertaining and locally useful first.
-
----
-
-## 2. Phased Launch Strategy
-
-### Phase A — "Founding 100" (Weeks 1–6): 0 → 100 organic Chennai users
-Digital-only, organic-first. Order of goals: (1) real IG presence, (2) saveable/shareable Chennai-dating content engine, (3) seed women via micro-creators + communities, (4) turn early users into referrers.
-
-Framing: **"Founding 100 — Chennai's first Fuse members."** Scarcity + status + local pride. Founding members get a perk (early Explore access / free first gift credit / founder badge).
-
-**Exit criteria to Phase B:** ~100 real users, workable gender ratio, 2–3 clearly-outperforming reels (proven creative to fund).
-
-### Phase B — "Scale" (after ~100 users): IRL + paid amplification
-Unlocks: a **Fuse Chennai singles mixer / curated experience** (offline positioning made real + best content shoot available), paid behind proven reels, and user-testimonial content.
+- **Product:** Fuse — *Chennai's going-out app where you never go alone.* Two doors: **Meet People** (events, run clubs, house parties → acquisition, esp. women) and **Date Ideas** (matches, gifts, real plans → retention).
+- **One-liner:** "Match. Gift. Go out — with your match or with the city."
+- **THE VISUAL EQUATION (core positioning device — show, don't tell):** **Hinge + Blinkit + District = Fuse.** One simplified platform that does what today takes three apps: *Hinge* (the match / the person) **+** *Blinkit* (instant thoughtful gifting, delivered) **+** *District* (the event / the place to actually go) → collapsed into one. This equation is a recurring visual motif — animate it on reveal day (D7R2), and let founder gesture to it. It makes "what is Fuse" graspable in 2 seconds without jargon.
+- **Competitor landscape (given by founder + researched):**
+  - *Hinge / Bumble / Tinder* — the swipe incumbents; our controversy fuel (dying, paywalled, ratio-broken). Weaponize Hinge's own "designed to be deleted" slogan — they preach it, but the product is still endless swiping; meanwhile Gen Z now assumes apps only hold "leftovers."
+  - *Belong.app* — **the closest real threat**: "meet new people in your city" (dinners/drinks/sports, 3M+ downloads). It owns the *Meet People* idea but has **no dating/gifting/match→plan layer**. Our edge = the second door (Date Ideas + gifting) fused onto events, Chennai-density, and "who from Fuse is going."
+  - *EQUAL* — personality-first, zero-swipe, hidden-photos dating app. Adjacent "anti-swipe" positioning; no offline/events/gifting. Not a direct threat but proves the anti-swipe wave is real.
+  - *District / Insider / BookMyShow* — sell the seat, but you go alone; no people layer.
+- **Phase A goal:** Founding 100 — first 100 real organic Chennai users. Density strategy, Chennai-only, 21–30, Tanglish.
+- **Silent priority:** acquire women first; protect gender ratio. Never shout "safety" — show it (verified, group-first, see-who's-going, address privacy).
+- **The wedge:** dating apps end at the chat; ticket apps sell a seat you use alone. Fuse is the only one with **the plan AND the people in it**.
+- **Why NOW is the perfect attack window (real, current, usable on camera):**
+  - Bumble paying users fell **~21% in Q1 2026**; company reportedly **exploring a sale** (once worth $7B).
+  - Tinder monthly actives **down ~7% YoY**; Match Group publicly scrambling to win back Gen Z.
+  - **~79% of Gen Z report dating-app fatigue**; ~47% say they'd rather meet at a real-life event/club than on an app.
+  - Bumble's own founder (Whitney Wolfe Herd, to Fortune): dating apps are *"rooted in rejection and judgment… not healthy dynamics."*
+  - The market narrative "swiping is dying, real-life is back" is mainstream news. **Fuse is the answer to the exact trend the world is writing headlines about.** We ride that wave; we don't have to create it.
 
 ---
 
-## 3. Instagram Account Setup (Week 1, before posting volume)
+## 1. The 15-Day Arc (story, not playlist)
 
-- **Handle:** `fuse.chennai` / `getfuse.in` style — city in the name aids local discovery.
-- **Name field (searchable):** "Fuse — Chennai Dating" (IG Name field is SEO; use keywords).
-- **Bio (v2, two-door):**
-  > Chennai's going-out app. You never go alone.
-  > Meet people at real events · turn matches into real dates.
-  > 🎟️ Founding 100 — join the first members ↓
-- **Link-in-bio:** one link → simple page with App/Play Store links + Founding-100 signup. Track clicks.
-- **Highlights (6):** `Meet People` · `Date Ideas` · `This weekend` · `Gifting` · `Founding 100` · `FAQ/Safe`.
-- **Grid seeding:** post 3 foundational reels before any promotion.
-- **Pinned reels (3):** "what is Fuse" explainer, strongest relatable hook, gifting-concept reel.
+Every day advances a narrative. A viewer who watches Day 1 → Day 15 experiences a story: *the old world burns → the pain gets named → a builder appears → the answer is revealed → proof stacks up → the door starts closing.*
 
----
+| Act | Days | Job | Energy |
+|---|---|---|---|
+| **ACT 1 — IGNITE** | 1–3 | Burn the category. Controversy, real headlines, Chennai-specific pain. Zero product. | Spicy, loud, comment-bait |
+| **ACT 2 — THE STORY** | 4–6 | Agitate deeper + founder origin story begins → "so I built something" → name-drop **Fuse** on Day 6 | Storytelling, cliffhangers |
+| **ACT 3 — THE REVEAL** | 7–9 | Show the product: reveal day → Meet People day → Gifting day | Confident, show-don't-tell |
+| **ACT 4 — PROOF** | 10–12 | Make it believable: real event, women-first day, community/organizer day | Warm, honest, social |
+| **ACT 5 — THE PULL** | 13–15 | Convert: Founding-100 launch → FOMO stack → full-circle closer (callback to Day 1) | Urgent, emotional, cinematic |
 
-## 4. Content Pillars
-
-Weekly target: ~2 reach, ~1 local-utility, ~1 product, +1 founder/community.
-
-1. **Relatable / Dating-in-Chennai (REACH).** Ghosting, situationships, app fatigue, Chennai stereotypes. Humor + Tanglish. Growth engine, no pitch.
-2. **Gifting economy (SIGNATURE).** "Send a filter coffee, not a creepy 'hi'." Thoughtful gesture > cringe DM. Warmth without pressure.
-3. **Offline / Chennai date spots + Explore (LOCAL / SAVE-BAIT).** "5 first-date spots under ₹500," "where to take your match." Saveable, ranks locally, ties to Explore.
-4. **Product / How-it-works (CONVERSION).** Screen-recs of swipe, gifting flow, Explore/events tab. Show don't tell.
-5. **Founder / build-in-public + Community (TRUST).** "Why I built a dating app for Chennai," Founding-100 countdown, BTS, on-camera comment replies.
+**Golden thread rules:**
+- Day 1's "I deleted every app" character returns on Day 15 — at a real event, not alone. Full circle.
+- Day 3 founder ends on a cliffhanger → resolved Day 4. Day 6 name-drops Fuse → Day 7 reveals it.
+- Comments harvested in Days 1–2 get enacted/reacted-to on Day 12 (plan the bait accordingly).
+- "This weekend on Fuse" ritual debuts Day 10 and repeats Days 12 & 14 → becomes the permanent weekly slot after the blitz.
 
 ---
 
-## 5. Posting Cadence & 30-Day Editorial Calendar
+## 2. Category System (every script is tagged)
 
-**Cadence:** 5 reels/week (Mon–Fri), 4–7 stories/day, 1 carousel/week (save-bait). Post windows ~1pm and ~8–10pm IST.
+**FORMAT** — how it's made:
+- `POV` — first-person storytelling, solo-shootable, captions-driven
+- `SKIT` — enaction, 1–3 actors (our M/F friend pool)
+- `FOUNDER` — founder face-on talk (talking head / green-screen / walk-and-talk)
+- `FACELESS` — text-motion / animation / meme-format, CapCut template
+- `SCREENREC` — app screen recording + voiceover/captions
+- `EDIT` — trend-remix or montage; `EDIT★` = one of the 5 heavy outsourced edits
 
-| Day | Pillar | Reel |
-|----|--------|------|
-| W1 D1 | Product | S1 "What is Fuse" (pin) |
-| W1 D2 | Relatable | S2 "Types of people on Chennai dating apps" |
-| W1 D3 | Gifting | S5 "Send a filter coffee, not a 'hi'" |
-| W1 D4 | Local | S8 "5 Chennai first-date spots under ₹500" (carousel + reel) |
-| W1 D5 | Founder | S12 "Why I built a dating app for Chennai" |
-| W2 D1 | Relatable | S3 "POV: the 3am 'wyd' text" |
-| W2 D2 | Product | S6 "How Fuse gifting actually works" |
-| W2 D3 | Relatable | S4 "Situationship vs Fuse" |
-| W2 D4 | Local | S9 "Where NOT to take a first date in Chennai" |
-| W2 D5 | Community | S13 "Founding 100 countdown" |
-| W3 D1 | Gifting | S7 "Gifts sweet vs creepy" |
-| W3 D2 | Relatable | S10 "Dating apps be like… empty chat" |
-| W3 D3 | Product | S11 "The Explore tab tour" |
-| W3 D4 | Local | S14 "Rainy-day Chennai date ideas" |
-| W3 D5 | Founder | S15 "Reading your comments about dating in Chennai" |
-| W4 | — | Repeat top 5 performers as fresh cuts + first UGC-creator collabs; re-hook winners |
+**FUNNEL JOB** — what it's for:
+- `IGNITE` (controversy/reach) · `AGITATE` (pain, no pitch) · `TEASE` (something's coming) · `REVEAL` (product) · `PROOF` (believability) · `TRUST` (founder/honesty) · `CONVERT` (Founding-100/CTA)
 
-*Rule:* a reel that pops gets **re-shot with a new hook**, not retired. Winners reused 2–3×.
+**PILLAR:** P1 Relatable-Chennai · P2 Gifting · P3 Local/Date-spots · P4 Product · P5 Founder/Build-in-public · P6 Events/"This weekend on Fuse"
 
----
+**EFFORT:** `LIGHT` (solo, <1h) · `MED` (actors or template build, 1–3h) · `HEAVY` (editor, 72h lead)
 
-## 6. Reel Script Library (15 ready-to-shoot)
+**CAST:** solo · F-lead (female lead — ratio-critical) · 2P/3P (multi-actor)
 
-Format: **[F]** founder · **[U]** UGC/hired creator · **[X]** faceless (screen-rec/text/motion). Each = Hook (first 2s) → Body → CTA → Caption → Hashtags. 12–25s. Tags: 3 local + 3 niche + 2 broad; always `#chennai #chennaidiaries #datinginchennai`.
+**ORIGIN TAG `[viggy#]`:** reels the founder (Viggy) personally suggests/originates carry a `[viggy#]` tag in brackets right after the DxRx id, numbered in the order he raises them (viggy1, viggy2, …). Purpose: track founder-originated concepts distinctly from Claude-drafted ones. **Every future founder-suggested reel gets the next number.** Current ledger: **viggy1 = D1R6** (Overtone / AI-can't-pick-your-love) · **viggy2 = D7R3** (friend UGC "3 years on apps → honest review"). Next up: viggy3.
 
-**S1 — "What is Fuse?" [X/F] · Product · PIN**
-- Hook (0–2s text): "Chennai made its own dating app. And it's… different."
-- Body: 3-beat screen-rec: "1. You match. 2. You *actually* talk — then send a real gift, not a creepy DM. 3. Then you go OUT — Fuse shows you where." End on Explore tab.
-- CTA: "Founding 100 get in first. Link in bio."
-- Caption: "Tired of dating apps that end at 'hey'. So we built one that gets you off the app. Match → gift → go out. 🔗 join Chennai's Founding 100."
-- Tags: #datinginchennai #chennai #chennaidiaries #datingapp #chennaidating #fuse #situationship #chennaievents
+**Daily slot structure (fixed, so production is systematic):**
 
-**S2 — "Types of people on Chennai dating apps" [F/U] · Relatable**
-- Hook: "Every Chennai dating app has these 5 people. You ARE one of them."
-- Body: rapid character bits: "the 'let's meet at Marina' guy," "the bio that's just 🏏," "'not looking for anything serious' at 2am," "the Besant Nagar beach photo x4," "the 'I'm actually really shy' who talks the most."
-- CTA (soft): "…or use one that gets you a real date. (bio.)"
-- Caption: "Tag which one you are 👀"
-- Tags: #chennai #chennaidiaries #datinginchennai #chennaimemes #situationship #tamilmemes #datingapp #reelschennai
-
-**S3 — "POV: the 3am 'wyd' text" [U] · Relatable**
-- Hook: phone buzzes "wyd 🥺" 3:04am. Text: "POV: he's 'different'."
-- Body: unimpressed reaction (12th 'wyd' this week) → cut to Fuse, someone asking "filter coffee Saturday?"
-- CTA: "Fuse is for the ones who make plans. Bio."
-- Caption: "The 'wyd' epidemic in Chennai is real. There's a cure. 🔗"
-- Tags: #situationship #datinginchennai #chennai #chennaidiaries #wyd #datingapp #chennaimemes
-
-**S4 — "Situationship vs Fuse" [X] · Relatable**
-- Hook: split text "Situationship | Fuse".
-- Body: contrast lines — "'just vibing' | 'going to that gig Saturday'" · "left on read | left the house (on a date)" · "'what are we?' | an actual plan."
-- CTA: "Pick the right side. Bio."
-- Caption: "Choose your fighter."
-- Tags: #situationship #datinginchennai #chennai #datingapp #chennaidiaries #relatable
-
-**S5 — "Send a filter coffee, not a 'hi'" [F/U] · Gifting**
-- Hook: "Guys, stop sending 'hi'. Send THIS." (show filter coffee)
-- Body: on Fuse, after you actually talk you can send a small approved gift — coffee, book, flowers. "Not to buy her attention. To show you're paying attention." Show gift screen.
-- CTA: "That's Fuse gifting. Bio."
-- Caption: "A 'hi' means nothing. A thoughtful gift *after* a real conversation is the whole point of Fuse. (And no — you never see her address. Safe by design.)"
-- Tags: #datinginchennai #chennai #gifting #chennaidiaries #datingapp #thoughtful #filtercoffee
-
-**S6 — "How Fuse gifting actually works" [X screen-rec] · Product**
-- Hook: "'How does the gift thing work?' — let me show you."
-- Body: match → chat unlocks → gifting appears only *after* both really talk → pick approved gift → pay → ships. Beat: "You never see their address. Ever."
-- CTA: "Try it. Bio."
-- Caption: "Gifting unlocks only after a real conversation — a gesture, never pressure. The actual flow 👇"
-- Tags: #datingapp #gifting #chennai #datinginchennai #howto #chennaidiaries
-
-**S7 — "Gifts sweet vs creepy" [U] · Gifting**
-- Hook: "Green flag gift 🟢 vs red flag 🔴 — rate these."
-- Body: filter coffee 🟢, a book she mentioned 🟢, flowers 🟢, "your address" 🔴, day-1 jewelry 🔴. Point: Fuse only allows thoughtful low-pressure ones.
-- CTA: "Fuse curates the green flags only. Bio."
-- Caption: "We built the catalog so no one can be weird. 🟢 only."
-- Tags: #gifting #datinginchennai #chennai #greenflag #redflag #datingapp #chennaidiaries
-
-**S8 — "5 Chennai first-date spots under ₹500" [X carousel + reel] · Local (SAVE-BAIT)**
-- Hook: "Save this before your next first date in Chennai. 5 spots, under ₹500."
-- Body: 5 spots + one-line why each (Besant Nagar cafe, bookstore, beach walk + sundal, filter-coffee joint, gig venue). End: "Fuse's Explore tab has more."
-- CTA: "Full list + more inside Fuse. Bio."
-- Caption: "First-date spots that don't scream 'I didn't plan anything.' Save it 📌 Your go-to?"
-- Tags: #chennai #chennaidiaries #datinginchennai #chennaifood #chennaicafes #firstdate #besantnagar #thingstodoinchennai
-
-**S9 — "Where NOT to take a first date in Chennai" [F/U] · Local**
-- Hook: "Stop taking first dates to these places. I'm begging."
-- Body: anti-list — a movie (can't talk), bike ride to nowhere, friend's group hangout, "chill at my place" (no). Flip to a good idea.
-- CTA: "Fuse suggests places that work. Bio."
-- Caption: "Chennai, we need to talk about first-date choices 😭 Tag the friend who does #1."
-- Tags: #datinginchennai #chennai #chennaidiaries #firstdate #chennaimemes #datingapp
-
-**S10 — "Dating apps be like… the empty chat" [X] · Relatable**
-- Hook: screenshot of a match, 0 messages for 2 weeks. "You matched. Then… nothing. Every time."
-- Body: dead matches, dying chats. Then: "Fuse is built so 'match' leads somewhere — a gift, a plan, a date."
-- CTA: "Bio."
-- Caption: "The graveyard of dead matches. We're trying to fix it."
-- Tags: #datingapp #situationship #datinginchennai #chennai #chennaidiaries #relatable
-
-**S11 — "The Explore tab tour" [X screen-rec] · Product**
-- Hook: "Your dating app has a chat. Ours has a whole Explore tab."
-- Body: screen-rec of Explore — events, venues, experiences bookable in Chennai. "Match, then Fuse shows you where to go."
-- CTA: "Come see it. Bio."
-- Caption: "Most dating apps stop at the DM. Fuse shows you the actual date. 🎟️"
-- Tags: #chennaievents #chennai #datinginchennai #chennaidiaries #thingstodoinchennai #datingapp
-
-**S12 — "Why I built a dating app for Chennai" [F] · Founder**
-- Hook: "I'm not a big company. I built a dating app because I was tired of how dating apps work here."
-- Body: 30–40s honest founder story — ghosting, dead chats, wanting people to actually meet safely in Chennai. "We're at [X] members. I want the first 100 to be Chennai people who get it."
-- CTA: "Be one of the Founding 100. Bio. And comment what's broken about dating apps — I read everything."
-- Caption: "Building in public. This is Fuse. 🔗 Founding 100 in bio."
-- Tags: #buildinpublic #chennai #startup #datinginchennai #chennaistartup #founder #chennaidiaries
-
-**S13 — "Founding 100 countdown" [F/X] · Community**
-- Hook: "Only [X] Founding-100 spots left in Chennai."
-- Body: what members get (early Explore / first gift credit / founder badge), why 100 + Chennai-only (density). Filling counter.
-- CTA: "Claim your spot — bio."
-- Caption: "Keeping the first circle small and Chennai-only on purpose. [X] spots left. 🔗"
-- Tags: #chennai #foundingmembers #datinginchennai #chennaidiaries #earlyaccess
-
-**S14 — "Rainy-day Chennai date ideas" [X/U] · Local (seasonal)**
-- Hook: "Chennai rain ruined your date plan? Here's the fix."
-- Body: 4 rain-proof ideas (cozy cafe, board-game cafe, bookstore, filter coffee + long chat). Tie to Explore.
-- CTA: "More date ideas in Fuse. Bio."
-- Caption: "Chennai monsoon date rescue 🌧️ Save it. Which one?"
-- Tags: #chennai #chennairains #datinginchennai #chennaidiaries #chennaicafes #firstdate
-
-**S15 — "Reacting to your comments about dating in Chennai" [F] · Founder/Community**
-- Hook: "You left some WILD comments about dating in Chennai. Let's go through them."
-- Body: react to 3–4 real comments (green-screen), funny + warm, sneak in how Fuse addresses each pain.
-- CTA: "Keep them coming. Join the Founding 100 — bio."
-- Caption: "Part 1. Drop your Chennai dating horror stories 👇 I'll do a part 2."
-- Tags: #datinginchennai #chennai #chennaidiaries #storytime #datingapp #chennaimemes
-
-**Generation template (make more forever):**
-`Hook (real Chennai dating pain, first 2s) → agitate/relate (no pitch) → the Fuse turn (gift OR go-out OR Explore) → 1 CTA → save/tag/comment bait → 3 local + 3 niche + 2 broad tags.`
+| Slot | Time (IST) | Default format | Why |
+|---|---|---|---|
+| R1 | 8:00 AM | POV / story | Commute scroll; story hooks hold |
+| R2 | 12:30 PM | FACELESS / SCREENREC | Lunch scroll; snackable |
+| R3 | 4:30 PM | SKIT | Evening wind-down; comedy peaks |
+| R4 | 8:00 PM | FOUNDER | Prime time; biggest audience for trust |
+| R5 | 10:00 PM | EDIT / spicy closer | Late scroll; shares & saves happen at night |
 
 ---
 
-## 7. Promotion Tactics (beyond posting)
+## 3. THE 75 SCRIPTS — first drafts, in posting order
 
-- **Comment-farming** daily on big Chennai pages (food, memes, events, college). Your comment persona *is* marketing — free profile visits.
-- **Reply to every comment** in the first 60 min (boosts reach; feeds S15).
-- **Story interaction loops** — daily polls / this-or-that / "rate this date idea." Story replies = warmest DMs.
-- **DM warm leads** manually and human (not spammy) with link + Founding-100 framing.
-- **Chennai community seeding** — share date-spot carousels into welcoming WhatsApp/college/interest groups (utility travels, ads don't).
-- **Micro-creator barter (1–3 in Phase A)** — Chennai lifestyle/food/college creators (5k–50k, high local engagement). Prioritize female creators (§8).
-- **Referral loop** — Founding members get an extra perk for bringing a friend.
-- **Repurpose relentlessly** — every reel → story + group share; every carousel → reel; winners re-hooked.
+> Each is a first draft: hook (first 2s), beats, CTA, caption seed. Exact line-by-line delivery, shot lists and edit notes get locked per-day in `REELDAY{N}_SCRIPTS.md` (workflow in §5). Tanglish is drafted by me — founder localizes punchlines before shoot.
+> **Legal rule for all competitor call-outs:** only true, published facts (show "Source: Reuters / Fortune / Newsweek" on screen) or personal-experience/opinion framing ("I deleted…", "in my experience…", "I think…"). Never invent numbers. Never say a competitor is a "scam/fraud."
 
 ---
 
-## 8. Female-Seeding & Cold-Start (make-or-break)
+### DAY 1 — "BURN THE CATEGORY" (all 5 controversial · zero product)
 
-- **Female-first creator mix** — of 1–3 barter creators, ≥2 female.
-- **Lead female-facing content with gifting + curated experiences + "you decide the pace,"** not "meet strangers." S5/S7 (gifting) and S8/S14 (date spots) are the female-acquisition workhorses — thoughtful/safe without shouting "safety."
-- **Founding-100 perk skew** for early female members (free first gift credit, priority Explore-event invite).
-- **Seed female-heavy Chennai spaces** (college groups, women's professional/interest communities) with utility content, not pitches.
-- **Watch the ratio weekly.** If it skews male, pause male-acquisition pushes and double female effort until it rebalances. Single most important operational metric.
+> Founder's locked structure for Day 1: **2 reels** on the two biggest indictments (swiping is dead · their profit is your singleness), then **3 reels** pinpointing the *other* pains — the ones people don't say out loud: (R3) the pains beyond swiping, (R4) how Gen Z actually feels about "meeting on an app" / Hinge relationships & the gap our niche fills, (R5) the boy-girl ratio and why it's mathematically broken.
 
----
+**D1R1 — "Swiping is dead. I have proof." (indictment #1)** `POV · IGNITE · P1 · LIGHT · solo`
+- Hook: *"Nethu night naan Tinder, Bumble, Hinge — moonu app um delete panniten. Aana story adhu illa."*
+- Beats: apps deleting one by one → then the bigger claim: swiping itself is dying, and not just for me — receipts on screen: "Bumble paying users −21% (Q1 2026)" · "Tinder MAU −7%" · "79% of Gen Z: dating-app fatigue" · "Bumble reportedly exploring a sale — once worth $7B" (Source cards: Reuters/Inc./Newsweek) → *"Idhu naan solradhu illa. Idhu numbers solradhu. Swiping-oda era mudinjiduchu."*
+- CTA: "How long have YOU swiped for nothing? Comment the damage."
+- Caption seed: "Not a hot take. A death certificate. 🪦 (sources in the reel)"
 
-## 9. Phase B Preview — IRL Event (unlocks at ~100 users)
+**D1R2 — "Their profit is you staying single. Read that again." (indictment #2)** `FACELESS · IGNITE · P1 · LIGHT · solo`
+- Hook (bold text): "Your dating app makes money ONLY if you stay single."
+- Beats: text-motion logic chain — you find someone → you delete the app → they lose a paying customer → so the algorithm's incentive is to feed you *almosts*, never answers → the cruel irony card: **"Hinge literally advertises itself as 'designed to be deleted.' Then why are you STILL swiping after 2 years?"** → "A company that profits from your loneliness will never cure it."
+- CTA: "Tag the friend who's been 'on the apps' for 3 years straight."
+- Caption seed: "It's not you. It's the business model. 🧾"
 
-Run a **Fuse Chennai curated singles event/mixer** (cafe takeover / games night / curated Explore experience). It is at once: offline positioning made literal, best content shoot available (a month of reels from one night), retention/community moment, and press/creator hook. Gate attendance to verified Fuse users. Foreshadow now via S13 countdown + teasers.
+**D1R3 — "The pains nobody warns you about" (the other 90%)** `SKIT · IGNITE · P1 · MED · 2P/3P`
+- Hook: *"Swiping mattum illa da. Adhukku appuram varra pain-e periya kadhai."* (friends comparing app horror stories)
+- Beats: rapid-fire enacted pains BEYOND swiping — the *talking stage* that lasts 3 weeks and dies (all texting, no meeting) · "see who liked you" locked behind ₹999 · getting ghosted *after* a great date · juggling 5 half-conversations till all of them rot · matched → he lives in Velachery, she's in Anna Nagar, nobody crosses the city → punchline: *"Match aaguradhu problem illa. Adhukku appuram onnume nadakaadhu — adhu dhaan problem."*
+- CTA: "Which pain hit hardest? 1, 2, 3, 4 or 5 — comment." *(comment harvest for Day 12)*
+- Caption seed: "The match was never the hard part. Everything after was."
 
----
+**D1R4 — FOUNDER: "Nobody wants to say 'we met on an app'" (the gen gap our niche fills)** `FOUNDER · IGNITE/TRUST · P5 · LIGHT · solo`
+- Hook: *"Oru truth: yaarum proud ah sollradhu illa 'naanga app la meet pannom' nu. Yean?"*
+- Beats: to-camera, honest — our generation *uses* the apps but is quietly ashamed of them; Gen Z now assumes apps only have "leftovers" (perception is real, cite it lightly) → even Hinge preaches "get off the app," yet keeps you swiping → what people ACTUALLY want back is the meet-cute — meeting through a run club, a gig, a friend-of-a-friend, a real room → **"Andha 'we met in real life' feeling — adha oru app kudukka mudiyaadha? Adhu dhaan naan fill panna vandhirukra gap."** → tease (arc): "What I'm building gives you the app's reach WITHOUT the app's shame. Naalaikku innum solren."
+- CTA: "Would YOU tell people you met on an app? Honest answer below."
+- Caption seed: "We all use them. Nobody's proud of them. That's the whole problem."
 
-## 10. Small Paid Budget Allocation (Phase A)
+**D1R5 — "The ratio nobody does the math on" (why apps can't work)** `EDIT★ HEAVY #1 · IGNITE · P1 · HEAVY · none`
+- Hook: black screen: "A dating app that's 70% men isn't a dating app. It's a queue."
+- Beats: cinematic data-film — animated crowd fills the screen ~70/30 male-female (industry-typical skew) → show the mechanics honestly, blaming the *system* not a gender: with that ratio, women get buried in low-effort messages and leave in ~2 weeks → fewer women → men swipe harder → app *sells* "boosts"/"see who likes you" to fight the imbalance IT profits from → text: **"The ratio isn't a bug. It's the business."** → hard cut to warm Chennai b-roll (run club, gig, filter coffee) + line: *"Real rooms balance themselves. Group settings, real context, real places."* → final frame: **"Chennai. Something's coming."** (no logo yet — arc tease).
+- CTA: none (pure share/save-bait; sparks the ratio debate in comments).
+- Caption seed: "The math that breaks every swipe app. And the fix isn't an algorithm. 🔥 (sources in reel)"
+- *Guardrail note:* attack the SYSTEM and the incentive, never "men are X / women are Y." Sympathetic to both sides being failed by the design.
 
-Hold most for Phase B. In Phase A:
-- **~60% → 1–3 Chennai micro-creator collabs** (barter-first, small top-up). Highest-ROI local trust.
-- **~30% → boosting proven organic reels** — only after strong organic saves/shares, small geo-targeted (Chennai, 21–30) boost.
-- **~10% → one small IG ad test** of the best reel as a signup driver, to learn CPI before Phase B.
-Rule: no paid rupee behind unproven creative.
+**D1R6 [viggy1] — "The Hinge founder wants an AI to pick who you love. I disagree." (BONUS — timely)** `FOUNDER · IGNITE/TRUST · P5 · LIGHT · solo`
+> Added on founder request — the news is days old (Overtone raised $18M, July 2026) so it's too timely to hold. Day 1 runs 6 reels *only if* launch-day appetite allows; otherwise this SWAPS into a Day-2 founder slot and the displaced take goes to the reserve bank (§ note below). Either way, keep it inside the controversial run (Days 1–3).
+- Hook: *"Hinge oda founder ippo Hinge ah vittutu, oru AI dating app pannuraaru. Peru — Overtone. $18 million raise pannitaaru. Naan yean adha nambala nu solren."*
+- Beats: to-camera, calm-but-firm — the facts first (quote/source cards: Justin McLeod, ex-Hinge; "$18M"; Overtone = "voice- and AI-forward," makes "only the introductions worth making"; funded by Match Group — Source: TechCrunch/Fortune) → then the take: **"An AI can curate. It cannot feel. You cannot outsource butterflies."** → the sharp line: *"Who decides which introduction is 'worth making'? Adhu neenga decide pannanum — oru algorithm illa."* → *"Connection you didn't choose isn't connection. Adhu assignment."* → the philosophy that IS our brand: **"Fuse oru platform — puppeteer illa. Naanga unna real people kitta, real rooms la kondu vandhu vittudrom. Yaaru-nu nee decide pannu. AI unakku love ah 'assign' panna koodadhu."** → soft close: "Machines can optimize your feed. They shouldn't optimize your heart."
+- CTA: "AI-picked love or your-own-choice? Comment where you stand."
+- Caption seed: "The man who built the swipe now wants an AI to pick your person. I think you should pick. 🧠❤️ (sources in reel)"
+- *Contro points bank (pick 2–3 on lock):* $18M to remove humans from human connection · Match Group (the swipe-app giant) is funding it · a relationship therapist on the board selling an algorithm · "voice AI that knows you deeply" = surveillance dressed as intimacy (press literally called it "Black Mirror") · love needs friction/serendipity/choice — AI deletes exactly those · gatekeeping: an AI deciding who is "worth" your time.
+- *Guardrail:* criticize the *idea* (AI-assigned connection) and cite only published facts; do not mock McLeod personally or invent Overtone details. Opinion framing throughout ("I disagree," "I think").
 
----
-
-## 11. Metrics & Weekly Ritual
-
-**North-star (Phase A):** real Chennai signups toward 100. **Guardrail:** gender ratio.
-Track weekly: followers, reel reach, **saves + shares** (weight over likes), profile visits, link clicks, installs, signups, gender ratio, top reel.
-
-**Weekly 30-min ritual (Sundays):** (1) which reel won by saves/shares → re-hook & reuse; (2) which flopped → drop that format; (3) ratio check → adjust female-seeding; (4) signups vs 100 target; (5) pick next week's 5 scripts.
-
----
-
-## 12. Guardrails
-
-- Don't oversell safety loudly, but never contradict it — the "never see their address," "gifts only after real talk," "curated catalog" beats do trust work quietly.
-- No fake scarcity — if "X spots left," actually cap/gate the Founding-100 perk.
-- Chennai authenticity — Tanglish/local references must feel native; have a local review scripts if needed.
-- Consistency > perfection — 5 decent reels/week beats 1 polished/month.
-- Ratio before growth.
-
----
-
-## 13. Week 1 Execution Checklist
-
-1. Set up/clean IG account per §3 (handle, name-field keywords, bio, tracked link-in-bio, 5 highlights).
-2. Build link-in-bio landing (store links + Founding-100 signup + click tracking).
-3. Produce first 5 reels: **S1, S2, S5, S8, S12**.
-4. Post S1 (pin) + S2 + S12 to seed the grid before promotion.
-5. Start daily comment-farming on 5–10 Chennai pages; reply to all comments within 60 min.
-6. Decide the actual Founding-100 perk + referral reward.
-7. Shortlist 5 Chennai micro-creators (≥2 female) for barter outreach.
-8. Stand up metrics sheet (§11) + book recurring Sunday review.
+> **Reserve bank (displaced-take parking):** if D1R6 swaps into Day 2's founder slot (D2R4), move D2R4 "Dating apps weren't built for Chennai" here as a re-hook/reserve reel — its core idea (Chennai is a *who's-your-circle* city) can also fold into D2R3 or D8R4.
 
 ---
 
-## Success Criteria
+### DAY 2 — "CHENNAI DATING TRUTHS" (local spice)
 
-- **Weeks 1–2:** account live + first 5 reels posted; ≥1 reel clears meaningfully higher saves/shares; link-in-bio getting clicks.
-- **Weeks 3–4:** first creator collab live; measurable signup lift; ratio not badly skewed.
-- **Week ~6 (Phase-A success):** ~100 real Chennai users, workable gender ratio, 2–3 proven reels → triggers Phase B (IRL event + paid scale).
+**D2R1 — "POV: being a girl on dating apps in Chennai"** `POV · IGNITE · P1 · LIGHT · F-lead`
+- Hook: *"POV: Chennai la ponnu-a irundhutu dating app open panra."*
+- Beats: notification avalanche — 47 "hi", 3 "hii", one "ur so beautiful reply pls" → zero actual plans → she closes the app, deadpan: *"Idhukku dhaan ah download pannen?"*
+- CTA: "Girls — worst opener you've received. Comments. Now." *(comment harvest for Day 12)*
+- Caption seed: "The 'hi' economy is crashing and we're not sorry."
+
+**D2R2 — "Chennai dating app math"** `FACELESS · AGITATE · P1 · LIGHT · solo`
+- Hook: "The real Chennai dating-app funnel. Prepare yourself."
+- Beats: animated counter — 500 swipes → 12 matches → 3 replies → 1 "wyd" at 3am → 0 dates. Final card: "500 swipes. Zero coffee. Semma ROI."
+- CTA: "Save this and show it to the friend who defends these apps."
+- Caption seed: "Math doesn't lie machan 📉"
+
+**D2R3 — "Types of Chennai dating-app bios"** `SKIT · IGNITE · P1 · MED · 2P`
+- Hook: *"Chennai dating app la 5 types of people. Nee kandippa idhula oruthar."*
+- Beats: rapid character bits — "Let's meet at Marina" guy · the bio that's just 🏏 · "not looking for anything serious" (online at 2am) · Besant Nagar beach photo ×4 · "I'm actually shy" (voice note: 4 minutes).
+- CTA: "Tag which one you are. Be honest da."
+- Caption seed: "No.3 knows what they did 👀"
+
+**D2R4 — FOUNDER: "Dating apps weren't built for Chennai"** `FOUNDER · IGNITE/TRUST · P5 · LIGHT · solo`
+- Hook: *"Hot take: dating apps Chennai kaaga design pannave illa."*
+- Beats: they're built in SF, tuned for Delhi/Bombay metros — anonymous cities, hookup-paced → Chennai is a *"who's your circle"* city; we date through friends, colleges, gigs, run clubs → apps give strangers with no context and nowhere to go → "Enga city ku vera maadhiri app venum. I'm on it."
+- CTA: "Agree or fight me in comments."
+- Caption seed: "Chennai deserves an app that gets Chennai."
+
+**D2R5 — "Matches that went nowhere: a memorial"** `EDIT · AGITATE · P1 · LIGHT · solo`
+- Hook (trending sad-audio remix): "A moment of silence for every match that died at 'hey'."
+- Beats: gallery-scroll of fake-but-familiar dead chats — "hey" / "hey" / *seen* — dates on each (2023… 2024… 2025) → candle emoji finale.
+- CTA: "Your worst dead-chat story. Best one gets a reel." *(harvest for Day 12)*
+- Caption seed: "Gone but not forgotten 🕯️"
 
 ---
 
-## 14. Explore Events Integration — the v2 acquisition engine (post Explore Iteration 2, 2026-07-03)
+### DAY 3 — "THE GRAVEYARD" (agitation peaks + first founder cliffhanger)
 
-> Full product/tech plan: `FUSE_EXPLORE_ITERATION2_PLAN.md` (all stages A–G complete). This section makes **events the primary acquisition engine**; content amplifies them. Nothing above is deleted — it's re-sequenced under the two-door frame.
+**D3R1 — "The match that died in 'hey'"** `POV · AGITATE · P1 · LIGHT · solo`
+- Hook: "Day 1: matched. Day 14: still 'hey'. A love story."
+- Beats: slow storytelling POV — the excitement of the match → the opener drafted 6 times → sent → *seen* → the app opens less and less → uninstall. Melancholy, not comedy.
+- CTA: "If this hurt, you've lived it. Share it to the group chat."
+- Caption seed: "Every match is a maybe that the app lets die."
 
-Explore is split into **"Date Ideas"** (matched users: venues, gifts, bookings) and **"Meet People"** (run clubs, house parties, gigs, meetups — open to everyone). Fuse aggregates existing Chennai events for free (organizer green-light, no commission) and adds the **Event Circle**: RSVP through Fuse → see who else from Fuse is going → wave → connect → check in at the venue. Positioning: **"Match. Gift. Go out — with your match or with the city."**
+**D3R2 — "Every app has this screen"** `FACELESS/SCREENREC-style · AGITATE · P1 · LIGHT · solo`
+- Hook: "Open your dating app. Go to matches. Scroll. I'll wait."
+- Beats: mock match-list scroll — 40 matches, zero conversations past 3 messages → text: "This screen exists on every app. It's not a feature. It's a graveyard." → "Why does no app have a NEXT STEP?"
+- CTA: "Screenshot yours (hide names), story-tag us. Let's see the biggest graveyard in Chennai."
+- Caption seed: "The graveyard screen. You have one too."
 
-### 14.1 Strategic foundation (the "why anyone needs this")
-- **Exact need:** the gap between meeting people online and actually meeting them offline — *"I want to go out and meet people in Chennai, but I either go alone, or my matches die in the chat."* Fuse's promise: **you never go alone.**
-- **Why reach for Fuse (not "switch"):** entry is a free event RSVP, not a dating commitment (low switching cost). Fuse is the only app combining **the plan AND the people in it** — Hinge has people but no events; District has events but no people.
-- **How we create the need:** name the pain (relatable content) → make it concrete + urgent (a real event + who's going + a perk) → de-risk (group, verified, free, gender-balanced) → reward (circle, better match odds, Fuse Regular badge) → ritualize (weekly "This weekend on Fuse"). Latent want → habit → need.
+**D3R3 — "'We should totally meet up' — a Chennai love story"** `SKIT · AGITATE · P1 · MED · 2P`
+- Hook: *"'Free ah? Meet pannalama?' — 'Sure!' … (naragam intro: they never met).*"
+- Beats: split-screen texting skit — "this weekend?" → "next weekend pakkalam" → exam → wedding → "after Pongal?" → calendar flips a full year → both still texting "we should totally meet up".
+- CTA: "Tag the 'we should meet up' friend. You have one."
+- Caption seed: "One year. Zero meetings. Infinite 'pakkalam'."
 
-### 14.2 Event-led path to "Founding 100"
-1. List **3–4 real Chennai events/month** via admin (run clubs, board-game cafés, open-mics, house parties) — supply costs ₹0.
-2. Each event needs only **~5 Fuse users** to feel alive; seed from existing users + content.
-3. Each organizer **cross-promotes** "RSVP on Fuse" to their community → ₹0-CAC acquisition of the exact persona.
-4. Every event = a **micro-campaign** = 3 content moments: announce → circle-teaser countdown → recap reel. 4 events/month ≈ 12+ free content moments.
-5. Users arrive for the event, stay for the app. The 100-user goal becomes an outcome of running ~4 real circles, not just posting.
+**D3R4 — FOUNDER: "The dirty secret: the chat IS the end of the product"** `FOUNDER · AGITATE/TEASE · P5 · LIGHT · solo`
+- Hook: *"Dating apps oda dirty secret onnu solren."*
+- Beats: the product literally ENDS at the chat — no app has a next step because your date isn't their business, your subscription is → "Match aana appuram enna? Silence. By design." → cliffhanger: **"Naan idha pathi rendu varusham yosichen. Appuram oru decision eduthen. Naalaikku solren."**
+- CTA: "Tomorrow. Follow so you don't miss it."
+- Caption seed: "Part 1 of a story I've never told publicly."
 
-### 14.3 Organizer outreach — the core new growth channel
-- **Targets:** run clubs, board-game cafés, open-mic/comedy hosts, house-party throwers, college fest teams, small gig promoters, hobby meetups (cycling, trekking, book clubs).
-- **Pitch (borrowed trust, zero ask):** *"We put your event in front of Chennai's most socially active 21–30 crowd, free. They RSVP through Fuse, you get more attendees. Optionally give them a code/offer. All we ask: mention 'RSVP on Fuse' once."*
-- **DM template:**
-  > Hi [name] — love what you're doing with [run club/open mic]. I run Fuse, a Chennai going-out app. We list local events free and show our users who else is going, so people show up in a group instead of alone. Happy to feature [event] this weekend at zero cost — you just get more RSVPs. Want me to add it? (We can give your Fuse RSVPs a small perk too.)
-- **Target:** 3–4 confirmed organizers into Week 2; ≥1 female-led community (run/book clubs skew female = ratio help).
-- **Build:** a one-page organizer explainer (what Fuse is, what they get, a "who's going" screenshot).
+**D3R5 — "The 3am 'wyd' text"** `EDIT/POV · AGITATE · P1 · LIGHT · F-lead`
+- Hook: phone buzz in the dark. 3:04 AM. "wyd 🥺". Text overlay: *"POV: avan 'different' aam."*
+- Beats: her unimpressed face lit by phone glow → receipts: same guy, "wyd", 12th time this month → cut to black: "Chennai's most-sent romantic message: wyd. We can do better."
+- CTA: "The 'wyd' epidemic ends soon. Follow."
+- Caption seed: "wyd = will you disappoint. every time."
 
-### 14.4 6th content pillar — "This weekend on Fuse" (RITUAL/FOMO)
-Weekly event-roundup reel + carousel: "This weekend in Chennai — 5 things + who from Fuse is going." Save-bait + FOMO + **organizer tags** (they reshare = free reach). Fixed weekly slot (e.g., Thursdays).
+---
 
-### 14.5 New event-driven reel scripts (S16–S20)
-Format legend as §6. These are angles Hinge/District structurally cannot make.
+### DAY 4 — "ORIGIN STORY, PART 1" (storytelling act begins)
 
-**S16 — "POV: you moved to Chennai and know nobody" [U/F] · Meet People (REACH/female-friendly)**
-- Hook: "POV: you moved to Chennai for work and your only friends are your colleagues."
-- Body: scrolling alone on a Saturday → open Fuse → "Meet People" → RSVP a Sunday run club → "8 people from Fuse going" → cut to being there, not alone.
-- CTA: "You don't have to go alone. Fuse — bio."
-- Caption: "New in Chennai? The app isn't for finding a date first. It's for finding your people. 🔗"
-- Tags: #chennai #newinchennai #datinginchennai #chennaidiaries #meetpeople #chennaievents #runclub
+**D4R1 — "POV: you moved to Chennai and know nobody"** `POV · AGITATE · P1/P6 · LIGHT · solo or F-lead`
+- Hook: *"POV: velaikaaga Chennai vandhutta. Un friends list: colleagues mattum."*
+- Beats: Saturday alone — scrolling reels of other people's plans → Swiggy for one → the quiet montage of a full city you're alone in → text: "Chennai has 12 million people. Why is it so hard to meet ANY of them?"
+- CTA: "If you moved here and felt this — comment your area. Find your people below."
+- Caption seed: "New city. Full of people. Somehow lonely. This one's for you."
 
-**S17 — "I went to a run club alone — here's who I met" [U/testimonial] · Meet People (PROOF)**
-- Hook: "I almost didn't go. Went alone. Here's what happened."
-- Body: first-person recap of a real Fuse-listed event — showed up, saw the Fuse circle, met people, one became a chat. Warm, unscripted.
-- CTA: "There's one this weekend too. Bio."
-- Caption: "The 'go alone' fear is the only thing between you and your next friend group. Fuse fixes that."
-- Tags: #chennai #runclub #chennaidiaries #meetpeople #datinginchennai #chennaievents
+**D4R2 — "You don't need more matches"** `FACELESS · AGITATE · P1 · LIGHT · solo`
+- Hook: "Unpopular opinion: you don't need more matches."
+- Beats: manifesto text-motion — more matches = more tabs open in your brain → what you need is ONE plan: a place, a time, a person who shows up → "Apps optimize matches. Nobody optimizes PLANS."
+- CTA: "Send this to the serial swiper."
+- Caption seed: "Matches are inventory. Plans are life."
 
-**S18 — "This weekend on Fuse" [X carousel + voiceover] · This weekend on Fuse (RITUAL) — WEEKLY**
+**D4R3 — "Situationship vs actual plan"** `SKIT · AGITATE · P1 · MED · 2P`
+- Hook: split screen: "Situationship || Real plan".
+- Beats: same actor, two timelines — LEFT: "just vibing" / left on read / "what are we?" · RIGHT: "Saturday, 5pm, that gig in Alwarpet?" / gets ready / actually goes → face on each side says everything.
+- CTA: "Pick your side. One of them has a future."
+- Caption seed: "Choose your fighter. One fights back."
+
+**D4R4 — FOUNDER: "Why I'm building this" (Origin Pt. 1)** `FOUNDER · TRUST · P5 · LIGHT · solo`
+- Hook: *"Sonna maadhiri — indha story naan yaarukum sollala."*
+- Beats: personal, unpolished — the ghosting that stung, friends' dead chats, watching people go to gigs alone or not at all → "Ellarum sollranga 'apps la idhu dhaan da normal'. Naan accept panna mudiyala." → the question that started everything: **"Yean app chat la mudiyudhu? Yean adhu oru real plan la mudiya koodadhu?"** → "Answer panna try panren. Part 2 naalaikku."
+- CTA: "Part 2 tomorrow. Your worst ghosting story in comments — I read all."
+- Caption seed: "Origin story, part 1. No script, no polish."
+
+**D4R5 — "What they promised vs what you got"** `EDIT · AGITATE · P1 · LIGHT · solo`
+- Hook (trending audio): "Dating app ads vs dating app reality."
+- Beats: remix cut — glossy ad clichés (laughing couples, 'find your person!') smash-cut against reality (the graveyard screen, "hey", 3am wyd, sub paywall ₹999) → repeat 3 rounds, escalating.
+- CTA: "Which one got you? 👇"
+- Caption seed: "The ads were the best fiction of the decade."
+
+---
+
+### DAY 5 — "THE VILLAIN DEEPENS" (business-model exposé, competitor round 2)
+
+**D5R1 — "Why women leave dating apps in 2 weeks"** `POV · AGITATE · P1 · LIGHT · F-lead`
+- Hook: *"Ponnunga dating apps ku varanga. Rendu week la poiduvanga. Yean nu theriyuma?"*
+- Beats: her POV — day 1: hopeful → day 3: 200 low-effort DMs → day 7: one decent chat, he vanishes → day 10: an unsolicited weird message → day 14: uninstall → text: "The apps lose the women first. Then it's just men swiping at each other's shadows."
+- CTA: "Women of Chennai — how long did you last? Comments."
+- Caption seed: "Every app's real crisis, told honestly."
+
+**D5R2 — "Bumble was worth $7 billion. Now it's for sale."** `FACELESS · IGNITE · P1 · MED · solo`
+- Hook: "$7,000,000,000 → for sale. What happened?"
+- Beats: mini video-essay in text-motion — 2021: Bumble IPO, $7B+ · 2025: paying users falling · Q1 2026: paying users −21%, reports say it's exploring a sale (Source cards: Reuters/Inc. on screen) → "Users didn't leave because dating died. They left because SWIPING died."
+- CTA: "The full story nobody's telling — follow for part 2."
+- Caption seed: "Not hate. Just history, with sources. 📉"
+
+**D5R3 — "Dating app premium be like"** `SKIT · IGNITE · P1 · MED · 2P`
+- Hook: shopkeeper-style skit: *"Enna venum? Love ah? Adhu premium section la irukku."*
+- Beats: absurd "love shop" — see who liked you: ₹999/month · undo a swipe: ₹249 · "boost" so humans see you: ₹499 → customer: *"Anna, kadhal ku EMI iruka?"* → deadpan: "No refunds."
+- CTA: "How much have YOU paid these apps? Confess."
+- Caption seed: "Love behind a paywall. Comedy writes itself."
+
+**D5R4 — FOUNDER: "Her words, not mine"** `FOUNDER · IGNITE/TRUST · P5 · LIGHT · solo`
+- Hook: *"Bumble oda founder-e enna sonnanga theriyuma?"*
+- Beats: quote card — "rooted in rejection and judgment… not healthy dynamics" (Whitney Wolfe Herd, Fortune) → "The person who BUILT the swipe era says the swipe era is broken. Appuram naan yaaru adha defend panna?" → "The question isn't whether it's broken. It's who fixes it — and for which city."
+- CTA: "Tomorrow I'll tell you what I did about it."
+- Caption seed: "When the founder of the swipe says the swipe is broken… case closed."
+
+**D5R5 — "It's not you. It's the app."** `EDIT · AGITATE · P1 · LIGHT · solo`
+- Hook: "If dating apps left you feeling like the problem — watch this."
+- Beats: montage of real headline cards + stat cards (79% fatigue · users leaving · 'the year dating apps died') over emotional audio → turn: "Millions quit at once. That's not coincidence. That's a verdict." → soft: "You were never the problem."
+- CTA: "Share this with someone who needed it."
+- Caption seed: "A verdict, not a coincidence. 🧾"
+
+---
+
+### DAY 6 — "SO I BUILT SOMETHING" (name-drop day)
+
+**D6R1 — "What if the app's job was to get you OFF the app?"** `POV · TEASE · P1/P4 · LIGHT · solo`
+- Hook: *"Imagine pannunga: oru app — adhoda velai unna app la vechirukardhu illa. Unna VELIYA anupradhu."*
+- Beats: inverted day-in-life — 9am match → 12pm an actual plan suggested → Saturday: out, phone in pocket → text: "The best session is a short one. What app thinks like that?"
+- CTA: "One does. Tomorrow, 8pm. Follow."
+- Caption seed: "An app that wants you to leave it. Imagine."
+
+**D6R2 — "3 things a dating app SHOULD do"** `FACELESS · TEASE · P4 · LIGHT · solo`
+- Hook: "A dating app only needs to do 3 things. Nobody does the third."
+- Beats: text-motion — 1) Show you real people (not bots/ghosts) 2) Make talking mean something (effort > 'hi') 3) **Give you somewhere to GO** → "1 is table stakes. 2 is rare. 3 doesn't exist." → beat → "Existed*. Until now. Tomorrow."
+- CTA: "Guess what it's called. Comments."
+- Caption seed: "The third thing is the whole thing."
+
+**D6R3 — "Machan… I met someone. OFFLINE."** `SKIT · TEASE · P1 · MED · 2P/3P`
+- Hook: friend bursts in: *"Machan!! Naan oru ponnu kitta pesinen. REAL LIFE la."*
+- Beats: friends react like he discovered fire — "Offline ah?! Photo illama?! Bio illama?!" → he explains: at a run club, normal humans, actual conversation → friends: *"Eppadi da? Enga da?"* → he smirks at camera: "Naalaikku solren."
+- CTA: "Tomorrow. 8pm. Everything."
+- Caption seed: "Offline is the new exotic. 😂"
+
+**D6R4 — FOUNDER: "It's called Fuse." (Origin Pt. 2 + name-drop)** `FOUNDER · TRUST/TEASE · P5 · LIGHT · solo`
+- Hook: *"Rendu naala oru story sollitu iruken. Idhu dhaan ending. Illa — beginning."*
+- Beats: "I stopped waiting for the big apps to fix it. Naan-e build panniten." → **"It's called FUSE. Chennai only. Adhoda promise: you never go alone."** → what it is in one breath: match, gift, go out — with your match or with the whole city → "Full reveal tomorrow. Screen by screen."
+- CTA: "Tomorrow, 8pm, full tour. Set the reminder."
+- Caption seed: "Two years of frustration → one app. Meet Fuse tomorrow. 🔗 soon"
+
+**D6R5 — Countdown teaser** `EDIT · TEASE · P4 · LIGHT · solo`
+- Hook: glitch cuts — fragments of an app UI you can't quite see.
+- Beats: 0.5s flashes: a card swipe… a gift box icon… an events map… people at a gig → text stamps: "MATCH." "GIFT." "GO OUT." → logo glitch-reveals for 0.3s → gone → "07:00 PM. TOMORROW."
+- CTA: "Followers see it first."
+- Caption seed: "You've seen 0.3 seconds of it. Tomorrow: everything."
+
+---
+
+### DAY 7 — "REVEAL DAY"
+
+**D7R1 — "What is Fuse — in 30 seconds" (PIN)** `SCREENREC · REVEAL · P4 · LIGHT · solo`
+- Hook: *"Chennai kku sondha app. Idhu dhaan Fuse. 30 seconds. Paaru."*
+- Beats: crisp 3-beat screen-rec — 1) Match (deck swipe) 2) Actually talk → send a real gift, not a creepy 'hi' (gift screen) 3) GO OUT — events, venues, who's-going (Explore) → end on the two doors: Meet People / Date Ideas.
+- CTA: "Founding 100 opens soon. Follow. Link coming."
+- Caption seed: "The app that ends where others give up: at the actual date. PIN this."
+
+**D7R2 — "Hinge + Blinkit + District = Fuse" (THE EQUATION)** `FACELESS/EDIT · REVEAL · P4 · MED · solo`
+- Hook: "You currently need 3 apps to do what Fuse does in one. Watch."
+- Beats: the core visual motif animated — three app icons/ideas slide in: **Hinge** (the match / the person) **＋ Blinkit** (a thoughtful gift, delivered fast) **＋ District** (the event / the place to go) → they collapse/fuse into ONE Fuse icon with a satisfying snap → then show it live: match → gift → go out, one flow, one app → text: **"Three apps' worth of effort. One simplified app."** → land on the two doors (Meet People / Date Ideas).
+- CTA: "One app instead of three. Founding 100 — bio soon."
+- Caption seed: "Stop app-hopping. Match, gift, and go out in one place. The equation, visualized. 🔗"
+- *Note:* this equation is the signature explainer — reuse the animation as a sting in founder reels and the reveal film.
+
+**D7R3 [viggy2] — "I did 3 years on dating apps. Then my friend made me review his." (friend UGC hero reel)** `TESTIMONIAL/POV (UGC) · REVEAL (+ reach on-ramp) · P4/P1 · MED · friend (M, natural/unscripted)`
+> The friend asset. TWO acts in one reel: a jaded-veteran confession (reach/relatable) → an honest skeptic's review (reveal/trust). The confession earns him credibility so the review lands as PROOF, not an ad. Written as a performance brief — anchor lines he can say his own way + improv prompts. Keep it real; his personality carries it, not the script.
+>
+> **Location & look:** a real Chennai café or a rooftop/balcony at golden hour — casual, lived-in, phone in hand, iced coffee on the table. Handheld or tripod-static, natural light. He's talking to a friend behind the camera, not "performing." One outfit, one location, ~40–50s.
+>
+> **HOOK (0–2s, he picks whichever feels natural — say it like he's mid-rant to a friend):**
+> - *"Moonu varusham dating apps use pannen, machan. Enakku kedaicha total return — idho."* (holds up phone, shows a dead match list)
+> - "I spent 3 years on dating apps. Let me tell you exactly what I got out of it. Nothing. Zero."
+> - "My friend built a dating app and asked me to review it. I was 100% ready to roast it."
+>
+> **ACT 1 — THE CONFESSION (0–20s · reach/relatable · let him riff, hit 3 of these beats):**
+> - the honest damage: 3 years, hundreds of swipes, a graveyard of "hey / hey / *seen*"
+> - a specific funny pain he actually relates to — *the talking stage that dies after 3 weeks* · matched but she's across the city and nobody ever crosses Chennai traffic for a stranger · paying ₹999 to see who liked you · being "a number in someone's rotation"
+> - the emotional turn (real, not scripted): *"Oru stage la app open panradhe waste-nu feel aachu. Naanum delete panniten."*
+> - *Improv prompt for him:* "What's the pettiest reason you gave up on an app?" — let his real answer make the cut.
+>
+> **ACT 2 — THE REVIEW (20–45s · reveal/trust · skeptic slowly won over):**
+> - the setup: *"Appuram en friend 'Fuse try pannu da' nu. Seri, honest review pannalam-nu open pannen."* (arms-crossed energy)
+> - beat 1 — the gifting rule surprises him: *"Wait — gift anuppardhukku munnadi, rendu peru-um actually pesanum-a? And avaloda address enakku theriyaadha?? …okay that's actually not creepy."*
+> - beat 2 — the two doors / events tab: *"Idhu just dating app illa da. 'Meet People' — run clubs, gigs, and it shows who else from Fuse is going. Thani ya poga vendaam."*
+> - beat 3 — the click: the **Hinge + Blinkit + District = Fuse** equation lands and he says some version of *"Oh. It's like three apps in one. Match, gift, and the actual plan."*
+> - the verdict (the whole point — his real reaction): *"Naan idha roast panna vandhen. …Download panniten, machan. Adhu dhaan review."*
+>
+> **ANIMATED EDITS (dropped in over his talk — this is where the 1 outsourced-lite polish goes if any):**
+> - Act 1: dead-chat bubbles pile up + a red "0 dates" counter · stat card "79% of Gen Z: app fatigue" · quick meme cutaways on the funny beats.
+> - Act 2: screen-rec picture-in-picture of what he's tapping (gifting flow, who's-going circle) · UI zoom-ins · the **equation animation** snaps in at "three apps in one" · a subtle green ✓ on each feature he approves.
+>
+> **CTA:** "Don't take my word — I'm just the skeptic. Founding 100, link in bio." / on-screen: "@fuseinc_ · Chennai only."
+> **Caption seed:** "Gave a dating app to Chennai's most cynical single man. He downloaded it. 💀 (honest review, no script) 🔗 bio"
+> **Why it works:** the confession is pure relatable reach (works even on people who've never heard of Fuse), and it *buys* the credibility that makes the review land as proof. Reusable as a paid ad later. A non-founder saying "I came to roast it, I downloaded it" is the most trustworthy line in the whole sprint.
+> **Natural-delivery notes:** shoot 3–4 takes, let him go off-script, harvest the realest lines in the edit; feed him the beats between takes, never a full script; keep his stumbles/laughs — they read as authentic. If a line feels forced, cut it.
+>
+> *(Old D7R3 "First date planned by an app?!" M+F skit → moved to RESERVE BANK: use as a Date-Ideas reel on D9 or a re-hook slot; concept intact — she asks "enga meet pannalam?", he panics, Fuse Date Ideas saves him.)*
+
+**D7R4 — FOUNDER: The founder tour** `FOUNDER · REVEAL/TRUST · P5/P4 · LIGHT · solo`
+- Hook: *"Naan build pannadha naan-e ungalukku kaatren. No marketing voice. Just me."*
+- Beats: founder walks through the app on camera, casual commentary — the deck, the gift catalog ("she never sees your… sorry, YOU never see her address — by design"), Explore two-tabs, event circle ("who's going" screen) → honest: "Ippo dhaan start. Chennai only. On purpose."
+- CTA: "Ask me anything below. I answer everything, even the rude ones."
+- Caption seed: "No actors. No ad budget. Just the thing I built. AMA below."
+
+**D7R5 — FUSE ANTHEM (reveal film)** `EDIT★ HEAVY #2 · REVEAL · P4 · HEAVY · all cast`
+- Hook: "Chennai. This is Fuse."
+- Beats: cinematic — city wakes up (Marina dawn, filter coffee pour, metro) → phones: match → gift picked → RSVP → cut to REAL people arriving at a run club/gig together → the "who's going" circle UI overlaid on real faces → **"Match. Gift. Go out. You never go alone."** → logo.
+- CTA: "Fuse. Founding 100 opens this week."
+- Caption seed: "60 days of building. 30 seconds of why. 🔥 Boost-candidate."
+
+---
+
+### DAY 8 — "NEVER GO ALONE" (Meet People day)
+
+**D8R1 — "I almost didn't go"** `POV · PROOF · P6 · LIGHT · F-lead`
+- Hook: *"Nethu run club ku thani ya poganum nu irundhadhu. Almost cancel pannitten."*
+- Beats: her POV — the go/don't-go doubt at the door → opens Fuse: "6 from Fuse going" → goes → the moment a stranger waves because the app said they'd both be there → text: "The scariest part was never the event. It was walking in alone."
+- CTA: "There's one this weekend too. Fuse. Bio."
+- Caption seed: "The 'almost didn't go' club has the best stories."
+
+**D8R2 — "RSVP → see who's going → wave"** `SCREENREC · REVEAL · P6/P4 · LIGHT · solo`
+- Hook: "The 3 taps that fix going out alone."
+- Beats: screen-rec — pick event → RSVP → the circle appears (real profiles going) → wave 👋 → chat unlocked at the event → "No cold DMs. You already have a reason to talk: you're literally both going."
+- CTA: "Try the wave. Bio."
+- Caption seed: "Context > cold DMs. Every time."
+
+**D8R3 — "Going out in Chennai: expectations vs Fuse"** `SKIT · PROOF · P6 · MED · 2P/3P`
+- Hook: *"Chennai la Saturday plan podarthu — a tragedy in 3 acts."*
+- Beats: Act 1: group chat "Saturday gig?" — 14 "yes" → Act 2: Saturday 5pm — "da sorry da, function" ×13 → Act 3: him alone, ticket in hand → FLIP: opens Fuse → RSVPs → "8 from Fuse going" → walks in, gets the wave → "Your friends will bail. The city won't."
+- CTA: "Stop depending on the group chat. Bio."
+- Caption seed: "13 'yes' = 0 attendees. Fuse math is different."
+
+**D8R4 — FOUNDER: "Why events, not swiping"** `FOUNDER · TRUST · P5/P6 · LIGHT · solo`
+- Hook: *"Naan swiping fix panna try pannala. Naan adha SKIP panniten. Yean nu solren."*
+- Beats: thesis to camera — you can't judge a human from 4 photos; you CAN vibe with one at a run club in 4 minutes → group settings = zero pressure, esp. for women → "Fuse la first step date illa. First step: just show up. Adhukapram everything is optional." → to organizers: "Chennai la run club / open mic / house party nadathuringala? DM me. Free listing. Unga event ku crowd, enga users ku plans."
+- CTA: "Organizers — DMs open. Everyone else — bio."
+- Caption seed: "We skipped fixing the swipe. We replaced the first step entirely."
+
+**D8R5 — "This city has plans every single weekend"** `EDIT · PROOF · P6 · LIGHT · solo`
+- Hook (trend audio, fast cuts): "Chennai every weekend: gigs. run clubs. open mics. house parties. beach cleanups. board-game nights."
+- Beats: rapid b-roll/flyer montage of real Chennai event culture → hard stop: "The plans were never missing. The PEOPLE to go with were." → Fuse logo + circle UI.
+- CTA: "Never go alone again. Bio."
+- Caption seed: "The city was never boring. You were just alone in it."
+
+---
+
+### DAY 9 — "GIFTING DAY" (signature differentiator)
+
+**D9R1 — "He sent filter coffee instead of 'hi'"** `POV · REVEAL · P2 · LIGHT · F-lead`
+- Hook: *"Oru payyan enakku 'hi' anupala. Filter coffee anupinaan."*
+- Beats: her POV — good conversation for days → doorbell: a small filter-coffee set, from the chat, through Fuse → her reaction: not "expensive", but *"avan actually kekkitu irundhaan"* (he was actually listening — she'd mentioned loving filter coffee) → "He never got my address. The app handled it. That's the part that impressed me."
+- CTA: "This is Fuse gifting. Effort > 'hi'. Bio."
+- Caption seed: "Not the gift. The listening. 🫶"
+
+**D9R2 — "How gifting works (and why he never sees your address)"** `SCREENREC · REVEAL · P2/P4 · LIGHT · solo`
+- Hook: "'So he can send me stuff… and he does NOT get my address?' Correct. Watch."
+- Beats: screen-rec — match → real conversation (both sides messaged) → ONLY then gifting unlocks → curated catalog (coffee, books, flowers — platform-approved only) → pay → Fuse delivers → address never shown → "Gifting unlocks after real talk. Never before. It can't be used to pressure anyone."
+- CTA: "Questions? Comments. I answer all."
+- Caption seed: "Thoughtful, not creepy — by architecture, not by promise."
+
+**D9R3 — "Green flag gift vs red flag gift"** `SKIT · REVEAL · P2 · MED · 2P (M+F)`
+- Hook: *"Rate pannunga: green flag gift ah, red flag ah?"*
+- Beats: rapid-fire judging panel — filter coffee 🟢 · the book she casually mentioned 🟢🟢 · flowers 🟢 · "share your location" 🔴🚨 · day-1 gold chain 🔴 ("bro CALM DOWN") · "Fuse catalog la red flags-e illa. We deleted them for you."
+- CTA: "What's the weirdest gift offer you've received? Comments."
+- Caption seed: "We curated out the creeps. You're welcome. 🟢"
+
+**D9R4 — FOUNDER: "Why gifting unlocks only AFTER real conversation"** `FOUNDER · TRUST · P5/P2 · LIGHT · solo`
+- Hook: *"Enga app la oru rule irukku — palar ku pudikkadha rule. Aana adha naan maathave maaten."*
+- Beats: the rule: no gift until BOTH people have genuinely talked → why: a gift before conversation is a transaction; after conversation it's a gesture → "Gifts can never buy attention on Fuse. Catalog is curated, address is hidden, timing is earned." → "Idhu romance ah slow pannuma? Illa. Idhu romance ah REAL pannum."
+- CTA: "Fight me or agree — comments."
+- Caption seed: "The rule that makes gifting sweet instead of weird."
+
+**D9R5 — "A 'hi' costs nothing. That's the problem."** `EDIT · AGITATE/REVEAL · P2 · LIGHT · solo`
+- Hook: "Why did dating lose all its effort? Because 'hi' is free."
+- Beats: montage essay — 100 copy-paste 'hi's a night, zero thought → old-school effort flashes (letters, mixtapes, showing up) → "Effort was never cringe. It was the whole point." → Fuse gift beat: small, thoughtful, earned.
+- CTA: "Bring effort back. Bio."
+- Caption seed: "Free messages made cheap intentions. Effort is the flex now."
+
+---
+
+### DAY 10 — "PROOF DAY" (first real event content)
+
+> Requires: one real listed event attended by founder + 3–5 users/friends this week. Shoot everything; this day's content is the raw material.
+
+**D10R1 — "A Saturday on Fuse" (vlog POV)** `POV · PROOF · P6 · MED · solo+cast`
+- Hook: *"Saturday morning. Plan: onnum illa. Fuse open pannen."*
+- Beats: vlog-style — browse events → RSVP a run club/board-game café → circle shows 5 going → getting there → real faces, real hellos, the wave working IRL → filter coffee after → home by evening, phone full of new chats → "Total cost: ₹0. Total awkwardness: surprisingly none."
+- CTA: "Next one's this weekend. Bio."
+- Caption seed: "Documented, not staged. This is the app working."
+
+**D10R2 — "This weekend on Fuse" #1 (RITUAL debut)** `FACELESS · CONVERT · P6 · LIGHT · solo`
 - Hook: "5 things happening in Chennai this weekend — and who's going."
-- Body: 5 real listed events w/ flyers/b-roll + "X from Fuse going" each. Tag every organizer.
-- CTA: "RSVP free on Fuse. Bio."
-- Caption: "Your weekend plan, sorted. Save it 📌 Tag who you're dragging along. [tag organizers]"
-- Tags: #chennai #chennaievents #thingstodoinchennai #chennaidiaries #chennaithisweekend #datinginchennai
+- Beats: flyer/b-roll cards for each listed event + "X from Fuse going" counters → tag every organizer (they reshare = free reach).
+- CTA: "RSVP free on Fuse. Bio. Tag who you're dragging."
+- Caption seed: "Your weekend, sorted. Save this 📌 (new every week)"
 
-**S19 — "House party but everyone's verified" [U/X] · Meet People (safety-quiet)**
-- Hook: "A house party where everyone's actually verified? In Chennai?"
-- Body: the vibe of a curated meetup — see who's going before you go, honest gender balance, no randoms. Low-key safety, no lecture.
-- CTA: "See who's going before you go. Fuse — bio."
-- Caption: "Know the room before you walk in. That's the whole idea."
-- Tags: #chennai #chennaidiaries #meetpeople #chennaievents #datinginchennai #houseparty
+**D10R3 — "The wave, explained by two awkward people"** `SKIT · PROOF · P6 · MED · 2P`
+- Hook: two people at an event, 2 meters apart, both too awkward to say hi.
+- Beats: comedy — internal monologues overlap ("say something da"/"what if she's not from Fuse") → both open Fuse → wave 👋 → phones buzz → they look up → "Hi. You waved." "YOU waved." → both grin → "Technology finally doing something useful."
+- CTA: "The wave works. Try it. Bio."
+- Caption seed: "For everyone whose 'hi' gets stuck in their throat. 👋"
 
-**S20 — "Match → but make it a real plan" [X screen-rec] · Product/Date Ideas (RETENTION)**
-- Hook: "You matched. Now what? On Fuse — an actual plan."
-- Body: screen-rec — match → chat → "Date Ideas" → pick a Chennai venue/event → invite your match → send a small gift.
-- CTA: "Stop letting matches die in the chat. Bio."
-- Caption: "Every other app leaves you at 'hey'. Fuse turns the match into Saturday."
-- Tags: #datinginchennai #chennai #chennaidiaries #datingapp #datenight #chennaievents
+**D10R4 — FOUNDER: "We listed our first events. Here's what actually happened."** `FOUNDER · TRUST/PROOF · P5/P6 · LIGHT · solo`
+- Hook: *"Build in public promise: real numbers, no inflation. Idho."*
+- Beats: honest recap — X events listed, X RSVPs, X showed up, what flopped ("one event had 2 people. Naan dhaan andha 2 la oruthan. It was still fun") → what's changing next week → "Small honest numbers now > fake big numbers ever."
+- CTA: "Founding 100 opens in 3 days. Follow."
+- Caption seed: "Week 1 events report card. Unfiltered."
 
-### 14.6 Refinements to earlier sections
-- **Bio/highlights (§3):** already updated to the two-door line + Meet People / Date Ideas / This weekend highlights.
-- **Pillars (§4):** add pillar #6 "This weekend on Fuse"; rebalance weekly toward Meet-People/event content as the acquisition lead.
-- **Calendar (§5):** fixed weekly **S18** (Thursdays); rotate **S16/S17/S19** into Meet-People slots, **S20** into product slots.
-- **Female-seeding (§8):** now product-backed — lead female acquisition with group-event content (S16/S17/S19) + female-led organizer communities.
-- **Phase B (§9):** de-risked — the "Fuse mixer" is just the first Fuse-hosted event in the Meet People feed; RSVP/circle/check-in infra already exists.
-- **Paid budget (§10):** best Phase-A spend = boosting a proven event-recap or "who's going" reel (verifiable, FOMO). Keep no-boost-until-proven.
-- **Metrics (§11):** add event-funnel metrics — events listed/month, **organizers confirmed**, RSVPs, **avg Fuse-circle size/event**, check-ins, event→signup attribution.
+**D10R5 — EVENT RECAP FILM** `EDIT★ HEAVY #3 · PROOF · P6 · HEAVY · real footage`
+- Hook: "Nobody here knew each other 3 hours ago."
+- Beats: cinematic recap of the real event — arrivals (alone) → the wave → the group forming → laughter, games, coffee → golden-hour group shot → text: "Everyone came alone. Nobody left alone." → Fuse logo.
+- CTA: "Be in the next one. Bio."
+- Caption seed: "3 hours from strangers to a group photo. This is the whole app."
 
-### 14.7 Founding-100 perk gets concrete
-Early circle access + event promo codes + the **"Fuse Regular" badge** (3 check-ins) as a status mechanic — "Founding 100 + Regulars first" for capped Fuse-hosted events.
+---
+
+### DAY 11 — "FOR THE WOMEN OF CHENNAI" (female-first day)
+
+**D11R1 — "Things I check before meeting someone from an app"** `POV · TRUST · P1 · LIGHT · F-lead`
+- Hook: *"App la oruthara meet panna munnadi naan check pannradhu — honest list."*
+- Beats: her real checklist — is he real? who else will be around? public place? can I leave easily? does anyone know where I am? → then, quietly, one per beat: Fuse's answer to each (verified profiles, group events first, public venues, RSVP visibility) → NO safety lecture, just "…and that's why my first meet is a run club, not a dinner."
+- CTA: "Girls, what's on your checklist? Comments."
+- Caption seed: "Not paranoid. Just smart. And finally an app that gets it."
+
+**D11R2 — "You see who's going before you go"** `FACELESS · TRUST · P6 · LIGHT · solo`
+- Hook: "One screen changed how women use this app."
+- Beats: calm, minimal motion piece — the "who's going" circle → real gender balance visible → verified badges → "Know the room before you walk in. That's it. That's the feature."
+- CTA: "See it yourself. Bio."
+- Caption seed: "Know the room first. Always."
+
+**D11R3 — "Girls' night? No da — run club."** `SKIT · PROOF · P6 · MED · 2–3 F cast`
+- Hook: *"Enna di Saturday? Movie ah?"* — "Illa. Run club." — *"…nee ah?? RUN ah??"*
+- Beats: comedy — she's not going for the running ("6am? For CARDIO? obviously not") → shows the circle: "paaru, indha group nalla vibe. And two of them are… interesting 👀" → cut to them at the run club, walking-not-running with coffee, mid-laugh → "Came for nothing. Left with plans."
+- CTA: "Bring your girls. It's better in twos. Bio."
+- Caption seed: "The run is optional. The people are the point. 🏃‍♀️☕"
+
+**D11R4 — FOUNDER: "An honest one about the ratio"** `FOUNDER · TRUST · P5 · LIGHT · solo`
+- Hook: *"Oru uncomfortable industry secret: most dating apps are 70% men. Adha pathi honest ah pesalam."*
+- Beats: straight talk — skewed apps become spam machines, women leave, everyone loses → "So we're building women-first ON PURPOSE": group-entry instead of 1:1 pressure, gifting that can't pressure, who's-going transparency, and founding perks skewed to early women members → "Idhu charity illa. A balanced app is just a BETTER app. For everyone."
+- CTA: "Women of Chennai — what would make you actually trust a dating app? I'm listening."
+- Caption seed: "Saying the ratio part out loud, for once."
+
+**D11R5 — "Come for the run club…"** `EDIT · CONVERT · P6 · LIGHT · solo`
+- Hook (soft trend audio): "Come for the run club."
+- Beats: gentle montage — morning run group, board-game café laughs, open-mic crowd → "…stay for the people." → "…and whatever happens next is up to you." → Fuse logo, soft.
+- CTA: "Your pace. Your call. Bio."
+- Caption seed: "No pressure. Just doors. 🚪"
+
+---
+
+### DAY 12 — "COMMUNITY DAY" (comments payoff + organizer channel)
+
+**D12R1 — "Your worst Chennai dating story — enacted" (Pt. 1)** `POV/SKIT · IGNITE · P1 · MED · 2P`
+- Hook: *"Neenga comment la potta story. Naanga act out panrom. Idhu real."*
+- Beats: enact the wildest (anonymized) story harvested from Days 1–2 comments — played straight, then the freeze-frame "…and THAT is why we built an app with plans instead of chats."
+- CTA: "More stories below. Best one gets Part 2."
+- Caption seed: "You wrote this one. We just survived filming it."
+
+**D12R2 — "This weekend on Fuse" #2** `FACELESS · CONVERT · P6 · LIGHT · solo`
+- Same ritual format as D10R2 — new events, new counters, organizer tags. Consistency IS the content.
+
+**D12R3 — "Comment story #2 — the sequel"** `SKIT · IGNITE · P1 · MED · 2P/3P`
+- Hook: *"Part 2. Idhu innum mosam (better)."*
+- Beats: second harvested story, bigger production energy, cast swap → running gag begins ("every Thursday we act out your trauma").
+- CTA: "Keep them coming. This is a series now."
+- Caption seed: "Chennai's dating stories deserve a Netflix deal. We're the budget version."
+
+**D12R4 — FOUNDER: comment reactions (green-screen)** `FOUNDER · TRUST · P5 · LIGHT · solo`
+- Hook: *"Day 1 la naan big apps ah criticize pannen. Neenga comment la enna ellam potinga… paakalam."*
+- Beats: green-screen react — pick 4: one supportive, one hater ("just another app bro" → honest answer), one great question (address privacy → quick demo), one hilarious → warm, funny, unbothered.
+- CTA: "Roast me more. I'll do another one."
+- Caption seed: "Reading your comments so my mom doesn't have to."
+
+**D12R5 — "POV: you run a run club / open mic in Chennai"** `EDIT/POV · CONVERT · P6 · LIGHT · solo`
+- Hook: *"POV: neenga Chennai la event nadathureenga. Idhu ungalukku dhaan."*
+- Beats: organizer-facing pitch as a reel — "You bring the event. We bring the crowd. Free. No commission. Your event in front of Chennai's most socially active 21–30s → they RSVP on Fuse → you get attendees, they get a circle → everyone wins." → screenshots of the listing + circle.
+- CTA: "DM 'LIST' and your event is up this week."
+- Caption seed: "Organizers, this is your zero-cost crowd machine. DMs open. [tag known organizers]"
+
+---
+
+### DAY 13 — "FOUNDING 100 LAUNCH" (conversion begins)
+
+**D13R1 — "POV: you're one of Chennai's first 100"** `POV · CONVERT · P5 · LIGHT · solo`
+- Hook: *"POV: nee Fuse oda first 100 la oruthan/oruthi."*
+- Beats: dramatized status — founder badge on profile → first access to capped events ("Founding + Regulars first") → free first gift credit → "In 2027 when everyone's on it, un profile la irukkum: **Founding Member — #041**."
+- CTA: "100 spots. Chennai only. Bio. Today."
+- Caption seed: "Early isn't a number. It's a badge. Literally."
+
+**D13R2 — "Why only 100? Why only Chennai?"** `FACELESS · CONVERT/TRUST · P4 · LIGHT · solo`
+- Hook: "Every app wants millions of users. We want 100. Here's the logic."
+- Beats: text-motion — a dating app with users spread across India = empty everywhere · 100 real people in ONE city = full deck, full events, real circles → "Density beats scale. Chennai first. Chennai only. 100 first." → "(Also: fake scarcity is cringe. The perks genuinely cap at 100.)"
+- CTA: "Be one of the hundred. Bio."
+- Caption seed: "Small on purpose. Full on purpose."
+
+**D13R3 — "The friend who's already on it"** `SKIT · CONVERT · P1 · MED · 2P`
+- Hook: friend checks phone, smiles. *"Enna da adhu?"* — "Fuse. Founding member, machan." (flexes badge)
+- Beats: FOMO comedy — he casually mentions Saturday's capped event ("founding members first, so… naan poren. Nee?") → friend frantically downloading → "spots left: 6x" counter gag.
+- CTA: "Don't be the second friend. Bio."
+- Caption seed: "There are two types of friends. Be the first type."
+
+**D13R4 — FOUNDER: the official ask** `FOUNDER · CONVERT/TRUST · P5 · LIGHT · solo`
+- Hook: *"15 naala neenga en story kettinga. Ippo naan onnu kekkaren."*
+- Beats: the sincere pitch — "I don't want 100 downloads. I want 100 Chennai people who GET it — who are done with dead chats and want real plans." → perks recap, honest state of the app ("early. improving weekly. you'll shape it") → "Un peru first 100 la irukkanum na — link in bio. Adhu dhaan ask."
+- CTA: "Founding 100 — bio. And DM me 'IN' after you join; I welcome everyone personally."
+- Caption seed: "The only ask I'll make this month. 🔗"
+
+**D13R5 — FOUNDING 100 LAUNCH FILM** `EDIT★ HEAVY #4 · CONVERT · P5 · HEAVY · all assets`
+- Hook: "Every big thing in this city started with a small room."
+- Beats: cinematic — archival-feel Chennai (bands, film, cricket crowds) → "before they were legends, they were 100 people who showed up early" → Fuse UI + real event faces → counter animating 001 → 100 → **"Founding 100. Chennai only. Doors open now."**
+- CTA: "Bio. Claim your number."
+- Caption seed: "100 spots. One city. Boost-candidate."
+
+---
+
+### DAY 14 — "FOMO STACK" (countdown + social proof)
+
+**D14R1 — "We're at [X]/100" (live count POV)** `POV · CONVERT · P5 · LIGHT · solo`
+- Hook: *"[X] spots gone. Idhu eppadi nadandhadhu-nu paaru."*
+- Beats: signup notifications rolling in (screen-recs), founder sending personal welcome DMs, member numbers being assigned → "Member #017 joined from a run club. #023 from the comment section. #031 is someone's ex. (Joking. Maybe.)"
+- CTA: "Remaining spots in bio. Countdown's real."
+- Caption seed: "Watching the 100 fill up in real time. [X] left."
+
+**D14R2 — "This weekend on Fuse" #3 + spots-left combo** `FACELESS · CONVERT · P6 · LIGHT · solo`
+- Ritual format + a "Founding spots left: [X]" strip on every card. Two FOMOs, one reel.
+
+**D14R3 — "The friend who waited"** `SKIT · CONVERT · P1 · MED · 2P`
+- Hook: *"Sonnen la join pannu nu. Ippo paaru."*
+- Beats: flash-forward comedy — Friend A (member #038) at events, new circle, thriving → Friend B who "was going to join next week" now #113 on a waitlist, watching stories alone → B's haunted face: *"Naan next week nu sonnenae…"*
+- CTA: "Don't be B. Bio."
+- Caption seed: "'Next week' is how legends miss things."
+
+**D14R4 — FOUNDER: reading first member DMs + killing the top objection** `FOUNDER · TRUST/CONVERT · P5 · LIGHT · solo`
+- Hook: *"First members enna sollirukanga paaru. And oru objection ah address panren."*
+- Beats: reads 3 real welcome-DM replies/messages (screenshots, permission taken) → then head-on: **"'App la yaarume irukka maataanga' — the honest answer:"** correct, it's early — that's literally why events exist: the room is full even when the deck is small, and the deck fills as the city joins → "You're not joining an empty app. You're joining a full calendar."
+- CTA: "More questions? Comments. Founding 100 — bio."
+- Caption seed: "Answering the thing you're all thinking."
+
+**D14R5 — "You watched us build this" (meta montage)** `EDIT · TRUST/CONVERT · P5 · MED · solo`
+- Hook: "14 days ago this account had 0 followers and I had a speech about deleting dating apps."
+- Beats: rapid self-montage — D1's rant → the graveyard → origin story → the reveal → first event → the wave working → founding launch → "All documented. Nothing staged. One day left."
+- CTA: "The finale is tomorrow. Founding 100 — bio."
+- Caption seed: "A 14-day movie, starring this city."
+
+---
+
+### DAY 15 — "FULL CIRCLE" (the closer)
+
+**D15R1 — "15 days ago, I deleted every dating app"** `POV · CONVERT · P1/P6 · MED · same actor as D1R1`
+- Hook: *"15 naal munnadi naan ella dating apps um delete panninen. Idhu dhaan aduthadhu nadandhadhu."*
+- Beats: THE callback — same person from D1R1 → this time: opens Fuse → RSVPs → cut to them AT the event, in a circle of people, mid-laugh → looks at camera: *"Naan apps ah delete pannala. Naan loneliness ah delete pannen."* → "Full circle."
+- CTA: "Your turn. Bio."
+- Caption seed: "Day 1 person, Day 15 ending. Watch both."
+
+**D15R2 — The manifesto** `FACELESS · CONVERT · P4 · LIGHT · solo`
+- Hook: "Chennai deserved better than swiping."
+- Beats: clean text manifesto, share-formatted — "Better than 'hey'. Better than 3am wyd. Better than paywalled maybes. / A match should become a plan. A plan should have people. A city should feel like company. / Match. Gift. Go out. You never go alone. / Fuse. Made in Chennai, for Chennai."
+- CTA: "Share this if you agree. Join if you mean it. Bio."
+- Caption seed: "Screenshot-and-share bait, by design. 📌"
+
+**D15R3 — "One month from now" (flash-forward)** `SKIT · CONVERT · P1 · MED · 2P (M+F)`
+- Hook: friends interrogating a couple: *"Seri seri — eppadi meet paninga sollunga."*
+- Beats: flash-forward skit — they met in a Fuse circle at a board-game night ("she destroyed me at Catan. I asked for a rematch. The rematch was a date.") → friends: "app la ah?!" → "App la illa da. App VZHIYA. (through the app)" → wink at camera.
+- CTA: "Your version of this story starts at the bio."
+- Caption seed: "Future lore. Loading."
+
+**D15R4 — FOUNDER: "Day 15. Everything that happened. What's next."** `FOUNDER · TRUST · P5 · LIGHT · solo`
+- Hook: *"Day 15. Promised ah transparent update: full report."*
+- Beats: the honest recap — followers, members joined, events run, what flopped, best comment of the sprint → gratitude, specific ("member #009 brought 4 friends. Legend.") → the tease forward: **"Adutha step: Fuse's first OWN event. Founding members and Regulars get in first. Adhoda content um varum."** (Phase B foreshadow)
+- CTA: "Founding spots still open until [X]. After that — waitlist. Bio."
+- Caption seed: "The 15-day report card, unfiltered. And a announcement inside 👀"
+
+**D15R5 — THE ANTHEM CLOSER** `EDIT★ HEAVY #5 · CONVERT · P4/P6 · HEAVY · everything`
+- Hook: "You never go alone. Not in this city."
+- Beats: the emotional best-of — every real face from the sprint's events, the waves, the circles, the coffees, night-drive Chennai b-roll → interleaved UI beats (match/gift/RSVP) → crescendo → **"Fuse. Match. Gift. Go out."** → "Chennai's Founding 100 — closing soon." → logo, hold, cut.
+- CTA: "Bio. Before the number hits 100."
+- Caption seed: "The closer. Boost this one hard. 🔥"
+
+---
+
+## 4. Paper → Execution: The Production System
+
+### 4.1 Pre-production week (T-7 to T-1, before Day 1 goes live)
+1. **Lock Days 1–5 scripts** via the REELDAY workflow (§5) — exact lines, shot lists.
+2. **Founder batch shoot #1** (one 3-hour sitting, same outfit-change trick per reel): D1R4, D2R4, D3R4, D4R4, D5R4. Teleprompter app + lav mic.
+3. **Skit shoot #1** (one weekend session with the actor pool): D1R3, D2R3, D3R3, D4R3, D5R3 + D2R1/D3R5/D5R1 (F-lead POVs same session).
+4. **Faceless template build** (one-time, reused all 15 days): CapCut templates — (a) POV caption style, (b) text-motion/manifesto style, (c) founder subtitle style, (d) stat-card style with "Source:" slot.
+5. **Screen-recs recorded** (one sitting): app flows for D7R1, D8R2, D9R2 + spares.
+6. **Heavy edit #1 briefed** to editor (D1R5) — 72h lead. Brief the other 4 with target dates now.
+7. **Accounts & infra:** IG handle = **@fuseinc_** (already live, ~90 followers — warm-start, not zero). Name-field = "Fuse — Chennai Dating & Events" (searchable keywords), two-door bio, tracked link-in-bio (store links + Founding-100 signup), 6 highlights (Meet People · Date Ideas · This weekend · Gifting · Founding 100 · FAQ), metrics sheet ready. *Note:* the 90 existing followers are the first comment-seeders on Day 1 — DM/notify them the blitz is starting so early reels don't post to silence.
+8. **Comment-harvest plan:** D2R1/D2R5/D4R4 comment prompts feed Day 12 — mark them.
+9. **Organizer pipeline:** confirm 3–4 organizers pre-launch (Day 8 founder CTA + Day 12 organizer reel amplify this; DM template from v2 still applies: free listing, zero commission, "RSVP on Fuse" mention).
+10. **Event booked for Day 9/10:** ONE real attended event (run club or board-game café) with founder + 3–5 people — it feeds D10 (all five reels) and D15R5.
+
+### 4.2 Rolling production rhythm (during the sprint)
+- **Every 5 days:** one founder sitting (5 talks) + one skit session (5–8 pieces) + faceless/screen-rec afternoon. You are always shooting the NEXT act while the current one posts.
+- **Daily ops (~2.5h/day):**
+  - Post at slot times (§2). Schedule via Meta Business Suite the night before.
+  - **First 60 minutes after each post: reply to every comment** (reach multiplier + Day 12 material).
+  - 30 min comment-farming on 5–10 big Chennai pages (memes/food/events/college) as the Fuse account.
+  - 3–5 stories/day: poll ("this or that date spot"), reel repost, countdown, BTS.
+  - DM every warm lead personally (Founding-100 framing, human tone).
+- **Heavy edits calendar:** D1R5 (brief T-7) · D7R5 (brief D3) · D10R5 (footage D9 evening, brief same night, RUSH) · D13R5 (brief D9) · D15R5 (brief D12, footage rolling).
+- **Contingency:** if any reel slips, the slot is filled by re-hooking the previous day's best performer (never skip a slot; the streak is the strategy).
+
+### 4.3 Gear (minimum viable)
+Phone (main) · lav mic (~₹1.5–3k) · tripod + phone mount · one soft light or window light · teleprompter app · CapCut (+ templates) · Meta Business Suite (scheduling) · a props box for skits (two extra phones/dummies, coffee tumblers).
+
+### 4.4 Tanglish & authenticity rules
+- I draft Tanglish; **founder localizes every punchline before shoot** (my Tamil is directional, not native).
+- Chennai references must be real (Besant Nagar, Alwarpet, Marina, filter coffee, gig venues) — no generic "India" content.
+- Subtitles on EVERY reel (English captions over Tanglish audio = widest comprehension + sound-off viewers).
+
+### 4.5 Competitor call-out safety protocol (non-negotiable)
+1. Numbers/claims about competitors ONLY from published sources; show "Source: [outlet]" on-screen.
+2. Personal framing for experiences ("I deleted…", "my Bumble had 3 matches") — always true for the speaker.
+3. Opinion framing for interpretations ("I think the model is designed to…", "hot take:").
+4. Never: "scam", "fraud", fabricated stats, mocking specific real users, screenshots of real people's profiles.
+5. Gender-spice guardrail: punch at *behavior and the apps*, never at "men are X / women are Y" as groups. D2R1/D5R1 style = sympathetic spice, not gender war.
+
+### 4.6 Hashtag & caption system
+- Stack: 3 local + 3 niche + 2 broad. Always: `#chennai #chennaidiaries #datinginchennai`. Rotate: `#chennaimemes #chennaievents #thingstodoinchennai #situationship #datingapp #tamilmemes #runclubchennai #chennaithisweekend`.
+- Caption formula: 1 punch line + 1 context line + 1 comment-bait question + CTA. Never more than 4 lines.
+
+---
+
+## 5. Script-Locking Workflow (the next step after this doc)
+
+Per day, in order, as we go:
+1. You review the day's 5 first drafts above → give inputs/vetoes.
+2. I produce **`REELDAY{N}_SCRIPTS.md`** — one file per day, each reel expanded to: exact line-by-line script (every spoken word, Tanglish finalized), shot list (per-beat framing), on-screen text/captions per second, audio/trend suggestion, edit notes, props/cast call, and a "why this works" note.
+3. We lock reels one at a time (v1 → your notes → LOCKED stamp).
+4. Locked scripts go into the batch-shoot schedule (§4.1/4.2).
+
+**Start:** `REELDAY1_SCRIPTS.md` (the 5 controversial openers) — highest-stakes day, deepest analysis.
+
+---
+
+## 6. Metrics & Rituals
+
+- **North star:** real Chennai signups → 100. **Guardrail:** gender ratio (weekly; if it skews male, D11-style content gets extra slots and male-CTA reels pause).
+- **Per-reel score:** saves + shares (weighted) > comments > reach > likes.
+- **Daily 10-min check:** yesterday's 5 — which slot won? Any comment worth harvesting? Any reply-bait for founder reels?
+- **Sunday 30-min review:** top 3 reels → schedule re-hooked versions post-sprint; flopped format twice → swap its slot type; signups vs 100; ratio; organizer pipeline count.
+- **Event funnel:** events listed · organizers confirmed · RSVPs · avg circle size · check-ins · event→signup attribution.
+- **Success criteria for the blitz:** Day 5 — ≥1 reel meaningfully outperforming + follower base forming. Day 10 — first real event executed + recap material. Day 15 — Founding-100 meaningfully filled (≥50 = strong; 100 = jackpot), 3+ proven formats for the post-blitz weekly engine.
+
+## 7. Post-blitz (Day 16+) — so the engine doesn't stop
+Drop to 1–2 reels/day: the weekly ritual ("This weekend on Fuse", comment-story enactments, founder reactions) + re-hooked winners + event recaps. Phase B (Fuse's own hosted event + paid boost behind the 2–3 proven reels) unlocks at ~100 users, per the original plan.
+
+## 8. Still needed from you (open asks — status)
+1. ✅ **Competitors given:** Hinge, Bumble, Belong.app, EQUAL — captured in §0 landscape. (Belong = closest threat; Hinge "designed to be deleted" = our weapon.) Send specific *reels* you rate whenever you spot them.
+2. ⏳ **Screen recordings** of the current build (swipe, gifting, both Explore tabs, event circle) — you'll give later; needed before D7/D8/D9 screen-rec reels.
+3. ⏳ **Real numbers** for on-camera use (user count, confirmed organizers/events) — later; until then founder reels use honest "early/building" framing, no fabricated figures.
+4. ✅ **IG:** @fuseinc_, ~90 followers. Handle locked; do the name-field + bio + link-in-bio cleanup in pre-production.
+5. ⏳ **Red lines** — we'll surface case-by-case during script locking (per your note).
+6. ⏳ **Sprint budget** (editor for the 5 heavy edits, props, lav mic, small boosts) — rough ₹ when you can.
+7. ⏳ **Day 1 go-live date** — sets the pre-production clock.
+
+---
+*v3 written 2026-07-17. Supersedes v2 (weekly cadence + S1–S20 library). The S1–S20 concepts survive inside the new 75 where noted; the strategy spine (two doors, Founding 100, organizer channel, female-first) is unchanged.*

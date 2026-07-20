@@ -670,7 +670,7 @@ useEffect(() => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "padding"}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 8}
     >
       <Modal visible={loading} transparent animationType="fade">
@@ -707,9 +707,25 @@ useEffect(() => {
             <View style={styles.headerCenter}>
               <Text style={styles.headerText}>{receiverUsername || "Chat"}</Text>
             </View>
-            <TouchableOpacity onPress={() => setShowSafetyMenu(true)} style={styles.menuButton}>
-              <Text style={styles.menuButtonText}>•••</Text>
-            </TouchableOpacity>
+            <View style={styles.headerRightGroup}>
+              {status === "accepted" && (
+                <TouchableOpacity
+                  onPress={() =>
+                    (navigation as any).navigate("ChatGiftOrdersScreen", {
+                      chatId,
+                      recipientName: receiverUsername,
+                    })
+                  }
+                  style={styles.giftOrdersButton}
+                  accessibilityLabel="View gift orders in this chat"
+                >
+                  <Text style={styles.giftOrdersButtonText}>🎁</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={() => setShowSafetyMenu(true)} style={styles.menuButton}>
+                <Text style={styles.menuButtonText}>•••</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {renderBanner()}
@@ -884,9 +900,30 @@ const styles = StyleSheet.create({
     backgroundColor: "#FAF8F3",
     position: "relative",
   },
-  menuButton: {
+  headerRightGroup: {
     marginLeft: "auto",
     zIndex: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  giftOrdersButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  giftOrdersButtonText: {
+    fontSize: 16,
+  },
+  menuButton: {
     width: 38,
     height: 38,
     borderRadius: 19,

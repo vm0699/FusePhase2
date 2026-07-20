@@ -1,7 +1,35 @@
 # Fuse Explore — Phase 3 (Marketplace) Implementation Plan
 
 > **Status:** ✅ ALL STAGES COMPLETE (Stages 0–7) — 2026-06-24
+> **Launch posture:** 🔒 Held behind a "Coming soon" gate for the Phase-2 (gifting) launch — see below.
 > This document is the cross-session source of truth. Update the Progress Log at the end of each stage.
+
+---
+
+## 🔒 Launch Gate — Explore is browseable, committing actions are "Coming soon"
+
+For the gifting launch, all of Explore ships **fully browseable** (home, rails, venue/event
+detail all work and show real seeded Chennai content), but the **committing actions** — Book a
+table, Get tickets / RSVP / Book-via-organizer, Event Circle, Request Premium — are gated because
+their fulfilment/payment loop isn't production-ready. Nothing was deleted; it's a two-switch flip.
+
+**Frontend gate** (`fuse/app/config/env.ts` → `EXPLORE_COMMERCE_LIVE = false`):
+- Shared hook `fuse/components/ui/explore/useExploreComingSoon.tsx` — `gate()` shows a FusePopup
+  and returns `true` (caller stops) while the flag is false; passes through when true.
+- Gated CTAs: `VenueDetailScreen` (Book a table), `EventDetailScreen` (main CTA all pricing types +
+  secondary RSVP bar + Event Circle teaser), `PremiumRequestScreen` (submit).
+- `BookingCheckout` / `EventTicketCheckout` are only reachable via those gated CTAs → unreachable
+  while gated. Gifts are NOT gated (Phase-2, live) and are reached from Chat/Profile, not Explore.
+
+**Backend safety net** (`FUSE - BE/api/middleware/exploreCommerceGuard.js`):
+- Applied in `ExploreRoutes.js` to **write routes only** (bookings/tickets/premium/RSVP-wave-checkin).
+  Returns `503 { code: "EXPLORE_COMING_SOON" }` unless `EXPLORE_COMMERCE_LIVE=true` in backend env.
+- **Read routes stay open** so browsing + teaser rails work. Default (env unset) = blocked, so no
+  order/payment can be created even from a stale/modified client.
+
+**To go live (next phase):** set `EXPLORE_COMMERCE_LIVE = true` in `env.ts` **and**
+`EXPLORE_COMMERCE_LIVE=true` in the backend env. (Optionally do it per-vertical later by extending
+the flag into an object.) `PAYMENT_MODE` still governs Razorpay test vs live independently.
 
 ---
 
