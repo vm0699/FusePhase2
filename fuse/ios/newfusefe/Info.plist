@@ -39,6 +39,13 @@
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+      <!-- Required so Linking.canOpenURL('upi://...') works for gift
+           payments — iOS blocks canOpenURL checks for unlisted custom
+           schemes. -->
+      <string>upi</string>
+    </array>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>

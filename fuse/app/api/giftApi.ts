@@ -134,16 +134,24 @@ export const giftApi = {
     return data?.intent;
   },
 
-  async initiatePayment(intentId: string): Promise<{
+  async initiatePayment(
+    intentId: string,
+    opts?: { preferredMode?: "RAZORPAY" }
+  ): Promise<{
     paymentId: string;
     amount: number;
     currency: string;
-    mode: "PLACEHOLDER" | "RAZORPAY";
+    mode: "PLACEHOLDER" | "RAZORPAY" | "UPI";
     providerOrderId: string | null;
     razorpayKeyId?: string | null;
+    upiDeepLink?: string | null;
+    payeeVpa?: string | null;
     alreadyPaid?: boolean;
   }> {
-    return postJson(`/api/chat/gift-intent/${intentId}/pay`);
+    return postJson(
+      `/api/chat/gift-intent/${intentId}/pay`,
+      opts?.preferredMode ? { preferredMode: opts.preferredMode } : undefined
+    );
   },
 
   async confirmPayment(
@@ -154,8 +162,15 @@ export const giftApi = {
       signature?: string;
       status?: "PAID" | "FAILED";
       failureReason?: string;
+      // UPI-only: user-submitted UTR/reference + optional note.
+      utr?: string;
+      note?: string;
     }
-  ): Promise<{ order: { _id: string; orderCode: string; status: string } | null }> {
+  ): Promise<{
+    order: { _id: string; orderCode: string; status: string } | null;
+    paymentStatus?: string;
+    message?: string;
+  }> {
     return postJson(`/api/chat/gift-intent/${intentId}/pay/confirm`, payload);
   },
 

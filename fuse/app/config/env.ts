@@ -1,10 +1,5 @@
-const LOCAL_API_URL = "http://localhost:5000";
-const PRODUCTION_API_URL = "https://api.fusedating.co.in";
-
-// __DEV__ is set by Metro/Expo: true for `expo start` / dev builds, false for
-// release/EAS builds. This removes the need to hand-toggle the URL before
-// shipping — a release build can never accidentally point at localhost.
-export const API_BASE_URL = __DEV__ ? LOCAL_API_URL : PRODUCTION_API_URL;
+export const API_BASE_URL = "https://api.fusedating.co.in";
+//export const API_BASE_URL = "http://localhost:5000";
 
 // ─── Fuse Explore launch gate ────────────────────────────────────────────────
 // Explore (dates, events, premium, event-circle) ships fully browseable, but the

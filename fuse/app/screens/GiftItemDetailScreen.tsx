@@ -1,11 +1,16 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
   Image,
+  Linking,
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -37,6 +42,30 @@ export default function GiftItemDetailScreen() {
     message?: string;
     tone?: "default" | "success" | "error" | "info";
   }>({ visible: false, title: "" });
+
+  // UPI checkout state. `Linking.openURL` is fire-and-forget (no OS-level
+  // result callback), so we watch AppState to notice when the user comes
+  // back from the UPI app and proactively surface the "did you pay?" prompt
+  // rather than requiring them to navigate back manually.
+  const awaitingUpiReturnRef = useRef(false);
+  const pendingUpiRef = useRef<{ intentId: string; paymentId: string } | null>(null);
+  const [utrModalVisible, setUtrModalVisible] = useState(false);
+  const [utrInput, setUtrInput] = useState("");
+  const [utrNote, setUtrNote] = useState("");
+  const [submittingUtr, setSubmittingUtr] = useState(false);
+
+  const [upiFallbackVisible, setUpiFallbackVisible] = useState(false);
+  const upiFallbackIntentIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active" && awaitingUpiReturnRef.current) {
+        awaitingUpiReturnRef.current = false;
+        setUtrModalVisible(true);
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   const showPopup = useCallback(
     (
@@ -101,6 +130,52 @@ export default function GiftItemDetailScreen() {
     [navigation, chatId, showPopup]
   );
 
+  // Shared with the "no UPI app installed" fallback path below, so both the
+  // primary flow and the fallback open the exact same checkout sheet.
+  const payWithRazorpay = useCallback(
+    async (intentId: string, paymentId: string, payData: any) => {
+      if (!payData.razorpayKeyId || !payData.providerOrderId) {
+        throw new Error("Payment isn't fully set up yet. Please try again shortly.");
+      }
+
+      let checkoutResult: {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      };
+      try {
+        checkoutResult = await RazorpayCheckout.open({
+          key: payData.razorpayKeyId,
+          amount: Math.round((item.amount ?? item.finalAmount) * 100),
+          currency: payData.currency || "INR",
+          name: "Fuse",
+          description: item.name,
+          order_id: payData.providerOrderId,
+          theme: { color: "#ff5864" },
+        });
+      } catch (checkoutError: any) {
+        // Cancelled or failed inside the Razorpay sheet — not a system
+        // error, so this is informational, not "Payment failed".
+        showPopup(
+          "Payment not completed",
+          checkoutError?.description || "You can try again anytime.",
+          "info"
+        );
+        return;
+      }
+
+      // Confirm with the real signature from the checkout result.
+      // (providerOrderId isn't part of the confirm contract — the backend
+      // verifies against the value it already stored during initiate.)
+      await finalizeAfterPayment(intentId, {
+        paymentId,
+        providerPaymentId: checkoutResult.razorpay_payment_id,
+        signature: checkoutResult.razorpay_signature,
+      });
+    },
+    [item, finalizeAfterPayment, showPopup]
+  );
+
   const handlePay = useCallback(async () => {
     if (!item || !chatId) return;
     setPaying(true);
@@ -114,56 +189,40 @@ export default function GiftItemDetailScreen() {
       const intentId = intentData?.giftIntentId || intentData?.intent?.intentId;
       if (!intentId) throw new Error("Failed to create gift intent.");
 
-      // 2 — initiate payment; returns { paymentId, mode, providerOrderId, razorpayKeyId? }
+      // 2 — initiate payment; returns { paymentId, mode, providerOrderId, upiDeepLink?, razorpayKeyId? }
       const payData = await giftApi.initiatePayment(intentId);
-      const paymentMode = payData?.mode || "PLACEHOLDER";
+      const paymentMode = payData?.mode || "UPI";
       const paymentId = payData?.paymentId;
       if (!paymentId) throw new Error("Payment could not be initiated.");
 
-      if (paymentMode === "RAZORPAY") {
-        if (!payData.razorpayKeyId || !payData.providerOrderId) {
-          throw new Error("Payment isn't fully set up yet. Please try again shortly.");
+      if (paymentMode === "UPI") {
+        if (!payData.upiDeepLink) {
+          throw new Error("UPI payment link is not available right now.");
         }
 
-        // 3a — open the native Razorpay checkout sheet and wait for the result.
-        let checkoutResult: {
-          razorpay_payment_id: string;
-          razorpay_order_id: string;
-          razorpay_signature: string;
-        };
-        try {
-          checkoutResult = await RazorpayCheckout.open({
-            key: payData.razorpayKeyId,
-            amount: Math.round((item.amount ?? item.finalAmount) * 100),
-            currency: payData.currency || "INR",
-            name: "Fuse",
-            description: item.name,
-            order_id: payData.providerOrderId,
-            theme: { color: "#ff5864" },
-          });
-        } catch (checkoutError: any) {
-          // Cancelled or failed inside the Razorpay sheet — not a system
-          // error, so this is informational, not "Payment failed".
-          showPopup(
-            "Payment not completed",
-            checkoutError?.description || "You can try again anytime.",
-            "info"
-          );
+        const canOpen = await Linking.canOpenURL(payData.upiDeepLink);
+        if (!canOpen) {
+          // No UPI app installed — offer the Razorpay fallback on the same
+          // intent (do not create a second intent).
+          upiFallbackIntentIdRef.current = intentId;
+          setUpiFallbackVisible(true);
           return;
         }
 
-        // 4a — confirm with the real signature from the checkout result.
-        // (providerOrderId isn't part of the confirm contract — the backend
-        // verifies against the value it already stored during initiate.)
-        await finalizeAfterPayment(intentId, {
-          paymentId,
-          providerPaymentId: checkoutResult.razorpay_payment_id,
-          signature: checkoutResult.razorpay_signature,
-        });
+        pendingUpiRef.current = { intentId, paymentId };
+        awaitingUpiReturnRef.current = true;
+        await Linking.openURL(payData.upiDeepLink);
+        // The AppState listener picks up the return trip and shows the UTR
+        // prompt — nothing more to do here.
         return;
       }
 
-      // 3b/4b — PLACEHOLDER mode: no real payment sheet, confirm directly.
+      if (paymentMode === "RAZORPAY") {
+        await payWithRazorpay(intentId, paymentId, payData);
+        return;
+      }
+
+      // PLACEHOLDER mode: no real payment sheet, confirm directly.
       await finalizeAfterPayment(intentId, {
         paymentId,
         providerPaymentId: "placeholder_pay_" + Date.now(),
@@ -178,7 +237,55 @@ export default function GiftItemDetailScreen() {
     } finally {
       setPaying(false);
     }
-  }, [item, chatId, catalogItemId, finalizeAfterPayment, showPopup]);
+  }, [item, chatId, catalogItemId, payWithRazorpay, finalizeAfterPayment, showPopup]);
+
+  const handleNoUpiAppFallback = useCallback(async () => {
+    const intentId = upiFallbackIntentIdRef.current;
+    setUpiFallbackVisible(false);
+    if (!intentId) return;
+    setPaying(true);
+    try {
+      const payData = await giftApi.initiatePayment(intentId, { preferredMode: "RAZORPAY" });
+      if (payData.mode !== "RAZORPAY" || !payData.paymentId) {
+        throw new Error("Card/netbanking payment isn't available right now.");
+      }
+      await payWithRazorpay(intentId, payData.paymentId, payData);
+    } catch (err: any) {
+      showPopup(
+        "Payment failed",
+        err?.message || "Something went wrong. Please try again.",
+        "error"
+      );
+    } finally {
+      setPaying(false);
+    }
+  }, [payWithRazorpay, showPopup]);
+
+  const handleUtrSubmit = useCallback(async () => {
+    const pending = pendingUpiRef.current;
+    if (!pending || !utrInput.trim() || submittingUtr) return;
+    setSubmittingUtr(true);
+    try {
+      await giftApi.confirmPayment(pending.intentId, {
+        paymentId: pending.paymentId,
+        utr: utrInput.trim(),
+        note: utrNote.trim() || undefined,
+      });
+      setUtrModalVisible(false);
+      setUtrInput("");
+      setUtrNote("");
+      pendingUpiRef.current = null;
+      navigation.replace("GiftIntentDetailsScreen", { intentId: pending.intentId, chatId });
+    } catch (err: any) {
+      showPopup(
+        "Couldn't submit payment",
+        err?.message || "Please try again.",
+        "error"
+      );
+    } finally {
+      setSubmittingUtr(false);
+    }
+  }, [utrInput, utrNote, submittingUtr, navigation, chatId, showPopup]);
 
   const occasionLabel = item?.occasion ? OCCASION_MAP[item.occasion] || item.occasion : null;
 
@@ -297,6 +404,73 @@ export default function GiftItemDetailScreen() {
         tone={popup.tone}
         onClose={() => setPopup((p) => ({ ...p, visible: false }))}
       />
+
+      {/* No UPI app installed — offer the Razorpay fallback on the same intent */}
+      <FusePopup
+        visible={upiFallbackVisible}
+        title="No UPI app found"
+        message="We couldn't find a UPI app (GPay, PhonePe, etc.) on this device. Pay with card / netbanking instead?"
+        tone="info"
+        onClose={() => setUpiFallbackVisible(false)}
+        primaryAction={{ label: "Pay another way", onPress: handleNoUpiAppFallback }}
+        secondaryAction={{ label: "Cancel", onPress: () => setUpiFallbackVisible(false) }}
+      />
+
+      {/* UPI return trip: ask the user to confirm they paid + enter the UTR */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={utrModalVisible}
+        onRequestClose={() => setUtrModalVisible(false)}
+      >
+        <Pressable style={styles.overlay} onPress={() => setUtrModalVisible(false)}>
+          <Pressable style={styles.utrCard} onPress={() => {}}>
+            <Text style={styles.utrTitle}>Did you complete the payment?</Text>
+            <Text style={styles.utrSubtitle}>
+              Enter the UPI transaction reference (UTR) from your payment app. We'll verify it and
+              confirm your gift shortly.
+            </Text>
+            <TextInput
+              style={styles.utrInput}
+              placeholder="UTR / transaction reference"
+              placeholderTextColor="#9CA3AF"
+              value={utrInput}
+              onChangeText={setUtrInput}
+              autoCapitalize="characters"
+              autoCorrect={false}
+            />
+            <TextInput
+              style={[styles.utrInput, styles.utrNoteInput]}
+              placeholder="Note (optional)"
+              placeholderTextColor="#9CA3AF"
+              value={utrNote}
+              onChangeText={setUtrNote}
+              multiline
+            />
+            <TouchableOpacity
+              style={[
+                styles.ctaButton,
+                (!utrInput.trim() || submittingUtr) && styles.ctaButtonDisabled,
+              ]}
+              onPress={handleUtrSubmit}
+              disabled={!utrInput.trim() || submittingUtr}
+              activeOpacity={0.85}
+            >
+              {submittingUtr ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.ctaText}>Submit</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.utrCancelButton}
+              onPress={() => setUtrModalVisible(false)}
+            >
+              <Text style={styles.utrCancelText}>I haven't paid yet</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -431,5 +605,61 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     textAlign: "center",
     lineHeight: 16,
+  },
+
+  /* UTR entry modal */
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(17,24,39,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  utrCard: {
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: 24,
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 22,
+    paddingVertical: 20,
+  },
+  utrTitle: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 18,
+    color: "#1a1a1a",
+    marginBottom: 8,
+  },
+  utrSubtitle: {
+    fontFamily: "Poppins",
+    fontSize: 13,
+    color: "#6B7280",
+    lineHeight: 19,
+    marginBottom: 16,
+  },
+  utrInput: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontFamily: "Poppins",
+    fontSize: 14,
+    color: "#1a1a1a",
+    marginBottom: 12,
+  },
+  utrNoteInput: {
+    minHeight: 60,
+    textAlignVertical: "top",
+  },
+  utrCancelButton: {
+    marginTop: 10,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  utrCancelText: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 14,
+    color: "#6B7280",
   },
 });

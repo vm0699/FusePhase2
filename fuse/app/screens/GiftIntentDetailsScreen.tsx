@@ -62,6 +62,12 @@ export default function GiftIntentDetailsScreen() {
 
   const snapshot = intent?.catalogSnapshot;
   const order = intent?.order;
+  const latestPayment = intent?.latestPayment;
+  // Once an order exists, tracking takes over — these banners are only for
+  // the gap between "submitted" and an admin actually verifying it.
+  const showPendingUpiBanner =
+    !order && latestPayment?.mode === "UPI" && latestPayment?.status === "PENDING_VERIFICATION";
+  const showFailedPaymentBanner = !order && latestPayment?.status === "FAILED";
 
   return (
     <View style={styles.container}>
@@ -99,6 +105,27 @@ export default function GiftIntentDetailsScreen() {
             <Text style={styles.label}>Total</Text>
             <Text style={styles.value}>₹{intent.totalAmount}</Text>
           </View>
+
+          {showPendingUpiBanner && (
+            <View style={styles.bannerCard}>
+              <Text style={styles.bannerTitle}>Payment submitted</Text>
+              <Text style={styles.bannerText}>
+                We're verifying your payment. This usually takes a few hours — you'll be notified
+                once it's confirmed.
+              </Text>
+            </View>
+          )}
+
+          {showFailedPaymentBanner && (
+            <View style={[styles.bannerCard, styles.bannerCardError]}>
+              <Text style={[styles.bannerTitle, styles.bannerTitleError]}>
+                Couldn't verify payment
+              </Text>
+              <Text style={styles.bannerText}>
+                We weren't able to confirm your payment. Please retry from the chat.
+              </Text>
+            </View>
+          )}
 
           {order ? (
             <TouchableOpacity
@@ -176,6 +203,23 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   desc: { marginTop: 6, fontSize: 13, color: "#6B7280", fontFamily: "Poppins" },
+  bannerCard: {
+    backgroundColor: "#FFF7ED",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#FED7AA",
+  },
+  bannerCardError: { backgroundColor: "#FEF2F2", borderColor: "#FECACA" },
+  bannerTitle: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 15,
+    color: "#C2410C",
+    marginBottom: 4,
+  },
+  bannerTitleError: { color: "#DC2626" },
+  bannerText: { fontFamily: "Poppins", fontSize: 13, color: "#6B7280", lineHeight: 19 },
   label: {
     fontSize: 12,
     color: "#9CA3AF",
