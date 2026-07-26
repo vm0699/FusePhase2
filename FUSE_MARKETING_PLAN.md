@@ -41,7 +41,7 @@ Every day advances a narrative. A viewer who watches Day 1 → Day 15 experience
 | **ACT 5 — THE PULL** | 13–15 | Convert: Founding-100 launch → FOMO stack → full-circle closer (callback to Day 1) | Urgent, emotional, cinematic |
 
 **Golden thread rules:**
-- Day 1's "I deleted every app" character returns on Day 15 — at a real event, not alone. Full circle.
+- **The golden-thread character (re-anchored 2026-07-19):** the **D4R1 "moved to Chennai and know nobody"** character returns on **D15R1** — at a real event, in a circle of people, not alone. Full circle. *(Previously anchored to the retired D1R1 "deleted every app" character; the loneliness arc is a stronger emotional payoff than the anti-swipe one — D15R1's ending is the resolution of being alone in a new city, not of swiping.)* **Cast one actor for both D4R1 + D15R1.**
 - Day 3 founder ends on a cliffhanger → resolved Day 4. Day 6 name-drops Fuse → Day 7 reveals it.
 - Comments harvested in Days 1–2 get enacted/reacted-to on Day 12 (plan the bait accordingly).
 - "This weekend on Fuse" ritual debuts Day 10 and repeats Days 12 & 14 → becomes the permanent weekly slot after the blitz.
@@ -92,11 +92,7 @@ Every day advances a narrative. A viewer who watches Day 1 → Day 15 experience
 
 > Founder's locked structure for Day 1: **2 reels** on the two biggest indictments (swiping is dead · their profit is your singleness), then **3 reels** pinpointing the *other* pains — the ones people don't say out loud: (R3) the pains beyond swiping, (R4) how Gen Z actually feels about "meeting on an app" / Hinge relationships & the gap our niche fills, (R5) the boy-girl ratio and why it's mathematically broken.
 
-**D1R1 — "Swiping is dead. I have proof." (indictment #1)** `POV · IGNITE · P1 · LIGHT · solo`
-- Hook: *"Nethu night naan Tinder, Bumble, Hinge — moonu app um delete panniten. Aana story adhu illa."*
-- Beats: apps deleting one by one → then the bigger claim: swiping itself is dying, and not just for me — receipts on screen: "Bumble paying users −21% (Q1 2026)" · "Tinder MAU −7%" · "79% of Gen Z: dating-app fatigue" · "Bumble reportedly exploring a sale — once worth $7B" (Source cards: Reuters/Inc./Newsweek) → *"Idhu naan solradhu illa. Idhu numbers solradhu. Swiping-oda era mudinjiduchu."*
-- CTA: "How long have YOU swiped for nothing? Comment the damage."
-- Caption seed: "Not a hot take. A death certificate. 🪦 (sources in the reel)"
+> **D1R1 — REMOVED (merged into D7R3 `[viggy2]`, 2026-07-19).** The original "Swiping is dead. I have proof." was a solo jaded male at a table confessing 3 years of dating-app damage — **the same character, setting and register as viggy2's Act 1 confession.** Running both would read as a repeat. Its two unique assets (the four sourced receipts + the *death-certificate* prop) have been moved into D7R3 Act 1. Day 1 now runs R2–R6 = the clean 5/day cadence. **Golden-thread consequence:** the Day 15 callback actor re-anchors from here to **D4R1** (see §1 golden thread + D15R1).
 
 **D1R2 — "Their profit is you staying single. Read that again." (indictment #2)** `FACELESS · IGNITE · P1 · LIGHT · solo`
 - Hook (bold text): "Your dating app makes money ONLY if you stay single."
@@ -133,6 +129,112 @@ Every day advances a narrative. A viewer who watches Day 1 → Day 15 experience
 - *Guardrail:* criticize the *idea* (AI-assigned connection) and cite only published facts; do not mock McLeod personally or invent Overtone details. Opinion framing throughout ("I disagree," "I think").
 
 > **Reserve bank (displaced-take parking):** if D1R6 swaps into Day 2's founder slot (D2R4), move D2R4 "Dating apps weren't built for Chennai" here as a re-hook/reserve reel — its core idea (Chennai is a *who's-your-circle* city) can also fold into D2R3 or D8R4.
+
+---
+
+## DAY 1 ADD-ON — VIGGY CONTROVERSY SKIT SERIES `[viggyC1–C3]` (competitor-targeted, actor-led)
+
+> **Founder-originated skit series, anchored on Day 1 (the controversy day).** Three escalating-cast skits, each targeting one competitor on a **fact-based** controversy, each ending by filling the gap with our niche. Cast pool: **2 girls + 2 boys ready.** Girls lead the critique on purpose — **female-voiced controversy reads as relatability + trust, not a brand cheap-shot.**
+>
+> **⚠️ Tag collision flag:** `[viggy1]` (D1R6) and `[viggy2]` (D7R3) are already used. To avoid overwriting them I've namespaced this set as **`[viggyC1/C2/C3]`** (C = Controversy series). If you want these to *be* the canonical viggy1/2/3, say so and I'll renumber the existing two.
+>
+> **Distribution recommendation:** 3 controversy skits in one day is too heavy. These are built to **anchor on Day 1 and run across the Day 1–3 controversy skit slots** (the existing `D1R3 / D2R3 / D3R3` are already `SKIT · IGNITE · 2P/3P` — natural homes). Shoot all three in **one session** with the actor pool (batch per §4.1 Skit Shoot). Founder decides final day placement.
+>
+> **Series-wide safety protocol (carried from §4.5):** every competitor claim on-frame is either a **verifiable fact with a source card** or **clearly framed opinion** ("I think," "in my experience"). Attack the **model / experience / business incentive** — never a gender, a person, or a company's staff. Belong especially gets *fair credit* before the critique (it's a genuinely good app; a cheap shot backfires with a savvy audience).
+
+---
+
+### `[viggyC1]` — Target: **HINGE** — "Designed to be deleted. It's been 8 months." `SKIT · IGNITE · P1 · MED · 1F+1M`
+
+**Controversy anchor (fact):** Hinge's own tagline is *"Designed to be deleted."* Hinge is owned by Match Group — whose revenue depends on you *not* leaving. Source card on-frame: *"'Designed to be deleted' — Hinge's official slogan. Hinge is owned by Match Group."* (Their words, our observation = high share-value, low legal risk.)
+
+**Concept & relatability lever:** the swipe economy has **two victims, one app.** She's drowning in low-effort likes (female relatability — the flood); he's invisible, thoughtful messages into the void (male relatability). Both exhausted, both still on it at 1am. The slogan is the joke. Fuse gets them *out* of the app into a real room.
+
+**Cast:** Girl A (the flooded inbox) · Boy A (the invisible sender). No interaction between them until the Fuse turn — they're strangers trapped in the same machine.
+
+| # | Time | Beat / Action | Dialogue (Tanglish — `[localise]`) | On-screen text |
+|---|------|---------------|-----------------------------------|----------------|
+| 1 | 0:00–0:03 | **HOOK.** Both faces, split-screen, deadpan to camera. | A + B (together): "Hinge says it's *'designed to be deleted.'*" *(beat)* B: "Machi… explain THIS." | `"Designed to be deleted." — Hinge` |
+| 2 | 0:03–0:10 | **HER HELL.** Fast cuts: phone erupting — "hi", "hii", "❤️", a cringe opener. She swipes-left, dead-eyed. | A (flat): "247 likes. Zero conversations. Oru real plan illa." `[localise]` | `247 likes · 0 plans` |
+| 3 | 0:10–0:17 | **HIS HELL.** He types a thoughtful, specific message. Sends. "Seen." …Nothing. Swipes into the void. | B (flat): "500 likes anuppinen. 3 match. Met… zero." `[localise]` | `sent 500 · met 0` |
+| 4 | 0:17–0:24 | **THE TRAP.** Split-screen, 1am, blue phone-glow on both faces, still swiping. | VO (B, quiet): "The app makes money while we're *both* still here. Deleting it is bad for business." | `owned by Match Group` |
+| 5 | 0:24–0:33 | **THE TURN.** Smash to warm daylight — both at a real Chennai thing (run club / cafe), NOT talking to camera, just… out. First time they share a frame naturally. | VO: "What if the app actually *wanted* you to leave?" | `fuse` sting → `link in bio` |
+
+**Camera / aesthetic:** Hell = **cold, claustrophobic, phone-lit close-ups**, dark rooms, tight split-screen, blue cast. Turn = **golden-hour, wide, airy, handheld, real location.** The colour-temperature flip (cold→warm) IS the story. Vertical 1080×1920.
+
+**Niche fill:** on Fuse you're *not* a flooded inbox and *not* invisible — you're a person in a real room. Get off the app → real events → real people.
+
+**CTA / caption / tags:** CTA: "Still on the app 'designed to be deleted'? Comment how long. 👇" · Caption: *"The slogan is beautiful. The business model says otherwise. 🫠 (Hinge = Match Group.) There's a way out. #linkinbio"* · `#datinginchennai #chennai #chennaidiaries #hinge #datingappsbelike #swipefatigue #situationship #fuse`
+
+**Space for additions:** `[ADD-LIB]` Girl A's worst real opener (let the actress supply a genuine one) · `[alt hook]` "It's been ___ months" (insert a funnier duration) · `[optional beat]` a paywall gag ("pay ₹___ to see who likes you").
+
+**Guardrail:** quote the slogan verbatim (it's theirs); "owned by Match Group" is fact (source card). No fabricated stats; the "makes money while you stay" line is framed as observation about the incentive.
+
+---
+
+### `[viggyC2]` — Target: **THE LEAGUE** (primary) + **HAPPN** (secondary jab) — "I got *waitlisted*… by a dating app." `SKIT · IGNITE · P1/P5 · MED · 2F+1M`
+
+**Controversy anchor (fact, sourced):** The League makes you **apply** and sit on a **waitlist (3–32 weeks, some report up to a year)**, screening by **college + career** ("ambitious professionals," LinkedIn-vetted); pay to skip the line. Source: *top10 / DatingScout / VIDA, 2026.* Secondary: **Happn** shows you people you **physically crossed paths with** (location "crossed paths" mechanic). Both real, both citable.
+
+**Concept & relatability lever:** two girls roast **dating gatekeeping** — you now have to be *elite enough to be allowed to date.* The boy is the "approved" League guy: perfect on paper, still alone (exclusivity ≠ connection). Quick Happn jab lets the girls voice the **surveillance-creep** — female-voiced = trust, and we critique safety **without shouting "safety."**
+
+**Cast:** Girl A (applying / incredulous) · Girl B (roasting / the Happn recoil) · Boy A (the "approved," lonely elite).
+
+| # | Time | Beat / Action | Dialogue (Tanglish — `[localise]`) | On-screen text |
+|---|------|---------------|-----------------------------------|----------------|
+| 1 | 0:00–0:04 | **HOOK.** Cafe. Girl A stares at phone, betrayed. Girl B leans in. | A: "Machi… indha dating app enna **waitlist**-la potudichu." B: "Waitlist?? To *date*?!" A: "3 to 32 weeks. To be *'approved.'*" `[localise]` | `waitlisted… to date. (The League)` |
+| 2 | 0:04–0:14 | **THE AUDITION.** A reads requirements aloud; girls roast. | A: "College pedigree, job title, 'ambitious professionals only.'" B: "So love ippo oru job interview ah? Resume anuppanuma?!" `[localise]` `[ADD-LIB roast]` | `college. career. "elite." to DATE.` |
+| 3 | 0:14–0:23 | **THE 'APPROVED' GUY.** Cut to Boy A alone in a sterile flat, swiping. Objectively "high-value on paper." Deadpan. | B (VO into his shot): "He got *in*." · Boy A: "Accepted. Into the elite. Been 'elite' and single… 2 years." | `exclusivity ≠ someone who likes you` |
+| 4 | 0:23–0:30 | **HAPPN JAB.** Girl B's phone buzzes: "someone you *crossed paths with* 3 times wants to connect." Both recoil-laugh. | B: "So indha app-ku theriyum naan enga ellam nadandhen-nu?? Illa illa." `[localise]` | `Happn: knows where you walked 👀` |
+| 5 | 0:30–0:40 | **THE TURN.** "You shouldn't have to *apply*. Or be *tracked*. Or be 'elite enough.'" Cut to all three easy at a real Chennai event, no gates. | A: "Yaarum apply panna koodadhu oru manushana meet panna." `[localise]` | `no application. no waitlist. no creeping.` → `fuse` sting |
+
+**Camera / aesthetic:** Cafe = **bright, natural, handheld, conversational** (trust, real-talk register). "Approved guy" = **sterile, cold, perfectly symmetrical** framing (visual joke: 'elite' = empty). Turn = **warm group event.** Let the two girls talk *over* each other a little — authenticity > polish.
+
+**Niche fill:** Fuse has **no application, no waitlist, no elitism, no tracking** — you just show up to a real thing, verified, everyone welcome. (The **Meet People** door = anti-gatekeeping + female-first, low-stakes.)
+
+**CTA / caption / tags:** CTA: "Would you *apply* to be allowed to date? 👇" · Caption: *"An app that waitlists you by your résumé. Another that tracks where you walked. We're good. 🚪 Just show up. #linkinbio"* · `#datinginchennai #chennai #chennaidiaries #theleague #datingapps #chennaimemes #fuse`
+
+**Space for additions:** `[ADD-LIB]` Girl B's best "resume for love" roast · `[alt]` swap Happn jab for a different creepy-app beat if timing runs long · `[optional]` a "₹____ to skip the waitlist" paywall gag card.
+
+**Guardrail:** waitlist + screening + pay-to-skip are **cited facts** (source card); Happn's "crossed paths" is its **actual advertised mechanic**. Roast the *model* ("apply to date," "tracked"), never individual users of these apps. Opinion framing on judgments ("we're good").
+
+---
+
+### `[viggyC3]` — Target: **BELONG.APP** — "Belong gets you in the room. Then it just… ends." `SKIT · IGNITE/STORY · P1/P2 · HEAVY (edit★ candidate) · 2F+2M`
+
+**Controversy anchor — FAIR, because Belong is genuinely good (the closest real threat):** Belong = "meet new people in your city," 3M+ downloads, curated dinners/drinks/sports, and it **does show who's going before you reserve** (so we do NOT claim otherwise — that would be false). The honest, precise wedge: **Belong is friends-only.** When you actually *click* with someone romantically, there's **no path** — no way to say "I like you," no match, no gift, no "let's do a real date." And it's a **generic global app** (same in London as in Chennai), one-off nights with no continuity. Source card: *"Belong — 3M+ downloads, meet-new-people events. Fair play. (App Store)"*
+
+**Concept & relatability lever:** the biggest cast = a **group scene.** Four strangers at a Belong-style dinner — it's genuinely nice (we credit it), and a girl + boy clearly click… then the night ends and **the app has nowhere for that to go.** The gap is the whole point: Fuse fuses **both doors** — meet at the event *and* actually turn a spark into something (wave → match → gift → real plan). Girl narrates (relatability); the girl–boy near-miss is the emotional hook.
+
+**Cast:** Girl A (narrator + the spark) · Boy A (the spark) · Girl B + Boy B (the group / the fizzled group-chat).
+
+| # | Time | Beat / Action | Dialogue (Tanglish — `[localise]`) | On-screen text |
+|---|------|---------------|-----------------------------------|----------------|
+| 1 | 0:00–0:05 | **HOOK.** Four around a table, warm. Girl A to camera. | A: "So we all met at one of those *'meet new people'* dinners." *(beat)* "It was actually really nice. Adhu dhaan the problem." `[localise]` | `we met at a Belong dinner.` |
+| 2 | 0:05–0:13 | **CREDIT IT (fair).** Quick warm montage — laughing, vibing; A and Boy A clearly clicking. | VO (A): "Real people. Real night. No swiping. Credit where it's due." | `Belong: gets you in the room ✅ (3M+ downloads)` |
+| 3 | 0:13–0:26 | **THE DEAD-END.** Night ends, everyone stands to leave. A & Boy A have the awkward "so… this was fun" pause — *no mechanism.* Cut to A at home; the group chat fizzles ("we should ALL hang again!!" → never). | VO (A): "But then… what? No way to say 'I actually like *you.*' No match. No 'let's do a real date.' You just… go home." | `meet people ✅ · date one of them ❌ · see them again ❌` |
+| 4 | 0:26–0:34 | **REFRAME.** | A: "Making friends is great. But if you actually *like* someone, the app just… leaves you there. And it's the same app in London as in Chennai. Adhukku un city theriyathu." `[localise]` | `great for friends. a dead-end for a spark.` |
+| 5 | 0:34–0:45 | **THE TURN + CONTINUITY.** "Fuse has *both* doors." Cut to A + Boy A on an actual date (the continuity Belong lacked); B + Boy B at the next event. | A: "Meet people at real Chennai events — *and* if you click, actually *do* something about it. Wave. Match. Send a gift. Make a real plan." | `both doors. the night doesn't just… end.` → `fuse` sting |
+
+**Camera / aesthetic:** Dinner = **warm, candle/string-lit, alive, ensemble handheld** (real group energy — let them genuinely talk). Dead-end = **the deflation:** empty table, one chair, A alone in phone-glow (cold). Turn = **warm continuity** (a real date + the next event). **Flag: this is an `edit★` heavy candidate** (cast + 3 locations + montage) — one of the 5 outsourced edits, or simplify to 2 locations if shooting solo.
+
+**Niche fill:** Fuse = **both doors in one app** — Meet People (events) **and** Date Ideas (match → gift → real plan), Chennai-dense, with continuity. Belong makes friends; Fuse lets you make friends *and fall for one of them.*
+
+**CTA / caption / tags:** CTA: "Ever clicked with someone at an event and had *no way* to reach them after? 👇" · Caption: *"Meeting people is only half of it. What happens when you actually like one of them? 👀 Both doors. One app. Chennai. #linkinbio"* · `#datinginchennai #chennai #chennaidiaries #meetpeople #belong #chennaievents #fuse`
+
+**Space for additions:** `[ADD-LIB]` the fizzled group-chat text (let it be a real, funny "we should all hang!!" screenshot) · `[alt]` set it at a run club / board-game cafe instead of a dinner · `[optional]` a second near-miss couple for extra relatability.
+
+**Guardrail — most important of the three:** **credit Belong honestly on-frame** (fair play, real downloads) — the critique is *only* the missing dating/continuity layer + generic-global, which is **true and specific.** Do **not** claim Belong "doesn't show who's going" (it does). Frame the gap as our differentiator, not their failure. This keeps us credible with the exact savvy audience most likely to know Belong.
+
+---
+
+### Series production notes (all three)
+
+- **One shoot session, four actors, three setups** (cafe, sterile flat, event/dinner) — batch per §4.1. Reuse the event location across C2's turn + C3's dinner if possible.
+- **Source cards** must be prepared before the shoot (Hinge slogan + Match Group; The League waitlist/screening; Happn crossed-paths; Belong downloads/credit). Keep a receipts folder.
+- **End every reel on the `fuse` outro master** (`marketing-assets/fuse_outro_vertical.mp4`).
+- **Tanglish pass:** all `[localise]` lines get Viggy's Chennai-native rewrite on lock; English on-screen text stays (reach + silent-watch).
+- **Comment-harvest:** C1 and C3 CTAs feed the Day 12 community reel — mark them.
 
 ---
 
@@ -336,6 +438,8 @@ Every day advances a narrative. A viewer who watches Day 1 → Day 15 experience
 > - a specific funny pain he actually relates to — *the talking stage that dies after 3 weeks* · matched but she's across the city and nobody ever crosses Chennai traffic for a stranger · paying ₹999 to see who liked you · being "a number in someone's rotation"
 > - the emotional turn (real, not scripted): *"Oru stage la app open panradhe waste-nu feel aachu. Naanum delete panniten."*
 > - *Improv prompt for him:* "What's the pettiest reason you gave up on an app?" — let his real answer make the cut.
+> - **[merged from the retired D1R1] the "it wasn't just me" pivot — OPTIONAL but strong:** after the personal damage, he can widen it: *"Then I looked it up — it's not just me."* → the four sourced receipts as on-screen cards: **Bumble paying users −21% (Q1 2026)** · **Tinder MAU −7% YoY** · **79% of Gen Z: dating-app fatigue** · **Bumble — once worth $7B — reportedly exploring a sale.** (Source cards: Reuters/Inc./Newsweek — pull real screenshots pre-shoot.) Payoff line: *"It's not me. The whole thing is dying."* This upgrades his confession from a personal sob-story to a defensible category indictment — and buys even more credibility for the Act 2 review.
+> - **[merged from D1R1] optional prop — the death certificate:** he slides a printed *"SWIPING · b. 2012 — d. 2026"* certificate onto the table as the button on Act 1. Best screenshot/share frame in the reel. Use only if it doesn't break his natural register.
 >
 > **ACT 2 — THE REVIEW (20–45s · reveal/trust · skeptic slowly won over):**
 > - the setup: *"Appuram en friend 'Fuse try pannu da' nu. Seri, honest review pannalam-nu open pannen."* (arms-crossed energy)
@@ -605,9 +709,10 @@ Every day advances a narrative. A viewer who watches Day 1 → Day 15 experience
 
 ### DAY 15 — "FULL CIRCLE" (the closer)
 
-**D15R1 — "15 days ago, I deleted every dating app"** `POV · CONVERT · P1/P6 · MED · same actor as D1R1`
-- Hook: *"15 naal munnadi naan ella dating apps um delete panninen. Idhu dhaan aduthadhu nadandhadhu."*
-- Beats: THE callback — same person from D1R1 → this time: opens Fuse → RSVPs → cut to them AT the event, in a circle of people, mid-laugh → looks at camera: *"Naan apps ah delete pannala. Naan loneliness ah delete pannen."* → "Full circle."
+**D15R1 — "15 days ago, I didn't know anyone in this city"** `POV · CONVERT · P1/P6 · MED · SAME ACTOR AS D4R1`
+- Hook: *"15 naal munnadi, indha city la enakku yaarum theriyaadhu. Idhu dhaan aduthadhu nadandhadhu."*
+- Beats: THE callback — same person from **D4R1** (alone on a Saturday, Swiggy for one, scrolling other people's plans) → this time: opens Fuse → RSVPs to a real thing → cut to them AT the event, in a circle of people, mid-laugh → looks at camera: *"Naan apps ah delete pannala. Naan loneliness ah delete pannen."* → "Full circle."
+- *Shot rhyme:* reuse D4R1's exact framings (the empty table, the same street, the same Saturday) but now full of people — the visual echo IS the payoff. Shoot D4R1 with this in mind.
 - CTA: "Your turn. Bio."
 - Caption seed: "Day 1 person, Day 15 ending. Watch both."
 

@@ -35,18 +35,29 @@ const IntroPage = () => {
     const m = parseInt(month, 10);
     const y = parseInt(year, 10);
 
-    const currentYear = new Date().getFullYear();
     if (!d || !m || !y) return false;
     if (m < 1 || m > 12) return false;
     if (d < 1 || d > 31) return false;
-    if (y > currentYear - 18 || y < currentYear - 100) return false;
 
     const date = new Date(y, m - 1, d);
-    return (
-      date.getFullYear() === y &&
-      date.getMonth() === m - 1 &&
-      date.getDate() === d
-    );
+    if (
+      date.getFullYear() !== y ||
+      date.getMonth() !== m - 1 ||
+      date.getDate() !== d
+    ) {
+      return false;
+    }
+
+    // Exact age, not just birth year — someone born in (currentYear - 18)
+    // whose birthday hasn't happened yet this year is still 17.
+    const today = new Date();
+    let age = today.getFullYear() - y;
+    const hasHadBirthdayThisYear =
+      today.getMonth() > m - 1 ||
+      (today.getMonth() === m - 1 && today.getDate() >= d);
+    if (!hasHadBirthdayThisYear) age--;
+
+    return age >= 18 && age <= 100;
   };
 
   useEffect(() => {

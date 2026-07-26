@@ -21,16 +21,23 @@ So posters are optimized differently from reels:
 
 ---
 
-## 1. Design system (shared across all 15)
+## 1. Design system (loose family, not a straitjacket)
 
-Keep every poster visually one family so the grid reads as a campaign, not 15 random posts.
+Keep the grid feeling like one campaign — but through **tone and type discipline, not a forced color**. Variety is a feature: a mix of stark type posters, abstract art frames, and photo-real moments makes the feed look alive, not templated.
 
-- **Brand color:** `#ff5864` (Fuse coral). Use as the one accent — the punch word, a rule line, or the logo lockup. Never flood-fill it.
-- **Base:** near-black `#0E0E10` or off-white `#F7F5F2`. Alternate so the feed grid has rhythm; keep type contrast high.
-- **Type:** Poppins. Big, tight, confident. Statement in Bold/ExtraBold; source lines and captions in Regular.
-- **Format mix:** ~10 single-frame statement posters + ~5 carousels (2–5 slides) for the ones that need a build (pains, the equation, two doors, gifting rule, launch).
-- **Corner sting:** small `fuse` wordmark bottom-corner on every poster (understated until Day 7 reveal, then confident).
-- **Safety protocol (carried from reel plan §4.5):** any competitor stat or claim shows its **source on-frame** (e.g. "Bloomberg, Q1 2026"), framed as opinion/fact — never a fabricated number. Attack the *system/model*, never a gender or a person's character.
+- **Color — a hint, not a rule.** Coral (`#ff5864` neighborhood) shows up as a *touch* — one word, a thin line, a glow, a single object — enough to whisper "Fuse." Posters can also be fully abstract or off-palette (moody film tones, warm Chennai golden-hour, high-contrast mono) when the idea is stronger without brand color. Never flood-fill coral; never let brand-matching flatten a good visual.
+- **What holds it together instead of color:** consistent type voice (confident, plain-spoken), generous negative space, one idea per frame, and a recurring *small* `fuse` sting. The through-line is attitude, not a swatch.
+- **Type:** Poppins (or close). Big, tight, confident. Statement in Bold/ExtraBold; source lines and captions in Regular. Type can *be* the whole poster.
+- **Visual registers to rotate (keeps the grid textured):**
+  - *Stark statement* — type on solid/gradient, near-zero imagery (Days 1, 2, 4, 6, 9).
+  - *Abstract/conceptual* — metaphor as image (locked gift, two doors, algorithm-hand vs human-hand, the equation) — clean, editorial, a little surreal.
+  - *Photo-real Chennai* — golden-hour, real rooms, run clubs, rooftops, a gift in hand — warm and human (Days 10, 11, 14).
+  - *Data/receipt* — clinical charts and quotes with sources (Days 1, 3, 12).
+- **Format mix:** ~10 single-frame + ~5 carousels (2–5 slides) for ideas that need a build.
+- **Corner sting:** small `fuse` wordmark somewhere on every poster — understated pre-reveal (Days 1–6), confident after Day 7.
+- **Safety protocol (carried from reel plan §4.5):** any competitor stat or claim shows its **source on-frame** (e.g. "Bloomberg, Q1 2026"), framed as opinion/fact — never fabricated. Attack the *system/model*, never a gender or a person's character.
+
+> **For the prompt-gen step next:** every poster below now carries an *Art direction* line written to translate straight into an image prompt — subject, mood, composition, palette-freedom noted. We'll expand each into a full generation prompt one at a time.
 
 ---
 
@@ -244,6 +251,51 @@ Each spec: **Hook** (the screenshot line) · **Visual** · **Format** · **Capti
 | 15 | Pull | Full circle: what's next | Single/2 | Callback / close | Yes |
 
 **Effort flags (which need a designer/editor vs founder-DIY):** Day 7 (equation lockup) and Day 15 (callback) are the two hero frames worth outsourcing polish; Days 1, 5, 10, 13 are carousels worth care; the rest are template-driven single frames the founder can produce fast once the system in §1 is set.
+
+---
+
+## 4a. Art-direction seeds (prompt-gen starters)
+
+One-line visual seed per day — the raw material we'll expand into full image-gen prompts, one poster at a time. Palette is free unless noted; coral is a *hint* only.
+
+| Day | Register | Art-direction seed |
+|-----|----------|--------------------|
+| 1 | Data/stark | Black void, a phone mid-swipe dissolving into ash/particles; three tiny sourced stats glowing at the base; one faint coral ember. |
+| 2 | Abstract | A heart wired into a subscription meter/coin-slot machine; the meter only pays while the heart stays caged. Cold industrial tones, one coral wire. |
+| 3 | Data | A brutally simple 70/30 bar as a crowded vs empty room; clinical, no faces, tension in the imbalance. Mono + one accent. |
+| 4 | Stark | The words "designed to be deleted" struck through, receding into an infinite swipe-tunnel that never ends. Ironic, minimal. |
+| 5 | Editorial carousel | Five plain cards, each one small sad object for a post-match pain (a stalled chat bubble, a paywall lock, a ghost, a map pin across a river, a single chair). Muted, consistent. |
+| 6 | Photo-real | A person at a party half-lit, lowering their phone, looking up at real people; captiony meet-cute mood, warm grain. Coral only in a distant light. |
+| 7 | Conceptual hero | The equation as three clean icons (heart · gift · ticket) fusing into one glowing mark; confident, premium, this is the signature frame. Coral earns its moment here. |
+| 8 | Conceptual | Two doors side by side in one wall — one opens to a crowd/run-club, one to a candlelit table; a figure choosing. Symmetrical, cinematic. |
+| 9 | Abstract | A gift box behind a soft lock whose keyhole is a speech bubble; you can't open it without talking first. Elegant, restrained. |
+| 10 | Photo-real / UI | A real Saturday scene with a subtle "who's going" grid floating over it; three stylized attendee tiles, a wave gesture. Alive, inviting. |
+| 11 | Meta/handmade | Founder-desk flatlay or chalkboard with hand-written "Day _, _ users, 1 city"; honest, imperfect, warm. Off-brand palette fine. |
+| 12 | Conceptual | A cold chrome algorithm-hand offering a match vs a warm human hand reaching past it toward another human. Sci-fi vs flesh contrast. |
+| 13 | Bold/badge | A wax-seal / founding-member badge, "Founding 100 · Chennai," a few spots visibly filling; scarcity as craft. Coral seal. |
+| 14 | Photo-real collage | A weekend grid — run club, rooftop, first-hello moments (stylized/consented); documentary warmth, real city texture. |
+| 15 | Callback | Day 1's ash-phone frame reversed: the particles reassemble into the Fuse equation/two-door mark. Same layout, resolved. Loop closes. |
+
+---
+
+## 4b. Niche-Idea Bank (draw-from pool)
+
+Extra concepts rooted specifically in **Fuse's niche** — the going-out app where you never go alone, offline meet-cutes, gifting-after-conversation, event circles, match→real-plan, Chennai locality. Use these to **swap into a day, extend the campaign past 15, or spin B-side posters.** Each: hook + art-direction seed + niche it depicts.
+
+- **"The app that wants you to leave it."** — A door left open, phone face-down on the table, city glowing outside. *Niche: get-off-the-app / offline-first (the honest inverse of "designed to be deleted").*
+- **"Match on Tuesday. Actually meet on Saturday."** — Split calendar: a chat bubble on one side, a real cafe table on the other, an arrow between. *Niche: match → real plan, closing the meet-cute gap.*
+- **"The talking stage has a graveyard. We skip it."** — A field of dead-grey chat bubbles as headstones; one bright path leads out to a real event. *Niche: anti-endless-texting, push to real-world.*
+- **"You don't need a date to belong here."** — A warm group in a room, one newcomer welcomed; no romance framing at all. *Niche: Meet People door / low-stakes female-first entry.*
+- **"Wave first. Talk later. No pressure."** — A hand doing a small wave across a room of stylized attendees. *Niche: Event Circle wave mechanic, consent-forward.*
+- **"A gift should mean something. So we made it earn its way."** — A single thoughtful object handed over after a visible conversation thread. *Niche: gifting economy tied to real interaction, not payment-for-attention.*
+- **"Chennai has 200 things to do this weekend. Now you have someone to do them with."** — A city map lit with event pins, two figures meeting at one. *Niche: local events aggregation + never-go-alone, hyperlocal.*
+- **"Verified room. Real people. No bots."** — A house-party scene with a subtle verified check on the door. *Niche: safety-quietly + real-world trust.*
+- **"Nobody screenshots a swipe. People screenshot a night out."** — Contrast: a grey swipe UI vs a vivid saved memory/photo. *Niche: experiences over swiping, share-worthy IRL.*
+- **"Come for the run club. Leave with a story."** — Runners at dawn on the Marina/ECR, two glancing at each other mid-stride. *Niche: event-led acquisition, the run-club hero image.*
+- **"Your dating app is lonely. On purpose. Ours puts you in a room."** — One person alone in a phone-glow vs a lit room full of people. *Niche: loneliness critique → group discovery answer.*
+- **"Sotta scene illa. Real plan than." (Tanglish)** — Bold Tanglish type, minimal. *Niche: Chennai voice / local authenticity — Viggy localizes the line.*
+
+> These are seeds, not scripts. When we start prompt-gen we can promote any of these into a numbered day or run them as fill-in posts between the 15.
 
 ---
 

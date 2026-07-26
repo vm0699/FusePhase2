@@ -20,6 +20,10 @@ import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
+import { ensureAdsConsent, AdsGateState } from "../ads/adsConsent";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import io, { Socket } from "socket.io-client";
+import { API_BASE_URL } from "../config/env";
 
 const APP_ID = "9f8005ccb3d34d7c9487f0de149a3111";
 const REMOTE_JOIN_TIMEOUT_MS = 25000;
@@ -57,11 +61,36 @@ export default function AgoraCallScreen() {
   const [remoteVideoOn, setRemoteVideoOn] = useState(true);
   const [chatMessages, setChatMessages] = useState<string[]>([]);
   const [message, setMessage] = useState("");
+  const [adsGate, setAdsGate] = useState<AdsGateState | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    ensureAdsConsent().then((state) => {
+      if (isMounted) setAdsGate(state);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const cleanupInProgressRef = useRef(false);
   const navigationInProgressRef = useRef(false);
   const remoteJoinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteUidRef = useRef<number | null>(null);
+  const chatSocketRef = useRef<Socket | null>(null);
+
+  const cleanupChatSocket = () => {
+    const socket = chatSocketRef.current;
+    if (!socket) return;
+    try {
+      socket.emit("leave_call_room", { channelName });
+      socket.disconnect();
+    } catch (error) {
+      console.warn("Chat socket cleanup warning:", error);
+    } finally {
+      chatSocketRef.current = null;
+    }
+  };
 
   const cleanupEngine = (rtcEngine?: IRtcEngine | null) => {
     if (cleanupInProgressRef.current) return;
@@ -83,6 +112,7 @@ export default function AgoraCallScreen() {
     navigationInProgressRef.current = true;
 
     cleanupEngine();
+    cleanupChatSocket();
 
     if (!userId || !Array.isArray(interests) || interests.length === 0) {
       Alert.alert("Call ended", reason || "Returning to video setup.");
@@ -157,6 +187,49 @@ export default function AgoraCallScreen() {
     };
   }, []);
 
+  // In-call text chat, relayed through a call-scoped Socket.IO room (the
+  // backend authorizes the join against the matched VideoQueueEntry for this
+  // channelName, so only the two actual call participants can send/receive).
+  useEffect(() => {
+    if (!channelName) return;
+    let isMounted = true;
+
+    const connect = async () => {
+      const jwtToken = await AsyncStorage.getItem("jwtToken");
+      if (!jwtToken || !isMounted) return;
+
+      const socket = io(API_BASE_URL, {
+        path: "/socket.io",
+        transports: ["websocket", "polling"],
+        forceNew: true,
+        reconnection: true,
+        auth: { token: jwtToken },
+      });
+
+      chatSocketRef.current = socket;
+
+      socket.on("connect", () => {
+        socket.emit("join_call_room", { channelName });
+      });
+
+      socket.on("call_chat_message", ({ text }: { text: string }) => {
+        if (!isMounted || !text) return;
+        setChatMessages((prev) => [...prev, `Stranger: ${text}`]);
+      });
+
+      socket.on("call_chat_error", (err: { message?: string }) => {
+        console.warn("Call chat error:", err?.message);
+      });
+    };
+
+    void connect();
+
+    return () => {
+      isMounted = false;
+      cleanupChatSocket();
+    };
+  }, [channelName]);
+
   const toggleMute = () => {
     if (engine) {
       engine.muteLocalAudioStream(!muted);
@@ -175,6 +248,7 @@ export default function AgoraCallScreen() {
     if (navigationInProgressRef.current) return;
     navigationInProgressRef.current = true;
     cleanupEngine();
+    cleanupChatSocket();
     navigation.replace("VideoInitiateScreen");
   };
 
@@ -183,10 +257,15 @@ export default function AgoraCallScreen() {
   };
 
   const handleSend = () => {
-    if (message.trim()) {
-      setChatMessages((prev) => [...prev, `You: ${message}`, `Stranger: ${message}`]);
-      setMessage("");
-    }
+    const trimmed = message.trim();
+    if (!trimmed) return;
+
+    chatSocketRef.current?.emit("call_chat_message", {
+      channelName,
+      text: trimmed,
+    });
+    setChatMessages((prev) => [...prev, `You: ${trimmed}`]);
+    setMessage("");
   };
 
   return (
@@ -216,16 +295,18 @@ export default function AgoraCallScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bannerCard}>
-        <BannerAd
-          unitId="ca-app-pub-6755071267673135/6679397253"
-          size={BannerAdSize.FULL_BANNER}
-          requestOptions={{
-            requestNonPersonalizedAdsOnly: false,
-          }}
-          onAdFailedToLoad={(error) => console.warn("Ad load failed:", error)}
-        />
-      </View>
+      {adsGate?.canRequestAds ? (
+        <View style={styles.bannerCard}>
+          <BannerAd
+            unitId="ca-app-pub-6755071267673135/6679397253"
+            size={BannerAdSize.FULL_BANNER}
+            requestOptions={{
+              requestNonPersonalizedAdsOnly: adsGate.nonPersonalizedOnly,
+            }}
+            onAdFailedToLoad={(error) => console.warn("Ad load failed:", error)}
+          />
+        </View>
+      ) : null}
 
       <View style={styles.videoContainer}>
         <View style={styles.videoBox}>
