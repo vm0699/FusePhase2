@@ -13,6 +13,16 @@ install! 'cocoapods',
 
 prepare_react_native_project!
 
+# Agora's RTM (Signaling) SDK vendors its own copy of aosl.xcframework, which
+# collides with the copy RTC's AgoraInfra_iOS pod already provides — both are
+# the same underlying library from concurrent Agora SDK releases. Removing
+# the RTM copy is Agora's own documented fix:
+# https://docs.agora.io/en/help/integration-issues/rtm2_rtc_integration_issue
+pre_install do |installer|
+  agora_rtm_aosl = File.join(installer.sandbox.pod_dir('AgoraRtm').to_s, 'aosl.xcframework')
+  FileUtils.rm_rf(agora_rtm_aosl) if File.exist?(agora_rtm_aosl)
+end
+
 target 'newfusefe' do
   use_expo_modules!
 
